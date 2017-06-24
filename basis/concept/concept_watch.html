@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+<script src="https://cdn.bootcss.com/vue/2.3.4/vue.js"></script>
+</head>
+<body>
+<div id="app">
+    <p>{{firstname}}</p>
+    <p>{{lastname}}</p>
+    <p>采用 watch 方法计算全名: {{fullname}}</p>
+    <p>采用 computed 方法计算全名: {{fullname}}</p>
+</div>
+
+<!--todo 补充 question 的例子-->
+<!--todo https://cn.vuejs.org/v2/guide/computed.html#观察-Watchers-->
+<div id="watch2"></div>
+
+<script>
+    var app = new Vue({
+        el:"#app",
+        data:{
+            firstname:'a',
+            lastname:'a',
+            fullname:'a a',
+        },
+        watch:{
+            firstname:function (val) {
+                this.fullname = `${val} ${this.lastname}`;
+            },
+            lastname:function (val) {
+                this.fullname = `${this.firstname} ${val}`;
+            }
+        },
+        computed:{
+            linkName:function () {
+                return `${this.firstname} ${this.lastname}`;
+            }
+        }
+    });
+
+</script>
+</body>
+</html>

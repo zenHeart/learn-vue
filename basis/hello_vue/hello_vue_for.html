@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+<script src="https://cdn.bootcss.com/vue/2.3.4/vue.js"></script>
+</head>
+<body>
+<div id="app">
+    <ul>
+        <li v-for="todo in todos">
+            {{todo.text}}
+        </li>
+    </ul>
+
+</div>
+<script>
+    var app = new Vue({
+        el:"#app",
+        data:{
+            todos:[
+                { text: '学习 JavaScript' },
+                { text: '学习 Vue' },
+                { text: '做个项目' }
+            ]
+        }
+    })
+</script>
+</body>
+</html>

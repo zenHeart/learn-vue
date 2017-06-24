@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+<script src="https://cdn.bootcss.com/vue/2.3.4/vue.js"></script>
+</head>
+<body>
+<div id="app">
+        <todo-list :todo="items"></todo-list>
+</div>
+<!--todo 完成模板清单的创建-->
+
+<script>
+    Vue.component('todo-list',{
+        template:`
+                <div id="todo-list-example">
+                  <input
+                    v-model="newTodoText"
+                    v-on:keyup.enter="addNewTodo"
+                    placeholder="Add a todo"
+                  >
+                  <ul>
+                    <li
+                      is="todo-item"
+                      v-for="(todo, index) in todos"
+                      v-bind:title="todo"
+                      v-on:remove="todos.splice(index, 1)"
+                    ></li>
+                  </ul>
+                </div>
+                `,
+        props:[todos],
+        method:{
+            close:function () {
+                s
+            }
+        }
+    });
+    var app = new Vue({
+        el:"#app",
+        data:{
+            items:['demo','test'],
+        },
+        watch:{
+            firstname:function (val) {
+                this.fullname = `${val} ${this.lastname}`;
+            },
+            lastname:function (val) {
+                this.fullname = `${this.firstname} ${val}`;
+            }
+        },
+        computed:{
+            linkName:function () {
+                return `${this.firstname} ${this.lastname}`;
+            }
+        }
+    });
+
+</script>
+</body>
+</html>

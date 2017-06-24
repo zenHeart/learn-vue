@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>vue-transition</title>
+    <script src="https://cdn.bootcss.com/vue/2.3.4/vue.js"></script>
+    <style>
+        .fade-enter-active, .fade-leave-active {
+            transition:opacity .5s;
+        }
+        .fade-enter, .fade-leave-to {
+            opacity:0
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <button @click="show = !show">toggle</button>
+    <transition name="fade">
+        <p v-if="show">hello</p>
+    </transition>
+</div>
+</body>
+<script>
+    new Vue({
+        el:'#app',
+        data:{
+            show:true
+        }
+    });
+</script>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+<script src="https://cdn.bootcss.com/vue/2.3.4/vue.js"></script>
+</head>
+<body>
+<div id="app">
+    <p>{{message}}</p>
+</div>
+<div id="app1">
+    <p v-once>{{message}}</p>
+</div>
+<script>
+    var app = new Vue({
+        el:"#app",
+        data:{
+            message:"双向绑定"
+        }
+    });
+    var app1 = new Vue({
+        el:"#app1",
+        data:{
+            message:"v-once 只绑定一次"
+        }
+    });
+</script>
+</body>
+</html>
