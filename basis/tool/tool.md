@@ -26,6 +26,7 @@ npm run dev
     * 每个 vue 只包含一个模板标签
     * 内容将作为字符串编译到模板选项
     * 支持导入 html 模板
+    * 支持使用 [jade](https://www.npmjs.com/package/jade) 模板
     
 * script 标签
     * 包含 js 文件
@@ -43,5 +44,6 @@ npm run dev
 * 自定义标签内容
 * 注释使用 html  `<!-- -->` 格式
 
-# 
+## vue-loader
+是基于 Webpack 的 loader.用于转换 vue 组件.
 
