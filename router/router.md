@@ -18,7 +18,7 @@ router
 利用官方文档的一系列范例理解路由模块的使用.
 
 ### 静态路由
-参看 [basic](basic/basic_router.html) 文件.
+参看 [basic](basic_router.html) 文件.
 
 1. 引入 `vue,vue-router` 模块
 2. 利用 `router-link` 标签定义路由导航
@@ -32,7 +32,7 @@ router
 
 ### 动态路由
 利用路由获取传入参数.
-参看 [动态路由](dynamic_router/index.html)
+参看 [动态路由](dynamic_router.html)
 
 1. 利用 `/foo/:id` 的形式定义路由.
 该模式下所有 `/foo/*` 模式的路由都会指向相同模板.
@@ -71,6 +71,8 @@ router
 注意如下问题
 * **一级模板中必须包含 `router-view`** 标签给下一级路由替换
 * **二级路由若采用 `/`** 开头则合并到一级模板,多级同时替换
+
+### 路由控制
 
 
 

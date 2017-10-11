@@ -1,0 +1,39 @@
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+
+<div id="sameData">
+    <h1>same data</h1>
+    <same-component></same-component>
+    <same-component></same-component>
+    <same-component></same-component>
+    <h1>isolate data</h1>
+    <isolate-component></isolate-component>
+    <isolate-component></isolate-component>
+    <isolate-component></isolate-component>
+</div>
+
+<script>
+    // register
+    var sameData = {counter:0};
+    Vue.component('same-component', {
+        template: '<button v-on:click="counter += 1">A same data : {{counter}}</button>',
+        data:function () {
+            return sameData;
+        }
+    });
+    Vue.component('isolate-component',{
+            template: '<button v-on:click="counter += 1">isolate data : {{counter}}</button>',
+            data:function () {
+                return {
+                    counter:0
+                }
+            }
+
+        });
+    // create a root instance
+    new Vue({
+        el: '#sameData'
+    }) // register
+
+    // Now the app has started!
+</script>
