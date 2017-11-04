@@ -44,3 +44,18 @@ component
 > **若传递的是引用,子层修改会影响父级**
 
 * [ ] 此处数组操作有问题需研究?????????
+
+* 可以给 `props` 传递对象.
+并且限制接收的参数类型.参考范例中对数字和字符串的输入限制.
+详见 [属性校验](https://vuejs.org/v2/guide/components.html#Prop-Validation)
+
+> 该校验和 typescript 的思想相似.
+
+## 组件事件
+除了利用 `props` 向父元素暴露属性.
+可以利用 `v-on` 的事件机制实现组件通讯.
+
+组件中使用 `$emit('eventname')` 的方法发送事件
+父级元素利用 `v-on:eventname` 捕获事件并执行相应回调.
+
+范例参看 [component event](children_component_event.html)
