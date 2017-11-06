@@ -146,5 +146,73 @@ router
     * `matched` 包含路由记录
     * `name` 路由名称(配置项定以后才有)
     
-    
+ 
+### 守卫导航
+实例化的 `router` 对象可以注册钩子.
+监听整个路由变化.
 
+**全局钩子**
+
+`boforeEach` 在跳转前执行
+
+参见范例 [导航守卫](router_nav_guide.html)
+注册函数回传入三个参数
+    * `to` 切换到的路由
+    * `from` 切换前的路由
+    * `next` 回调 resolve 函数
+
+> 必须调用 next 函数来说明该回调的执行结果.否则路由会被挂起.
+导致视图不渲染!!!解析结果如下
+
+* `next()` 切换到下一个注册函数,**注意同样必须调用 next 来申明执行结果**
+* `next(false)` false 会终止该路由的切换,并切换到切换钱的目录.
+    > 可以利用该方法进行路由的权限控制
+* `next('/')` 切换到其他目录.
+    > 注意切换到其他目录会导致重新触发绑定函数.若绑定函数没有终止.
+    会导致循环触发路由.出现堆栈溢出
+    > **一定要确保路由的循环是可终止的**
+* `next(error)` 抛出一个错误对象,可以被 `onError` 捕获.  
+
+
+`beforeResolve` 解析守卫,异步视图加载后执行
+
+参见范例 [解析守卫](router_resolve_guide.html)
+
+ `afterEach`,后置钩子
+参见范例  [后置钩子](router_after_guide.html)
+
+
+除了全局配置,实例化路由时每个路由支持如下
+钩子属性.参见范例  [路由独享钩子](https://router.vuejs.org/zh-cn/advanced/navigation-guards.html)
+
+* `beoforeEnter` 该路由进入前的钩子,可以用来做路由权限控制
+
+此外还可在声明组件内部定义路由钩子.
+
+* `beforeRouteEnter` 组件实例化前触发 
+* `beforeRouteLeave` 路由离开前触发 
+* `beforeRouteUpdate` 组件实例化后,数据刷新触发.例如 `/foo/:id` 类的路由 
+
+这个导航守卫脚本顺序
+1. 导航被触发
+2. beforeRouteLeave 组件内部离开钩子
+3. beforeEach 全局钩子
+4. beforeRouteUpdate 组件重新更新钩子
+5. beforeEnter 路由配置里调用视图钩子
+
+
+总结,路由钩子分几类
+* 全局钩子
+    * `beforeEach`
+    * `beforeResolve`
+    * `afterEach`
+* 路由钩子  
+    * `beforeEnter`
+* 组件钩子
+    * `beforeRouteEnter`
+    * `beforeRouteUpdate`
+    * `beforeRouteLeave`
+
+next 函数用来解析钩子回调的执行结果.
+
+* [ ] 思考一个好的状态图来说明钩子的变化

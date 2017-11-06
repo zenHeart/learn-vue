@@ -1,0 +1,80 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+<div id="app">
+    <h1>组件内部钩子</h1>
+    <p>
+        <router-link to="/foo">Go to Foo</router-link>
+        <router-link to="/bar">Go to Bar</router-link>
+        <router-link to="/baz/:1">Go to Baz 1</router-link>
+        <router-link to="/baz/:2">Go to Baz 2</router-link>
+    </p>
+    <router-view></router-view>
+</div>
+<script>
+    //申明组件
+    const Foo = {
+        template: '<div>foo</div>',
+        beforeRouteEnter(to,from,next) {
+            console.log('-----------beforeRouteEnter 在渲染组件路由被确认前调用,组件还未实例化!----------')
+            next(vm => {
+                console.log('-----------vm 可以在 next 中访问组件实例----------')
+                console.log(vm);
+            });
+        },
+        beforeRouteLeave(to,from,next) {
+            console.log('--------beforeRouteLeave 导航离开,组件被销毁前调用,可以调用组件实例-------------');
+            console.log(this);
+            next();
+
+        }
+    }
+    const Bar = { template: '<div>bar</div>' }
+    const Baz = { template: '<div>baz {{$route.params}}</div>',
+        beforeRouteUpdate(to,from,next) {
+            console.log('--------beforeRouteUpdate 组件复用时调用,例如 /baz/:id 的情况,可以调用组件实例-------------');
+            next();
+        } }
+    //申明路由
+    const routes = [
+        { path: '/foo', component: Foo ,beforeEnter:(to,from,next)=> {
+            console.log('-----------/foo 内部 beforeEnter,在全局 beforeEach 之后执行---------');
+            next();
+        }},
+        { path: '/bar', component: Bar },
+        { path: '/baz/:id', component: Baz},
+        {path:'*',component:Bar}
+    ]
+    //实例化路由
+    const router = new VueRouter({
+        routes,
+        beforeEach() {
+        }
+    })
+
+    //注册全局路由监听钩子
+    router.beforeEach((to,from,next)     => {
+        console.log('-----------before hooks----------');
+        console.log('%s switch to %s',from.path,to.path);
+        //必须调用 next 才会执行下一个绑定的钩子函数
+        next();
+    });
+    router.beforeResolve((to,from,next) => {
+        console.log('-----------resolve hooks----------');
+        next();
+    });
+    router.afterEach((to,from) => {
+        console.log('-----------after hooks 无法修改路由变化,没有 next 函数----------');
+    });
+
+
+
+
+
+    //注册路由
+    const app = new Vue({
+        router
+    }).$mount('#app')
+
+
+</script>

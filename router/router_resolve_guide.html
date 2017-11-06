@@ -1,0 +1,58 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+
+<div id="app">
+    <h1>切换完成钩子</h1>
+    <p>
+        <router-link to="/foo">Go to Foo</router-link>
+        <router-link to="/bar">Go to Bar</router-link>
+    </p>
+    <router-view></router-view>
+</div>
+
+<script>
+    //申明组件
+    const Foo = { template: '<div>foo</div>' }
+    const Bar = { template: '<div>bar</div>' }
+    const Baz = { template: '<div>baz</div>' }
+    //申明路由
+    const routes = [
+        { path: '/foo', component: Foo },
+        { path: '/bar', component: Bar },
+        { path: '/baz', component: Baz },
+        { path: '/foo1', component: Foo }
+    ]
+    //实例化路由
+    const router = new VueRouter({
+        routes,
+        beforeEach() {
+        }
+    })
+
+    //注册全局路由监听钩子
+    router.beforeEach((to,from,next)     => {
+        console.log('-----------before hooks----------');
+        console.log('%s switch to %s',from.path,to.path);
+        //必须调用 next 才会执行下一个绑定的钩子函数
+        next();
+    });
+    router.beforeResolve((to,from,next) => {
+        console.log('-----------resolve hooks----------');
+        next();
+    });
+    router.afterEach((to,from) => {
+        console.log('-----------after hooks 无法修改路由变化,没有 next 函数----------');
+    });
+
+
+
+
+
+    //注册路由
+    const app = new Vue({
+        router
+    }).$mount('#app')
+
+
+</script>
