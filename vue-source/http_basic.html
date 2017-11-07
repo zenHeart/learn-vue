@@ -1,0 +1,44 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+<script src="https://unpkg.com/vue-resource/dist/vue-resource.js"></script>
+<div id="app">
+    <h1>vue-resource http 验证器</h1>
+    <p>
+        <button v-on:click="getJsonByThis">使用 this.$http 触发请求</button>
+        <button v-on:click="getJsonByGlobal">使用 Vue.http 触发请求</button>
+    </p>
+    <p>
+        <p>{{result}}</p>
+    </p>
+    <p>
+</div>
+<script>
+    //注册路由
+    const app = new Vue({
+        data:{
+            result:null
+        },
+        methods:{
+            getJsonByThis(){
+               this.$http.get('http://localhost:8081/by_this.json').then(
+                   response => {
+                       this.result = response.body;
+                   }
+               ).catch(response => {
+                   console.log(response);
+               })
+            },getJsonByGlobal(){
+                Vue.http.get('http://localhost:8081/by_global.json').then(
+                    response => {
+                        this.result = response.body;
+                    }
+                ).catch(response => {
+                    console.log(response);
+                })
+            }
+        }
+    }).$mount('#app')
+
+
+</script>

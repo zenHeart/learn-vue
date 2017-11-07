@@ -1,0 +1,101 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+<div id="app">
+    <h1>演示从后端获取路由数据进行渲染</h1>
+    <p>
+    <p>
+        <router-link to="/login">登录界面</router-link>
+    </p>
+    <p>
+        <router-link to="/user">用户信息(登录后才可访问)</router-link>
+    </p>
+    <p>
+        <router-link to="/home">主页</router-link>
+    </p>
+    </p>
+    <router-view></router-view>
+</div>
+<script>
+    //申明组件
+    var service = new Vue();
+    const Login = {
+        template: '<div>' +
+        '<p><label for="username">用户名:</label><input type="text" name="username" v-model="username"></p>' +
+        '<p><label for="password">密码:</label><input type="text" name="password" v-model="password"></p>' +
+        '<button v-on:click="login">登录按钮' +
+        '</button></div>',
+        methods: {
+            login() {
+                if ($this.username && $this.password) {
+                    alert('检查是否有漏填!');
+                } else {
+                    service.$emit('login', {
+                        username: $this.name,
+                        password: $this.password
+                    })
+
+                }
+
+            }
+        },
+        data: function () {
+            return {
+                username: null,
+                password: null
+            }
+        }
+    }
+    const User = {
+        template: '<div>' +
+        '<p>用户信息</p>' +
+        '<p>用户名: </p>' +
+        '<p>密码: </p>' +
+        '<p><button>退出登录</button>' +
+        '</p></div>'
+    }
+    const Home = {template: '<div>主页</div>'}
+
+    //申明路由
+    const routes = [
+        {
+            path: '/login', component: Login,
+            beforeEnter(to, from, next) {
+
+
+            }
+        },
+        {
+            path: '/user', component: User, meta: {
+            auth: false
+        }
+        },
+        {path: '/home', component: Home},
+        {path: '*', component: Login}
+    ];
+    //实例化路由
+    const router = new VueRouter({
+        routes
+    });
+
+    //全局路由监听
+    router.beforeEach((to, from, next) => {
+        //页面为 user 且未授权
+        if (to.path === '/user' && !to.meta.auth) {
+            alert('未授权,跳转到登录界面!');
+            next('/login');
+        }
+        else {
+            next();
+        }
+
+    })
+
+
+    //注册路由
+    const app = new Vue({
+        router
+    }).$mount('#app')
+
+
+</script>
