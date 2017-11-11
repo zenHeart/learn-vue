@@ -1,0 +1,97 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+<script src="https://unpkg.com/vue-resource/dist/vue-resource.js"></script>
+<div id="app">
+    <h1>演示路由切换前获取数据</h1>
+    <div>
+        <router-link to="/home">home</router-link>
+        <router-link to="/user">user</router-link>
+    </div>
+    <router-view>
+    </router-view>
+    <!--全局等待状态-->
+    <div v-if="loading" >... 加载中</div>
+    <!--全局出错提示-->
+    <div v-if="err">出错了: {{errMsg}}</div>
+</div>
+<script>
+    //申明组件
+    const service = new Vue();
+    const User = {
+        template: '<div>' +
+            '<div v-if="post"><p>用户名: {{username}}</p></div>' +
+        '</div>',
+        //组件进入前调用组件路由钩子
+       beforeRouteEnter(to,from,next) {
+
+            next( vm => {
+               vm.getData();
+            });
+       },
+        methods: {
+           getData() {
+               service.$emit('loading',{
+                   path:'/user'
+               });/*
+               this.$http.get('http://localhost:8081/user.json').then(
+                   response => {
+                       this.$emit('success',{
+                           response
+                       });
+                       this.username = response.body.name;
+                   }
+               ).catch( response => {
+                   this.$emit('fail',{
+                       response
+                   });
+               })*/
+           }
+        },
+        data: function () {
+            return {
+                username: null,
+                errMsg:null,
+                post: false,
+                loading: false,
+                err: false,
+            }
+        }
+    }
+    const Home = {template: '<div>主页</div>'}
+
+    //申明路由
+    const routes = [
+        {
+            path: '/user', component: User,
+        },
+        {
+            path: '/home', component: Home
+        },
+        {path: '*', component: Home}
+    ];
+    //实例化路由
+    const router = new VueRouter({
+        routes
+    });
+
+    //注册路由
+    new Vue({
+        router,
+        data:{
+            err:null,
+            errMsg:null,
+            loading:null
+        },
+        methods:{
+            updatePost() {
+
+            }
+        }
+    }).$mount('#app')
+    service.$on('loading',function () {
+        console.log('---------');
+        console.log(arguments);
+    })
+
+</script>

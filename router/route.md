@@ -233,4 +233,16 @@ next 函数用来解析钩子回调的执行结果.
 * 导航完成前,在路由进入的守卫中获取数据,
 成功后导航
 
-* [ ] [获取数据](https://router.vuejs.org/zh-cn/advanced/data-fetching.html)
+参见范例 [导航后获取数据](route_get_data/after_route.html)
+* 不启动 http-server 返回错误
+* 在对应文件加启动 `http-server -p 8081` 打开 [after_route](http://localhost:8081/after_route.html) 返回成功
+
+参见范例 [导航前获取数据](route_get_data/before_route.html)
+
+### 滚动行为
+当视图超出页面时.
+可以设置路由默认回退的位置.
+参见范例 [滚动行为](route_scrool.html)
+
+[滚动行为](https://router.vuejs.org/zh-cn/advanced/scroll-behavior.html)
+

@@ -1,0 +1,63 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+<div id="app">
+    <h1>路由元信息-验证授权登录界面</h1>
+    <p>
+    <p>
+        <router-link to="/top">顶部</router-link>
+    </p>
+    <p>
+        <router-link to="/middle">中间</router-link>
+    </p>
+    <p>
+        <router-link to="/bottom">底部</router-link>
+    </p>
+    </p>
+    <router-view></router-view>
+</div>
+<script>
+    //申明组件
+    const Page = {
+        template: '<div style="height: 1000px;background-color:red;position: relative">' +
+        '<div style="height:200px;position: relative;background-color:green;top=0;">顶部</div>' +
+        '<div style="height:200px;position: relative;background-color:white;top=500px;">中部</div>' +
+        '<div style="height:200px;position: relative;background-color:yellow;bottom=0">底部</div>' +
+        '</div>'
+        }
+
+
+    //申明路由
+    const routes = [
+        {
+            path: '/top', component: Page,
+        },
+        {
+            path: '/middle', component: Page
+        },
+        {path: '/bottom', component: Page},
+        {path: '*', component: Page}
+    ];
+    //实例化路由
+    const router = new VueRouter({
+        routes,
+        scrollBehavior(to,from,savedPosition){
+            //回到各界面滚动位置
+            if (savedPosition) {
+                return savedPosition
+            } else {
+                return { x: 0, y: 0 }
+            }
+        }
+    });
+
+
+
+
+    //注册路由
+    const app = new Vue({
+        router
+    }).$mount('#app')
+
+
+</script>

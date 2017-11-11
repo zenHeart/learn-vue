@@ -25,7 +25,9 @@ vue-source
 http-server -p 8081
 ```
 
-如果没有安装使用
+访问 [http_basic.html](http://localhost:8081/http_basic.html) 即可.
+
+如果没有安装 `http-server` 方法如下:
 ```bash
 # 安装该工具,用来仿真 http 服务器
 npm i -g http-server 

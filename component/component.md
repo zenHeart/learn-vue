@@ -59,3 +59,5 @@ component
 父级元素利用 `v-on:eventname` 捕获事件并执行相应回调.
 
 范例参看 [component event](children_component_event.html)
+
+* [ ] 怎样的组件才算父子组件???
