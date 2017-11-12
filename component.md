@@ -11,17 +11,26 @@ component
 
 ---
 
-### 创建全局组件
-1. 利用 `component` 方法定义组件
-    * `template` 属性申明模板
-2. 创建 Vue 时绑定模板.
+## 组件基础
+1. 使用 `template` 申明组件结构
+2. 使用 `Vue.component` 方法定义组件名及绑定组件构造函数
+3. 直接在 Vue 的作用域使用组件标签实例化对象.
 
-详见 [basic componnet](basic_component.html)
+[创建组件](examples/component/app.js)
 
-### 可以将组件实例化到某一组件内部调用.
+可以在 Vue 或组件中使用 `compoonets` 属性定义组件的作用范围
+
+> 申明的组件讲作用域绑定的空间.
+> 注意申明的组件必须有有根节点,不支持并列模式
+> 组件结构要符合标签插入原则否则参看   [is 特性](https://cn.vuejs.org/v2/guide/components.html#DOM-模板解析注意事项)
+
+
 1. 在 Vue,或组件内部使用 components 定义组件对象
 2. 在对应作用域使用组件
 
+[componnets](examples/component/components.html)
+
+## 组件通讯
 ## 组建数据
 1. 组件 data 属性必须是函数.
 
