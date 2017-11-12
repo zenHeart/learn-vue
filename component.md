@@ -11,12 +11,16 @@ component
 
 ---
 
-## 创建组件
+### 创建全局组件
 1. 利用 `component` 方法定义组件
     * `template` 属性申明模板
 2. 创建 Vue 时绑定模板.
 
 详见 [basic componnet](basic_component.html)
+
+### 可以将组件实例化到某一组件内部调用.
+1. 在 Vue,或组件内部使用 components 定义组件对象
+2. 在对应作用域使用组件
 
 ## 组建数据
 1. 组件 data 属性必须是函数.
