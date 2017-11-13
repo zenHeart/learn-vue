@@ -8,11 +8,14 @@ Vue.use(Vuex)
 //定义一个存储组件
 const store = new Vuex.Store({
     state: {
-        count: 0
+        count: 0,
     },
     mutations: {
         increment(state) {
             state.count++
+        },
+        mutation(state,payload) {
+            state.count = payload.count;
         }
     }
 });
@@ -33,11 +36,15 @@ const Home = {
     }
 }
 
+const PassArg = () => import(/* webpackChunkName: "/bar" */ './PassArg.vue')
+
+
 const router = new VueRouter({
     mode: 'history',
     base: __dirname,
     routes: [
-        {path: '/', component: Home}
+        {path: '/', component: Home},
+        {path: '/arg', component: PassArg}
     ]
 })
 
@@ -50,6 +57,7 @@ new Vue({
       <p>count: {{count}}</p>
       <ul>
         <li><router-link to="/">/</router-link></li>
+        <li><router-link to="/arg">传递参数</router-link></li>
       </ul>
       <router-view class="view"></router-view>
     </div>
