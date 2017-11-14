@@ -85,6 +85,45 @@ actions 处理异步的状态变化
 使用 modules 将状态拆封到多个模块中使用.
 每个模块中又可以使用上述方法.各方法的内部参数指代当前模块.
 采用 `rootState` 引用根模块.
+详见 [module](https://vuex.vuejs.org/zh-cn/modules.html)
 
+### 文件组织
+
+```
+├── index.html
+├── main.js
+├── api
+│   └── ... # 抽取出API请求
+├── components
+│   ├── App.vue
+│   └── ...
+└── store
+    ├── index.js          # 封装导出 store 的地方,每一层单独引用
+    ├── actions.js        # 根级别的异步事务
+    ├── mutations.js      # 根级别的同步事务
+    └── modules
+        ├── cart.js       # 模块状态 1
+        └── products.js   # 模块状态 2
+```
+
+[购物车范例](https://github.com/vuejs/vuex/tree/dev/examples/shopping-cart)
+
+
+## 调试
+* [严格模式](https://vuex.vuejs.org/zh-cn/strict.html)
+    阻止采用非事件方式修改状态.
+* [插件](https://vuex.vuejs.org/zh-cn/plugins.html)
+    利用插件调试状态,记录状态树
+* [测试方法](https://vuex.vuejs.org/zh-cn/testing.html)
+* [热加载](https://vuex.vuejs.org/zh-cn/hot-reload.html)
+
+
+## 重点回顾
+* 不要直接修改状态属性,利用 `mutation` 进行通知
+    * 也不允许采用 v-model 等间接方式修改状态值
+    解决方法参见 [表单处理](https://vuex.vuejs.org/zh-cn/forms.html)
+* `mutation` 处理同步事件,`actions` 处理异步事件
+* 复杂的状态定义使用 `modules`
+* [api 文档](https://vuex.vuejs.org/zh-cn/api.html)
 
 
