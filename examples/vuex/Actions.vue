@@ -15,7 +15,7 @@ export default {
     methods:{
         //通过返回 promise 独享给分发处理
         asyncIncrement() {
-            this.$store.dispatch({
+           return this.$store.dispatch({
                 type:'asyncIncrement'
             }).then(function () {
                 console.log('递增成功!')
@@ -23,7 +23,7 @@ export default {
                 alert(err.message);
             })
         },asyncAutoAddTwice() {
-            this.$store.dispatch({
+            return this.$store.dispatch({
                 type:'actionA',
                 count:1
             }).then(function () {

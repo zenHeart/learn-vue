@@ -1,0 +1,29 @@
+@startuml
+title 购物车状态变化图
+skinparam backgroundColor LightYellow
+skinparam state {
+  StartColor MediumBlue
+  EndColor Red
+  BackgroundColor Peru
+  BackgroundColor<<Warning>> Olive
+  BorderColor Gray
+  FontName Impact
+}
+
+
+init: 从后台拉取商品列表
+init: 初始化时购物车为空
+init: 结算后购物车为空
+state "初始状态" as init
+[*] --> init:初始进入购物界面
+added --> init:点击结算
+
+
+added: 购物车显示商品信息及各数
+added: 计算已添加商品总价格
+state "已添加" as added
+init --> added :添加商品
+@enduml
+
+
+

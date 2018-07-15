@@ -8,7 +8,7 @@
     "dev1": "webpack --watch",
     "build": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack-dev-server --open"
+    "start": "npm run dev"
   },
   "keywords": [],
   "author": "",

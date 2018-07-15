@@ -16,7 +16,7 @@ component
 2. 使用 `Vue.component` 方法定义组件名及绑定组件构造函数
 3. 直接在 Vue 的作用域使用组件标签实例化对象.
 
-[创建组件](examples/component/app.js)
+[创建组件](examples/component/restify.js)
 
 可以在 Vue 或组件中使用 `compoonets` 属性定义组件的作用范围
 

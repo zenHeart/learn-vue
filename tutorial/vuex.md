@@ -98,7 +98,7 @@ actions 处理异步的状态变化
 │   ├── App.vue
 │   └── ...
 └── store
-    ├── index.js          # 封装导出 store 的地方,每一层单独引用
+    ├── restify.js          # 封装导出 store 的地方,每一层单独引用
     ├── actions.js        # 根级别的异步事务
     ├── mutations.js      # 根级别的同步事务
     └── modules

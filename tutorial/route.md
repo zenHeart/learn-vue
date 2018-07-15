@@ -63,7 +63,7 @@ router
 * `beforeRouteUpdate` 钩子绑定路由变化
 
 详见 [响应参数变化](https://router.vuejs.org/en/essentials/dynamic-matching.html#reacting-to-params-changes)
-除了上述匹配模式,也可利用正则进行路由参数提取.详见 [路由匹配](https://github.com/vuejs/vue-router/blob/dev/examples/route-matching/app.js)
+除了上述匹配模式,也可利用正则进行路由参数提取.详见 [路由匹配](https://github.com/vuejs/vue-router/blob/dev/examples/route-matching/restify.js)
 
 ### 嵌套路由
 

@@ -7,7 +7,7 @@
 </head>
 <body>
 <div id="app">
-    <p >{{arr}}</p>
+    <p >{{chargerNumber}}</p>
     <p>{{joinArr}}</p>
 </div>
 
@@ -15,17 +15,17 @@
     var app = new Vue({
         el:"#app",
         data:{
-            arr:[1,2,3]
+            chargerNumber:[1,2,3]
         },
         computed:{
             joinArr:{
-                set:function (arr) {
-                    this.arr = arr;
-                    return arr.join(' ');
+                set:function (chargerNumber) {
+                    this.chargerNumber = chargerNumber;
+                    return chargerNumber.join(' ');
 
                 },
                 get:function () {
-                    return this.arr.join(' ');
+                    return this.chargerNumber.join(' ');
                 }
             }
         }

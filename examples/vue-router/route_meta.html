@@ -18,7 +18,7 @@
 </div>
 <script>
     //申明组件
-    var service = new Vue();
+    var services = new Vue();
     const Login = {
         template: '<div>' +
         '<p><label for="username">用户名:</label><input type="text" name="username" v-model="username"></p>' +
@@ -30,7 +30,7 @@
                 if ($this.username && $this.password) {
                     alert('检查是否有漏填!');
                 } else {
-                    service.$emit('login', {
+                    services.$emit('login', {
                         username: $this.name,
                         password: $this.password
                     })
