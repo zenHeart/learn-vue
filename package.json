@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
+    "docs:dev": "vuepress dev docs",
+    "docs:build": "vuepress build docs",
     "dev": "node examples/server.js",
-    "dev:official":"scripts/official.sh",
+    "dev:official": "scripts/official.sh",
     "dev1": "webpack --watch",
     "build": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -16,8 +18,7 @@
   "dependencies": {
     "lodash": "^4.17.4",
     "vue-router": "^3.0.1",
-    "vuex": "^3.0.1",
-    "webpack": "^3.8.1"
+    "vuex": "^3.0.1"
   },
   "devDependencies": {
     "babel-core": "^6.24.1",
@@ -40,6 +41,7 @@
     "vue": "^2.5.3",
     "vue-loader": "^13.3.0",
     "vue-template-compiler": "^2.5.0",
+    "vuepress": "^0.13.0",
     "webpack": "^3.7.1",
     "webpack-dev-middleware": "^1.9.0",
     "webpack-hot-middleware": "^2.20.0"
