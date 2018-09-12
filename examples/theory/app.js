@@ -35,6 +35,7 @@ const Home = { template: '<div>home</div>' }
 const TwoBindData = () => import('./TwoBindData.vue')
 const Mixin = () => import('./Mixin/index.vue')
 const SelfDirective = () => import('./self-directive/index.vue')
+const Components= () => import('./components/index.vue')
 
 const router = new VueRouter({
   mode: 'history',
@@ -45,6 +46,7 @@ const router = new VueRouter({
     { path: '/TwoBindData', component: TwoBindData },
     { path: '/Mixin', component: Mixin },
     { path: '/SelfDirective', component: SelfDirective },
+    { path: '/Components', component: Components },
 
   ]
 })
@@ -59,6 +61,7 @@ new Vue({
         <li><router-link to="/TwoBindData">/双向数据绑定</router-link></li>
         <li><router-link to="/Mixin">/混入技术</router-link></li>
         <li><router-link to="/SelfDirective">/自定义指令</router-link></li>
+        <li><router-link to="/Components">/组件</router-link></li>
       </ul>
       <router-view class="view"></router-view>
     </div>
