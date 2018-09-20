@@ -1,17 +1,13 @@
 <template>
     <div>
         <comma-value></comma-value>
-        <slot-scope-todo :todos="todos" :name="[{a:1},{b:2}]">
+        <slot-scope-todo :todos="todos" >
             <template slot = "list" slot-scope="test">
                 <li v-if="test.todo.done">X {{test.todo.text}}</li>
-                <strong>{{name}}</strong>
             </template>
-            <template slot-scope="a,b">
-                {{b}}
-            </template>
-            
         </slot-scope-todo>
-        <props-pass-func :hi="(name) => `evening ${name}`"></props-pass-func>
+        <props-pass-func :hi="(name) => `evening ${name}`" :showThis="() => this" :parent-data="parentData" :change-parent="() => { this.parentData += 1;this.ha=Date()}"></props-pass-func>
+        {{ha}}
     </div>
 </template>
 
@@ -28,6 +24,7 @@ export default {
   },
   data() {
     return {
+      parentData:1,
       todos: [
         {
           text: 1,
@@ -36,11 +33,14 @@ export default {
         },
         {
           text: 1,
-          key: 1,
+          key: 2,
           done:false 
         }
       ]
     };
+  },
+  computed: {
+    
   }
 };
 </script>

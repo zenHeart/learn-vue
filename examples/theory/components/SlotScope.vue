@@ -1,8 +1,7 @@
 <template>
     <div>
-        <h1>作用域插槽组件</h1>
+        <h1>作用域插槽组件,实现子组件引用父组件作用域</h1>
         <ul>
-            <slot v-bind="name"></slot>
             <li  v-for="todo in todos" :key="todo.key">
                <slot name="list" v-bind:todo="todo">
                    {{todo.text}}
@@ -17,9 +16,6 @@ export default {
   props: {
     todos: {
       type: Array
-    },
-    name:{
-        type:String
     }
   }
 };
