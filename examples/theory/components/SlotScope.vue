@@ -2,10 +2,10 @@
     <div>
         <h1>作用域插槽组件</h1>
         <ul>
-            <li v-for="todo in todos" :key="todo.key">
-               <slot v-bind:ha="todo" :demo="b">
+            <slot v-bind="name"></slot>
+            <li  v-for="todo in todos" :key="todo.key">
+               <slot name="list" v-bind:todo="todo">
                    {{todo.text}}
-                   <strong>{{b}}</strong>
                </slot>
             </li>
         </ul>
@@ -17,12 +17,10 @@ export default {
   props: {
     todos: {
       type: Array
+    },
+    name:{
+        type:String
     }
-  },
-  data() {
-    return {
-      b: 'demo'
-    };
   }
 };
 </script>
