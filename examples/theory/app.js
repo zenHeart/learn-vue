@@ -36,6 +36,10 @@ const TwoBindData = () => import('./TwoBindData.vue')
 const Mixin = () => import('./Mixin/index.vue')
 const SelfDirective = () => import('./self-directive/index.vue')
 const Components= () => import('./components/index.vue')
+const ProvideInject= () => import('./provide-inject/index.vue')
+const Render= () => import('./render/index.vue')
+const FunctionComponent= () => import('./function-component/index.vue')
+const DynamicComponent= () => import('./dynamic-component/index.vue')
 
 const router = new VueRouter({
   mode: 'history',
@@ -47,7 +51,11 @@ const router = new VueRouter({
     { path: '/Mixin', component: Mixin },
     { path: '/SelfDirective', component: SelfDirective },
     { path: '/Components', component: Components },
-
+    { path: '/ProvideInject', component: ProvideInject },
+    { path: '/Render', component: Render },
+    { path: '/FunctionComponent', component: FunctionComponent },
+    { path: '/DynamicComponent', component: DynamicComponent },
+    
   ]
 })
 
@@ -62,6 +70,10 @@ new Vue({
         <li><router-link to="/Mixin">/混入技术</router-link></li>
         <li><router-link to="/SelfDirective">/自定义指令</router-link></li>
         <li><router-link to="/Components">/组件</router-link></li>
+        <li><router-link to="/ProvideInject">/深度赋值</router-link></li>
+        <li><router-link to="/Render">/测试渲染函数</router-link></li>
+        <li><router-link to="/FunctionComponent">/测试函数式组件</router-link></li>
+        <li><router-link to="/DynamicComponent">/动态组件</router-link></li>
       </ul>
       <router-view class="view"></router-view>
     </div>
