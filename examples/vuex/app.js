@@ -1,12 +1,19 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Vuex from 'vuex'
+import {myPlugin} from './plugin'
+import user from './modules/user'
 
 Vue.use(VueRouter)
 Vue.use(Vuex)
 
 //定义一个存储组件
 const store = new Vuex.Store({
+    //测试组件
+    plugins: [myPlugin],
+    modules:{
+        user
+    },
     state: {
         count: 0,
         todos:[
@@ -101,6 +108,7 @@ const Mutations = () => import(/* webpackChunkName: "/bar" */ './Mutations.vue')
 const MapState = () => import(/* webpackChunkName: "/bar" */ './MapState.vue')
 const MapGetters = () => import(/* webpackChunkName: "/bar" */ './MapGetters.vue')
 const Actions = () => import(/* webpackChunkName: "/bar" */ './Actions.vue')
+const User = () => import(/* webpackChunkName: "/bar" */ './user.vue')
 
 
 const router = new VueRouter({
@@ -111,7 +119,8 @@ const router = new VueRouter({
         {path: '/mapState', component: MapState},
         {path: '/mapGetters', component: MapGetters},
         {path: '/mutation', component: Mutations},
-        {path: '/actions', component: Actions}
+        {path: '/actions', component: Actions},
+        {path: '/user', component: User}
     ]
 })
 
@@ -129,6 +138,7 @@ new Vue({
         <li><router-link to="/mapGetters">getters,mapGetters</router-link></li>
         <li><router-link to="/mutation">mutations</router-link></li>
         <li><router-link to="/actions">actions</router-link></li>
+        <li><router-link to="/user">user</router-link></li>
       </ul>
       <router-view class="view"></router-view>
     </div>
