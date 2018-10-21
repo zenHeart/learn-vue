@@ -40,6 +40,8 @@ const ProvideInject= () => import('./provide-inject/index.vue')
 const Render= () => import('./render/index.vue')
 const FunctionComponent= () => import('./function-component/index.vue')
 const DynamicComponent= () => import('./dynamic-component/index.vue')
+const ApiExtend= () => import('./api-extend/index.vue')
+const Event= () => import('./event/index.vue')
 
 const router = new VueRouter({
   mode: 'history',
@@ -55,6 +57,8 @@ const router = new VueRouter({
     { path: '/Render', component: Render },
     { path: '/FunctionComponent', component: FunctionComponent },
     { path: '/DynamicComponent', component: DynamicComponent },
+    { path: '/ApiExtend', component: ApiExtend },
+    { path: '/Event', component: Event },
     
   ]
 })
@@ -74,6 +78,8 @@ new Vue({
         <li><router-link to="/Render">/测试渲染函数</router-link></li>
         <li><router-link to="/FunctionComponent">/测试函数式组件</router-link></li>
         <li><router-link to="/DynamicComponent">/动态组件</router-link></li>
+        <li><router-link to="/ApiExtend">/ApiExtend</router-link></li>
+        <li><router-link to="/Event">/Event</router-link></li>
       </ul>
       <router-view class="view"></router-view>
     </div>
