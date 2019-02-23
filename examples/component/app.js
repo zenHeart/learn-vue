@@ -8,6 +8,7 @@ Vue.use(VueRouter)
 
 // 利用 template 实例化组件
 const Home = { template: '<div>测试组件</div>' }
+import FunctionComponent from './FunctionComponent/index.vue'
 
 // 注入路由
 const router = new VueRouter({
@@ -15,6 +16,7 @@ const router = new VueRouter({
   base: __dirname,
   routes: [
     { path: '/', component: Home },
+    { path: '/function-component', component: FunctionComponent },
   ]
 })
 
@@ -28,6 +30,7 @@ new Vue({
       <h1>Basic</h1>
       <ul>
         <li><router-link to="/">/</router-link></li>
+        <li><router-link to="/function-component">/函数组件</router-link></li>
       </ul>
       <router-view class="view"></router-view>
     </div>

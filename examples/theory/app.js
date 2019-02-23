@@ -43,6 +43,7 @@ const DynamicComponent= () => import('./dynamic-component/index.vue')
 const ApiExtend= () => import('./api-extend/index.vue')
 const Event= () => import('./event/index.vue')
 const Hooks= () => import('./hooks/index.vue')
+const Directive= () => import('./directive/index.vue')
 
 const router = new VueRouter({
   mode: 'history',
@@ -51,6 +52,7 @@ const router = new VueRouter({
     { path: '/', component: Home },
     // Just use them normally in the route config
     { path: '/TwoBindData', component: TwoBindData },
+    { path: '/Directive', component: Directive },
     { path: '/Mixin', component: Mixin },
     { path: '/SelfDirective', component: SelfDirective },
     { path: '/Components', component: Components },
@@ -72,6 +74,7 @@ new Vue({
       <h1>Basic</h1>
       <ul>
         <li><router-link to="/">/</router-link></li>
+        <li><router-link to="/Directive">/指令</router-link></li>
         <li><router-link to="/TwoBindData">/双向数据绑定</router-link></li>
         <li><router-link to="/Mixin">/混入技术</router-link></li>
         <li><router-link to="/SelfDirective">/自定义指令</router-link></li>
