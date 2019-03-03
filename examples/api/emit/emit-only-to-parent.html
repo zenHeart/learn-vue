@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title><!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Title</title>
+        <script src="https://cdn.bootcss.com/vue/2.3.4/vue.js"></script>
+        </head>
+        <style>
+            div {
+                padding: 10px;
+                border: 1px solid #000;
+            }
+        </style>
+<body>
+    <h1>验证 emit 只向上传递一层</h1>
+<div  @childrenClick='showChildren' id="app">
+  <h2>根元素也无法监听</h2>
+ <ground-parent>
+</ground-parent>
+</div>
+
+
+
+<script>
+let Children = {
+    template:`
+        <div>
+            <h3>子元素</h3>
+            <p><button @click="childrenHandle">子元素按钮</button></p>
+            </div>
+    `,
+    methods:{
+        childrenHandle() {
+            this.$emit('childrenClick',{
+                node:'children'
+            })
+        }
+    }
+}
+let Parent = {
+        template:`<div class="parent">
+                <h3>父元素可绑定子元素自定义事件</h3>
+                <children @childrenClick="showChildren"></children>
+            </div>
+        `,
+        components: {
+            Children
+        },
+        methods:{
+            showChildren() {
+                console.log('parent receive event:',arguments)
+            }
+        }
+    }
+let GroundParent = {
+        template:`<div  @childrenClick='showChildren'>
+                <h2>祖先父元素无法监听到 childrenClick</h2>
+    <parent>
+    </parent>
+            </div>
+        `,
+        components: {
+            Parent
+        },
+        methods:{
+            showChildren() {
+                console.log('ground parent receive event:',arguments)
+            }
+        }
+    }
+
+
+    var app = new Vue({
+        el:"#app",
+        components:{
+            GroundParent
+        },
+        methods:{
+            showChildren() {
+                console.log('root   receive event:',arguments)
+            }
+        }
+    });
+
+</script>
+</body>
+</html></title>
+</head>
+<body>
+
+</body>
+</html>
