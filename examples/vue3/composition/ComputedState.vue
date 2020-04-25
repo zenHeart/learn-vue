@@ -1,7 +1,7 @@
 <template>
-  <Example text="使用 computed 检测变化">
+  <Example text="computed 作为 state 的内部属性">
     <button @click="() => state.count++">
-      改变 count {{ state.count }},追踪变化 double {{ double }}
+      改变 count {{ state.count }},追踪变化 double {{ state.double }}
     </button>
   </Example>
 </template>
@@ -11,10 +11,9 @@ import { reactive, computed, watchEffect } from 'vue';
 import Example from '../components/Example.vue';
 
 const state = reactive({
-  count: 0
+  count: 0,
+  double: computed(() => state.count * 2)
 });
-// 计算属性将响应值变为了索引
-const double = computed(() => state.count * 2);
 
 export default {
   components: {
@@ -22,11 +21,11 @@ export default {
   },
   setup() {
     watchEffect(() => {
-      console.log('double', double.value);
+      // 无需使用 value 访问
+      console.log('double', state.double);
     });
     return {
-      state,
-      double
+      state
     };
   }
 };

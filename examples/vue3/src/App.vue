@@ -9,6 +9,7 @@
 
     <Hooks></Hooks>
     <WatchEffect />
+    <WatchEffectBind />
     <WatchEffectDebug />
     <WatchEffectRunTime />
     <WatchEffectFlush />
@@ -26,6 +27,7 @@
     <Ref />
     <Reactive />
     <Computed />
+    <ComputedState />
     <ComputedAccessor />
     <ProductInject />
     <IsRef />
@@ -44,6 +46,7 @@ import WatchMulti from '../composition/WatchMulti.vue';
 
 import Hooks from '../composition/Hooks.vue';
 import WatchEffect from '../composition/WatchEffect.vue';
+import WatchEffectBind from '../composition/WatchEffectBind.vue';
 import WatchEffectDebug from '../composition/WatchEffectDebug.vue';
 import WatchEffectFlush from '../composition/WatchEffectFlush.vue';
 import WatchEffectRunTime from '../composition/WatchEffectRunTime.vue';
@@ -54,6 +57,7 @@ import WatchEffectOnInvalidate from '../composition/WatchEffectOnInvalidate.vue'
 import Ref from '../composition/Ref.vue';
 import Reactive from '../composition/Reactive.vue';
 import Computed from '../composition/Computed.vue';
+import ComputedState from '../composition/ComputedState.vue';
 import ComputedAccessor from '../composition/ComputedAccessor.vue';
 import ProductInject from '../composition/ProductInject.vue';
 
@@ -67,8 +71,14 @@ import SetupReturnRender from '../composition/SetupReturnRender.vue';
 import SetupInputProps from '../composition/SetupInputProps.vue';
 import SetupInputContext from '../composition/SetupInputContext.vue';
 
+// 特性
+// import Fragment from '../feature/Fragment.vue';
+
 export default {
   components: {
+    // 特性
+    Fragment,
+
     CompositionBasic,
 
     Watch,
@@ -77,6 +87,7 @@ export default {
 
     Hooks,
     WatchEffect,
+    WatchEffectBind,
     WatchEffectDebug,
     WatchEffectRunTime,
     WatchEffectFlush,
@@ -93,6 +104,7 @@ export default {
     Ref,
     Reactive,
     Computed,
+    ComputedState,
     ComputedAccessor,
     ProductInject,
     Readonly,
