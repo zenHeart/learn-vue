@@ -1,0 +1,47 @@
+---
+tags: [ v-on ]
+---
+<script src="https://cdn.bootcss.com/vue/2.3.4/vue.js"></script>
+<style>
+  .item {
+    padding: 10px;
+    border: 1px solid #000;
+    width: 200px;
+  }
+</style>
+<script type="text/x-template" id="children">
+  <p  class="item" >Children {{text}}</p>
+</script>
+<script>
+  const Children = {
+    template: '#Children',
+    props: {
+      text: String
+    }
+  }
+</script>
+<div id="app">
+  <h1>测试 press 事件</h1>
+  <div class="parent" @keydown.esc="esc" tabindex="0">
+    <Children :text="`子元素 ${index}`" v-for="(item,index) in [1,2,3,4]">
+    </Children>
+  </div>
+</div>
+<script>
+  const vue = new Vue({
+    el: '#app',
+    components: {
+      Children
+    },
+    methods: {
+      esc(item) {
+        console.log(arguments);
+      }
+    }
+  })
+</script>
+<style>
+  .parent:focus {
+    outline: none;
+  }
+</style>

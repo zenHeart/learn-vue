@@ -1,0 +1,59 @@
+---
+tags: 组件
+---
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+
+<script type="text/x-template" id="children">
+<h1>{{ name || replace }}</h1>
+</script>
+<script>
+    const Children = {
+        template: '#children',
+        props: {
+            name: {
+                default: Object,
+                required: true
+            },
+            isReady: false
+        },
+        data: () => ({
+            replace: ''
+        }),
+        created() {
+            this.replace = `异步获取初始值为空 props.name:${this.name}`
+        },
+    }
+</script>
+
+<div id="app">
+    <h1>异步向属性传入数据,而此时数据并未传入导致子组件钩子中无法获取到值</h1>
+    <Children :name="asyncName">
+    </Children>
+    <h1>异步向属性传入数据,利用 v-if 确保数据拉取后渲染子组件</h1>
+    <Children v-if="isReady" :name="asyncName">
+    </Children>
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        components: {
+            Children
+        },
+        data: {
+            asyncName: null,
+            isReady: false
+        },
+        created() {
+            let self = this;
+            //模拟异步拉取数据
+            setTimeout(() => {
+                self.asyncName = 'test'
+                self.isReady = true;//拉取数据成功后才渲染子组件
+            }, 2000);
+        },
+    })
+
+</script>

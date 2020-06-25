@@ -1,0 +1,13 @@
+---
+tags: [ 指令 ]
+---
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<div id="app">
+  <p v-for="item in 10" :key="item">{{item}}</p>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app'
+  })
+</script>
