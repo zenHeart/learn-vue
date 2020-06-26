@@ -1,0 +1,42 @@
+ellipse()
+  white-space nowrap
+  overflow hidden
+  text-overflow ellipsis
+
+$Moblie = 800px
+
+.app
+  display flex
+  padding 10px
+
+  nav
+    max-width 300px
+    margin-right 10px
+
+    .nav-item
+      padding 2px 5px
+      cursor pointer
+      ellipse()
+
+      &:hover
+        border-bottom 1px solid #000
+
+  #raw
+    flex 1
+
+@media (max-width $Moblie)
+  .app
+    flex-direction column
+
+  nav
+    width 100%
+
+.tag
+  display: inline-block;
+  font-size: 14px;
+  height: 18px;
+  line-height: 18px;
+  border-radius: 3px;
+  padding: 0 6px;
+  color: black;
+  vertical-align: top
