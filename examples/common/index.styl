@@ -10,8 +10,14 @@ $Moblie = 800px
   padding 10px
 
   nav
+    position fixed
     max-width 300px
     margin-right 10px
+    height 100%
+    overflow hidden
+
+    &:hover
+      overflow-y auto
 
     .nav-item
       padding 2px 5px
@@ -21,8 +27,14 @@ $Moblie = 800px
       &:hover
         border-bottom 1px solid #000
 
-  .content
+  .app-content
+    margin-left 300px
     flex 1
+    border 1px solid #000
+    padding 10px
+    height 90vh
+    // >iframe 
+    
 
 @media (max-width $Moblie)
   .app
@@ -30,13 +42,3 @@ $Moblie = 800px
 
   nav
     width 100%
-
-.tag
-  display: inline-block;
-  font-size: 14px;
-  height: 18px;
-  line-height: 18px;
-  border-radius: 3px;
-  padding: 0 6px;
-  color: black;
-  vertical-align: top

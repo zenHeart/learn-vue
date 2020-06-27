@@ -4,6 +4,7 @@
   "description": "",
   "scripts": {
     "start": "webpack-dev-server  --env.mode development",
+    "start:vue3": "cd examples/vue3 && npm run dev",
     "prod": "webpack --env.mode production",
     "prod:debug": "node inspect `which webpack` --env.mode production",
     "docs:dev": "vuepress dev docs",
