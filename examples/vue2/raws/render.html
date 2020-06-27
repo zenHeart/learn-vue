@@ -1,0 +1,24 @@
+---
+tags: [渲染函数]
+desc: 定义 rende 不会提取 el 或 tempalte 中的内容
+---
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+
+<div id="app">
+    <h1>异步向属性传入数据,而此时数据并未传入导致子组件钩子中无法获取到值</h1>
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        render(h) {
+            return h('h2', {
+                attrs: {
+                    id: 'test'
+                }
+            }, '渲染函数')
+        }
+    })
+
+</script>

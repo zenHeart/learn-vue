@@ -5,7 +5,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 module.exports = (env = {}) => ({
   mode: env.prod ? 'production' : 'development',
   devtool: env.prod ? 'source-map' : 'cheap-module-eval-source-map',
-  entry: path.resolve(__dirname, './src/main.js'),
+  entry: path.resolve(__dirname, './main.js'),
   output: {
     path: path.resolve(__dirname, './dist'),
     publicPath: '/dist/'
@@ -21,6 +21,14 @@ module.exports = (env = {}) => ({
   },
   module: {
     rules: [
+      {
+        test: /\.styl(us)?$/,
+        use: [
+          'vue-style-loader',
+          'css-loader',
+          'stylus-loader'
+        ]
+      },
       {
         test: /\.vue$/,
         use: 'vue-loader'
@@ -55,6 +63,8 @@ module.exports = (env = {}) => ({
     hot: true,
     stats: 'minimal',
     contentBase: __dirname,
-    overlay: true
+    overlay: true,
+    open: true,
+    openPage: 'index.html',
   }
 })

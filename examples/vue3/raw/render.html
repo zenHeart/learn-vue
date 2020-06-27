@@ -1,0 +1,21 @@
+---
+tags: [组件]
+desc: 扁平化配置,render 函数被抽离出来,单文件中可用
+---
+
+<script src="https://unpkg.com/vue@next"></script>
+
+<div id="app">
+</div>
+<script>
+    const { h, createApp } = Vue;
+
+    createApp({
+        render() {
+            return h('div', {
+                id: 'test',
+                onClick: () => alert('test')
+            }, 'hello world')
+        }
+    }).mount('#app')
+</script>

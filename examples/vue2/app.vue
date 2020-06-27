@@ -23,7 +23,7 @@
         </p>
       </div>
     </nav>
-    <iframe id="raw" :srcdoc="content"></iframe>
+    <iframe class="content" :srcdoc="content"></iframe>
   </div>
 </template>
 
@@ -70,6 +70,6 @@ export default {
 };
 </script>
 <style lang="stylus">
-@import './common.styl';
+@import '../common/index.styl';
   
 </style>

@@ -1,0 +1,22 @@
+<script>
+  let isWachEffectRun = false;
+  class Dep {
+    
+  }
+  
+  function watchEffect(effect) {
+    if(!isWachEffectRun) {
+      
+    }
+    
+  }
+  
+  const dep = new Dep()
+  
+  watchEffect(() => {
+    dep.depend()
+    console.log('effect run')
+  })
+  
+  dep.notify()
+</script>

@@ -1,0 +1,23 @@
+<script src="https://unpkg.com/vue@next"></script>
+
+
+<script>
+  const {reactive, watchEffect} = Vue
+  const state = reactive({
+    count: 0,
+    flag: false
+  })
+
+  // 首次调用直接执行,收集依赖
+  watchEffect(() => {
+    if(state.flag) {
+      console.log(state.count)
+    } else {
+      console.log('log change')
+    }
+  })
+
+  // 代理触发回调,重新注册依赖
+  state.count++;
+
+</script>

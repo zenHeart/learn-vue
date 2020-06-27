@@ -51,6 +51,6 @@ module.exports = {
             minify: true
         })],
     resolve: {
-        extensions: ['.wasm', '.mjs', '.js', '.json', '.vue']
+        extensions: ['.wasm', '.mjs', '.js', '.json', '.vue'],
     }
 };
