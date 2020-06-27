@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>{{ text }}</h2>
-    <div class="content">
+    <div>
       <slot></slot>
     </div>
   </div>
@@ -14,5 +14,3 @@ export default {
   }
 };
 </script>
-
-<style lang="scss" scoped></style>

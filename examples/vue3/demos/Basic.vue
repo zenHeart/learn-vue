@@ -7,12 +7,15 @@
 </template>
 
 <script>
-import { reactive, computed } from 'vue';
-import Example from '../components/Example.vue';
+import { reactive, computed } from "vue";
+import Example from "../components/Example.vue";
 
 export default {
   components: {
     Example
+  },
+  meta: {
+    tags: ["basic"]
   },
   setup() {
     const state = reactive({

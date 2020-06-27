@@ -16,7 +16,8 @@ module.exports = (env = {}) => ({
       // is a simple `export * from '@vue/runtime-dom`. However having this
       // extra re-export somehow causes webpack to always invalidate the module
       // on the first HMR update and causes the page to reload.
-      'vue': '@vue/runtime-dom'
+      'vue': '@vue/runtime-dom',
+      "@": path.resolve(__dirname, '..')
     }
   },
   module: {
@@ -28,6 +29,15 @@ module.exports = (env = {}) => ({
           'css-loader',
           'stylus-loader'
         ]
+      },
+      {
+        test: /\.html$/i,
+        exclude: [
+          path.resolve(__dirname, "../examples/vue2/index.html")
+        ],
+        use: [
+          'raw-loader',
+        ],
       },
       {
         test: /\.vue$/,
