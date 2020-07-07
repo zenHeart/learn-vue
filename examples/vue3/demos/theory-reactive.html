@@ -1,0 +1,55 @@
+<script src="https://unpkg.com/vue@next"></script>
+<div id='app'>
+  <p>
+    <button @click="add">自增 state</button>
+    <button @click="add1">自增 state1</button>
+    <button @click="reset">复位</button>
+  </p>
+  <p>state: {{state}}</p>
+  <p>INIT: {{INIT}}</p>
+  <p>state1: {{state1}}</p>
+  <p>INIT1: {{INIT1}}</p>
+</div>
+<script>
+  let { createApp, reactive } = Vue;
+  const INIT = {
+    count: 0,
+    date: new Date()
+  }
+  const INIT1 = {
+    count: 0,
+    date: new Date(),
+    countDeep:{
+      value:0 
+    }
+  }
+  const app = createApp({
+    setup() {
+      let state = reactive(INIT);
+      let state1 = reactive({ ...INIT1 })
+      let reset = () => {
+        Object.assign(state, INIT)
+        // Object.assign(state1, INIT1)
+        state1 = INIT1;
+        Object.assign(state1, INIT1)
+      }
+      return {
+        INIT,
+        INIT1,
+        state,
+        state1,
+        reset,
+        add() {
+          state.count++
+          state.date = new Date()
+        },
+        add1() {
+          state1.count++
+          state1.countDeep.value++
+          state1.date = state1.date = new Date()
+        }
+      }
+    }
+  })
+  app.mount('#app')
+</script>

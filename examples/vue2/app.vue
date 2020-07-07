@@ -10,13 +10,15 @@
         </select>
       </div>
       <div
-        class="nav-item"
+        :class="['nav-item', { active: id === key }]"
         v-for="(value, key) in sortNavs"
         :key="value.name"
         @click="id = key"
       >
         <p>
-          {{ value.name }}
+          <span>
+            {{ value.name }}
+          </span>
           <Tags :tags="value.tags" :tagsColor="TAGS_COLOR"></Tags>
         </p>
       </div>

@@ -32,4 +32,5 @@ export default {
   padding 0 6px
   color black
   vertical-align top
+  margin-right 5px
 </style>
