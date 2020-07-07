@@ -22,5 +22,9 @@
 避免引用丢失,不要直接对整个 state 赋值,这样会导致响应式丢失
 
 ## 最佳实践
+### 共享状态
+将状态定义在外部,实现局部状态共享,示例参见 [局部状态共享](../../examples/vue3/demos/share-state/index.vue)
+
+
 ### 如何复位状态
 参考 [reset reactive](https://github.com/vuejs/vue-next/issues/1081#issuecomment-621385050)

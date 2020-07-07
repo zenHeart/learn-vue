@@ -1,8 +1,8 @@
-import { createTagsColor ,parserHtml} from '@/common/utils'
+import { createTagsColor, parserHtml } from '@/common/utils'
 
 export function mountComponents() {
   let components = [];
-  const demos = require.context('./demos', false, /\w+\.(vue|html)$/)
+  const demos = require.context('./demos', true, /(?<!\/)[a-z-]+\.(vue|html)?$/)
   demos.keys().forEach(filename => {
     const componentConfig = demos(filename)
     const name = filename.replace(/^\.\//, '').replace(/.\w+$/, '');
