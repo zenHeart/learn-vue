@@ -9,10 +9,11 @@
           }}</option>
         </select>
       </div>
-      <div
+      <a
         :class="['nav-item', { active: id === key }]"
         v-for="(value, key) in sortNavs"
         :key="value.name"
+        :href="`#${key}`"
         @click="id = key"
       >
         <p>
@@ -21,7 +22,7 @@
           </span>
           <Tags :tags="value.tags" :tagsColor="TAGS_COLOR"></Tags>
         </p>
-      </div>
+      </a>
     </nav>
     <div class="app-content">
       <component v-if="isSFC" :is="COMPONENTS[id].component"></component>
@@ -53,7 +54,7 @@ export default {
     return {
       COMPONENTS,
       TAGS_COLOR,
-      id: 0,
+      id: location.hash.slice(1) || 0,
       selected: "name",
       options: Object.keys(SORT_FACTOR).map(key => ({
         text: SORT_FACTOR[key],

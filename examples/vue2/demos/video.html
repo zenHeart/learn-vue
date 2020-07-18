@@ -1,0 +1,34 @@
+---
+tags: [ event,video ]
+---
+<script src="https://unpkg.com/vue@2"></script>
+<div id="app">
+  <video autoplay controls @pause="pause" @playing="playing">
+    <source src="https://interactive-examples.mdn.mozilla.net/media/examples/flower.webm" type="video/webm">
+    Sorry, your browser doesn't support embedded videos.
+  </video>
+  <p>{{status}}</p>
+</div>
+<style>
+  video {
+    width: 80%;
+  }
+</style>
+<script>
+  const app = new Vue({
+    el: '#app',
+    data:{
+      status: '暂停'
+    },
+    methods: {
+      pause() {
+        this.status = '暂停'
+      },
+      playing() {
+        this.status = '播放'
+      }
+
+    }
+  })
+
+</script>
