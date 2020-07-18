@@ -3,29 +3,46 @@ tags: [ event,video ]
 ---
 <script src="https://unpkg.com/vue@2"></script>
 <div id="app">
-  <video autoplay controls @pause="pause" @playing="playing">
-    <source src="https://interactive-examples.mdn.mozilla.net/media/examples/flower.webm" type="video/webm">
+  <video ref="video" @timeupdate="showTime" @pause="pause" @playing="playing" poster="http://dummyimage.com/200x100/50B347/FFF&text=Dragon">
+    <source src="https://store.xiaohongshu.com/%E7%99%BD%E8%97%9C%E8%8A%A6%E9%86%871534397472106.mp4" type="video/webm">
     Sorry, your browser doesn't support embedded videos.
   </video>
-  <p>{{status}}</p>
+  <p>
+    <button @click="start">播放</button> <button @click="pause1">暂停</button>
+    <strong>{{status}}</strong>
+    <strong>{{duration}}</strong>
+
+  </p>
 </div>
 <style>
   video {
-    width: 80%;
+    width: 120px;
+    height: 90px;
   }
 </style>
 <script>
   const app = new Vue({
     el: '#app',
-    data:{
-      status: '暂停'
+    data: {
+      status: '暂停',
+      duration:0
     },
     methods: {
+      showTime(res) {
+        this.duration = res.srcElement.currentTime;
+        console.log('---', arguments)
+      },
       pause() {
         this.status = '暂停'
       },
       playing() {
         this.status = '播放'
+      },
+      start() {
+        this.$refs.video.play()
+      },
+      pause1() {
+        this.$refs.video.pause()
       }
 
     }

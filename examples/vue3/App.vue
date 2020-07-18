@@ -1,15 +1,16 @@
 <template>
   <div class="app">
     <nav>
-      <div
-        class="nav-item"
-        @click="id = index"
+      <a
         v-for="(item, index) in COMPONENTS"
+        :class="['nav-item', { active: id === index }]"
         :key="item.name"
+        :href="`#${index}`"
+        @click="id = index"
       >
         {{ item.name }}
         <Tags :tags="item.tags" :tagsColor="TAGS_COLOR"></Tags>
-      </div>
+      </a>
     </nav>
     <div class="app-content">
       <component v-if="isSFC" :is="COMPONENTS[id].component"></component>
@@ -37,7 +38,7 @@ export default {
     return {
       COMPONENTS,
       TAGS_COLOR,
-      id: 0
+      id: (location && location.hash.slice(1)) || 0
     };
   },
   computed: {
