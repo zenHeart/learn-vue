@@ -8,6 +8,9 @@ $Moblie = 800px
 .app
   display flex
   padding 20px
+  color #888
+  a,&:visited, &:hover, &:active
+      color inherit
 
   nav
     padding 10px 0
@@ -17,14 +20,15 @@ $Moblie = 800px
     max-width 300px
     margin-right 10px
     overflow-y auto
-   
 
     .nav-item
       text-decoration none
       display block
-      padding 2px 5px
+      padding 5px 0
+      margin-bottom 20px
       cursor pointer
-      border-bottom 1px solid #000
+      border-bottom 1px solid #e6e6e6
+  
 
       &.active
         border-bottom 1px solid #22B077

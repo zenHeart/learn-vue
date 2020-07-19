@@ -1,0 +1,59 @@
+---
+tags: [optionMergeStrategies]
+---
+<script src="https://unpkg.com/vue@2"></script>
+<script type="x-template" id="C1">
+  <button @click="show">组件 show</button>
+</script>
+<script>
+  const C1 = {
+    template: '#C1',
+    methods: {
+      show: () => {
+        console.log('C1 show')
+      },
+      log() {
+        console.log('C1 log')
+      }
+    }
+  }
+</script>
+<div id="app">
+  <h2>optionMergeStrategies 修改 Vue 实例属性的合并策略</h2>
+  <C1></C1>
+  <button @click="show">show</button>
+</div>
+<script>
+  // 强制修改 data 的合并策略
+  const merge = Vue.config.optionMergeStrategies.data;
+  // 修改合并策略,原型会有默认值,但是会被自有属性覆盖,通过修改合并策略可以屏蔽此覆盖
+  Vue.config.optionMergeStrategies.methods = function (toVal, fromVal, vm) {
+    console.log('----', merge.toString(), toVal, fromVal)
+    // if (!toVal) return fromVal
+    // if (!fromVal) return toVal
+    return {
+      show: () => {
+        // 覆盖策略导致实例上的 methods 被完全覆盖
+        console.log(' merge show', vm)
+      }
+    }
+  }
+  let mixin = {
+    show() {
+      console.log('mixin show');
+    }
+  }
+  const app = new Vue({
+    el: '#app',
+    mixins: [mixin],
+    components: { C1 },
+    methods: {
+      show: () => {
+        console.log('self show')
+      },
+      log() {
+        console.log('self log')
+      }
+    }
+  }) 
+</script>
