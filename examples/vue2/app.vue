@@ -37,7 +37,6 @@ export default {
     return {
       COMPONENTS,
       TAGS_COLOR,
-      updateTrigger: 1,
       componentName: location.hash.slice(1),
       tagName: new URLSearchParams(location.search).get("tag")
     };

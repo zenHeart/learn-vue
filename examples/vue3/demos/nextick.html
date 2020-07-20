@@ -1,0 +1,41 @@
+---
+tags: [api, nexttick]
+---
+<script src="https://unpkg.com/vue@next"></script>
+
+<div id='app'>
+  <h2>next tick 等待挂载完成获取节点</h2>
+  <button @click="highLighFirst">highLighFirst</button>
+  <ul v-for="(item,index) in state.list" :key="index">
+    <li>{{item}}</li>
+  </ul>
+</div>
+<script>
+  const { createApp, nextTick, reactive } = Vue
+  const app = createApp({
+    setup() {
+      const state = reactive({
+        list: []
+      });
+      const highLighFirst = async () => {
+        let item = await fetch('https://httpbin.org/delay/3', {
+          body: JSON.stringify({ data: new Date() }),
+          method: 'POST'
+        })
+          .then(r => (r.json()))
+          .then(res => {
+            return JSON.parse(res.data)
+          })
+          state.list.unshift(item);
+          // 等待组件加载完成触发修改
+          await nextTick();
+          document.querySelector('ul>li').style.color='red'
+      }
+      return {
+        state,
+        highLighFirst
+      }
+    }
+
+  }).mount('#app')
+</script>

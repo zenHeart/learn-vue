@@ -1,0 +1,39 @@
+---
+tags: [api,compile]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id='app'>
+  <func-header :level="1">
+    {{text}}
+  </func-header>
+  <func-header :level="2">
+    {{text}}
+  </func-header>
+</div>
+<script>
+  console.log(Vue.compile(`<div>a</div>`))
+  const FuncHeader = {
+    props: {
+      level: {
+        type: Number,
+        default: 1
+      }
+    },
+    render() {
+      const { h } = Vue;
+      return h(`h${this.level}`, {}, this.$slots.default())
+    }
+  }
+  const { createApp } = Vue
+  const HelloApp = createApp({
+    components: {
+      FuncHeader
+    },
+    data() {
+      return {
+        text: 'hello vue'
+      }
+    }
+  })
+  HelloApp.mount('#app')
+</script>

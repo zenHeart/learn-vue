@@ -1,0 +1,35 @@
+---
+tags: [指令]
+---
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+
+<div id="app">
+    <h1>验证动态指令</h1>
+    <button @click="changeEvent">更改事件</button>
+    <button @[event]="show">动态绑定事件 {{event}} 触发</button>
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            event: 'dblclick',
+            trigger: false
+        },
+        methods: {
+            show(e) {
+                console.log(e.type)
+            },
+            changeEvent() {
+                if (this.trigger) {
+                    this.event = 'dblclick'
+                } else {
+                    this.event = 'click'
+                }
+                this.trigger ^= 1
+            }
+        }
+    })
+
+</script>

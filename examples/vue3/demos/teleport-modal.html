@@ -1,0 +1,45 @@
+---
+tags: [component, teleport]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<script type="text/x-template" id="modal">
+  <teleport to="#modals">
+    <div v-show="show" class="modal">
+      <div class="wrap">
+        <span @click="close">X</span>
+        <div>{{text}}</div>
+      </div>
+    </div>
+  </teleport>  
+</script>
+<script>
+  let Modal = {
+    template: '#modal',
+    props: {
+      text: String,
+      show: Boolean
+    }
+  }
+</script>
+
+<div id='app'>
+  <h2>teleport 组件必须在挂载点之后感觉是 bug</h2>
+  <div>content</div>
+  <div id="footer"></div>
+  <teleport to="#footer">
+    <div>
+      footer
+    </div>
+  </teleport>
+</div>
+<script>
+  const { createApp } = Vue
+  const HelloApp = createApp({
+    data() {
+      return {
+        text: 'hello vue'
+      }
+    }
+  })
+  HelloApp.mount('#app')
+</script>

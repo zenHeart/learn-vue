@@ -1,0 +1,18 @@
+---
+tags: [plugin]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id='app'>
+  <h2>createApp 第二个参数,可传入 props 初始化实例 </h2>
+  <p>{{text}}</p>
+</div>
+<script>
+
+  const { createApp } = Vue
+  // 返回的是 app 实例可链式调用
+  const app = createApp({
+    props: {
+      text: String
+    }
+  }, { text: 'hello vue' }).mount('#app')
+</script>

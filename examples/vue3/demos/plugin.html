@@ -1,0 +1,39 @@
+---
+tags: [plugin]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<script>
+  const HttpPlugin = {
+    install: (app) => {
+      // 采用 globalProperties 注入全局属性
+      app.config.globalProperties.$http = window.fetch.bind(window);
+    }
+  }
+</script>
+<div id='app'>
+  <h2>app.config.globalProperties 注入全局属性</h2>
+  <p>{{data?data:'加载中...' }}</p>
+
+</div>
+<script>
+  const { createApp } = Vue
+  const app = createApp({
+    data() {
+      return {
+        data: null
+      }
+    },
+    created() {
+      return this.$http('https://httpbin.org/delay/3', {
+        body: JSON.stringify({ data: 'mock' }),
+        method: 'POST'
+      })
+        .then(r => (r.json()))
+        .then(res => {
+          this.data = JSON.parse(res.data)
+        })
+    }
+  })
+  app.use(HttpPlugin);
+  app.mount('#app')
+</script>

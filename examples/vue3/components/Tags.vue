@@ -4,6 +4,7 @@
       class="tag"
       v-for="tag in tags"
       :key="tag"
+      @click.stop="jump(tag)"
       :style="{
         background: tagsColor[tag]
       }"
@@ -18,6 +19,14 @@ export default {
   props: {
     tagsColor: [Array, Object],
     tags: Array
+  },
+  methods: {
+    jump(tag) {
+      let queryParams = new URLSearchParams(location.search);
+      queryParams.set("tag", tag);
+      history.pushState(null, null, "?" + queryParams.toString());
+      this.$emit("update");
+    }
   }
 };
 </script>

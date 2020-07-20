@@ -1,0 +1,29 @@
+---
+tags: [readonly]
+---
+
+<script src="https://unpkg.com/vue@next"></script>
+
+<div id="app">
+  <h2>利用 readonly 限制对状态的修改</h2>
+  <p><button @click="state.count++">自增</button>{{state.count}}</p>
+  <p><button @click="readonlyS.count++">只读自增报错</button>{{readonlyS.count}}</p>
+</div>
+<script>
+  const {createApp,reactive,readonly} = Vue
+  const app = createApp({
+    setup() {
+      const state = reactive({
+        count:0
+      });
+      const readonlyS = readonly(state);
+      return {
+        state,
+        readonlyS
+      }
+    }
+  }).mount('#app')
+</script>
+<style>
+
+</style>
