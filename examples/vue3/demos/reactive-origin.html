@@ -1,0 +1,35 @@
+---
+tags: [reactive]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <H1>reactive 会直接修改传入初始对象, 需要避免直接操作原始对象</H1>
+  <button @click="changeOrigin">change origin</button>
+  <button @click="changeState">change state</button>
+  <p>origin:{{origin}}</p>
+  <p>state:{{state}}</p>
+</div>
+<script>
+  const { createApp, reactive } = Vue;
+  let origin = { count: 1 }
+  const app = createApp({
+    setup() {
+      const state = reactive(origin);
+      return {
+        state,
+      }
+    },
+    data() {
+      return { origin }
+    },
+    methods: {
+      changeState() {
+        this.state.count++
+      },
+      changeOrigin() {
+        origin.count++
+      }
+    }
+
+  }).mount('#app')
+</script>
