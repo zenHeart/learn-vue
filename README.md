@@ -1,7 +1,7 @@
 vue-demo
 ---
 
-**参考官方资料记录 vue 的学习过程**
+**vue 一系列实验和验证 demo**
 
 ---
 
@@ -17,21 +17,26 @@ vue-demo
 ├── README.md //项目介绍
 ├── package-lock.json
 ├── package.json
-└── todo.md 
+└── todo
 ```
 
+## 准备
+执行如下命令
 
-## 使用方法
 ```bash
-# 运行测试
-npm run dev
-
-# 运行某模块的官方示例
-# 运行 vuex 的官方示例
-npm run dev:official vuex
- 
+# 初始化安装
+npm i -g lerna && lerna bootstrap
 ```
 
+## 常用命令
 
-## 参考资料
-* [vue 官方教程](https://cn.vuejs.org/v2/guide/)
+```bash
+# 范例
+npm run start:vue2
+
+# vue3 范例
+npm run start:vue3
+ 
+# 运行文档
+npm run docs:dev
+```

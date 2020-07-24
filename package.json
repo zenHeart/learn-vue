@@ -3,10 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "webpack-dev-server  --env.mode development",
-    "start:vue3": "cd examples/vue3 && npm run dev",
-    "prod": "webpack --env.mode production",
-    "prod:debug": "node inspect `which webpack` --env.mode production",
+    "start:vue2": "cd examples/vue2;npm start",
+    "start:vue3": "cd examples/vue3;npm start",
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -15,39 +13,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@babel/core": "^7.6.0",
-    "@babel/preset-env": "^7.6.0",
-    "@vue/cli-service": "^3.11.0",
-    "@vue/composition-api": "^0.5.0",
-    "babel-loader": "^8.0.6",
-    "babel-plugin-syntax-dynamic-import": "^6.18.0",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "clean-webpack-plugin": "^3.0.0",
-    "css-loader": "^3.6.0",
-    "es6-promise": "^4.2.8",
-    "express-urlrewrite": "^1.2.0",
-    "extract-loader": "^5.1.0",
-    "file-loader": "^6.0.0",
-    "html-loader": "^1.1.0",
-    "randomcolor": "^0.5.4",
-    "raw-loader": "^4.0.1",
-    "snowpack": "^2.5.4",
-    "stylus": "^0.54.7",
-    "stylus-loader": "^3.0.2",
-    "uglifyjs-webpack-plugin": "^2.2.0",
-    "val-loader": "^2.1.1",
-    "vue": "^2.6.11",
-    "vue-loader": "^15.9.3",
-    "vue-style-loader": "^4.1.2",
-    "vue-template-compiler": "^2.6.11",
-    "webpack": "^4.40.1",
-    "webpack-cli": "^3.3.12",
-    "webpack-merge": "^4.2.2"
-  },
-  "dependencies": {
-    "@webpack-cli/init": "^0.3.0",
-    "extract-text-webpack-plugin": "^3.0.2",
-    "global": "^4.4.0",
-    "js-yaml": "^3.14.0"
+    "js-yaml": "3.14.0",
+    "randomcolor": "0.6.2"
   }
 }

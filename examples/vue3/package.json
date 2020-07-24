@@ -5,7 +5,10 @@
     "build": "webpack --env.prod"
   },
   "dependencies": {
-    "vue": "^3.0.0-alpha.8"
+    "stylus": "0.54.8",
+    "stylus-loader": "3.0.2",
+    "vue": "^3.0.0-alpha.8",
+    "vue-style-loader": "4.1.2"
   },
   "devDependencies": {
     "@vue/compiler-sfc": "^3.0.0-alpha.8",
