@@ -1,0 +1,34 @@
+---
+tags: [api, emits]
+---
+
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <h1>emits 可配置对象校验事件,失败会触发但是有报警</h1>
+  <C1 @send="log"></C1>
+</div>
+<script>
+  const C1 = {
+    template: `
+      <button @click="$emit('send',true)">校验成功会触发</button>    
+      <button @click="$emit('send',false)">校验失败无法触发</button>    
+    `,
+    emits: {
+      send(payload) {
+        return payload;
+      }
+    }
+  };
+  const { createApp } = Vue;
+  const HelloApp = createApp({
+    components: {
+      C1
+    },
+    methods: {
+      log(e) {
+        console.log('receive', e);
+      }
+    }
+  });
+  HelloApp.mount('#app');
+</script>

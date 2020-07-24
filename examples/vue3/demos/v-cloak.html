@@ -1,0 +1,38 @@
+---
+tags: [directive, v-pre]
+---
+
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <h1>v-cloak 标识元素编译中的状态,如何阻塞渲染??</h1>
+  <p>不包含 v-cloak 一直显示 {{ data }}</p>
+  <p>包含 v-cloak 控制渲染后显示 <strong v-cloak>{{ data1 }}</strong></p>
+</div>
+<script>
+  const { createApp } = Vue;
+  const app = createApp({
+    data() {
+      i = 1e9;
+      return {
+        data: [],
+        data1: []
+      };
+    },
+    created() {
+      fetch('https://httpbin.org/delay/3', {
+        body: JSON.stringify([1, 2, 3]),
+        method: 'POST'
+      })
+        .then((r) => r.json())
+        .then((res) => {
+          let d = JSON.parse(res.data);
+          this.data1 = d;
+        });
+    }
+  }).mount('#app');
+</script>
+<style>
+  [v-cloak] {
+    display: none;
+  }
+</style>
