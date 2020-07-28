@@ -1,0 +1,45 @@
+<script src="https://unpkg.com/vue@next"></script>
+<script type="text/x-template" id="container">
+  <!-- 1. 验证只包含具名插槽 -->
+<div>
+  <header>
+    <slot name="header"></slot>
+  </header>
+  <main>
+    <slot></slot>
+  </main>
+  <footer>
+    <slot name="footer"></slot>
+  </footer>
+</div>
+</script>
+<script>
+  const C1 = {
+    template: '#container',
+  }
+</script>
+<div id="app">
+  <h2>可以包含默认插槽和多个具名插槽</h2>
+  <C1>
+    <template #header>
+      <h1>header</h1>
+    </template>
+    <!-- 未显示申明的区块会被省略 -->
+    <div>content</div>
+    <template #default>
+      <div>content1</div>
+    </template>
+    <template #footer>
+      <h1>footer</h1>
+    </template>
+  </C1>
+
+</div>
+<script>
+  const { createApp } = Vue
+  const app = createApp({
+    components: {
+      C1
+    }
+  }).mount('#app')
+</script>

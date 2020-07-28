@@ -1,0 +1,34 @@
+<script src="https://unpkg.com/vue@next"></script>
+<script type="text/x-template" id="todo-button">
+  <!-- 1. slot 内部内容会作为默认值 -->
+<button>
+  <slot>
+    <h3>default</h3>
+  </slot>
+</button>
+</script>
+<script>
+  const C1 = {
+    template: '#todo-button',
+  }
+</script>
+<div id="app">
+  <h2>验证 slot 节点的默认值</h2>
+  <C1 @click="log('default')"></C1>
+  <C1 @click="log('空格不认为包含内容')"> </C1>
+  <C1 @click="log('html 节点')">
+    <h1>test</h1>
+  </C1>
+
+</div>
+<script>
+  const { createApp } = Vue
+  const app = createApp({
+    components: {
+      C1
+    },
+    methods: {
+      log: console.log
+    }
+  }).mount('#app')
+</script>

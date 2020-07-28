@@ -1,0 +1,35 @@
+<script src="https://unpkg.com/vue@2"></script>
+<script type="text/x-template" id="todo-button">
+  <!-- 1. 验证只包含具名插槽 -->
+<button>
+  <p>name slot</p>
+  <slot name="a">
+  </slot>
+</button>
+</script>
+<script>
+  const C1 = {
+    template: '#todo-button',
+  }
+</script>
+<div id="app">
+  <h2>可以只包含具名插槽</h2>
+  <C1 @click="log('html 节点')">
+    <template v-slot:a>
+      <h1>test</h1>
+    </template>
+
+  </C1>
+
+</div>
+<script>
+  const app = new Vue({
+    el:'#app',
+    components: {
+      C1
+    },
+    methods: {
+      log: console.log
+    }
+  })
+</script>
