@@ -1,3 +1,9 @@
+INBOX:
+    ☐ add dynamic directive example https://github.com/vuejs/rfcs/blob/master/active-rfcs/0003-dynamic-directive-arguments.md
+TODO:
+    ☐ read rfcs https://github.com/vuejs/rfcs
+        ☐ 
+
 问题:
     vue 的未知技巧: 
         ☐ vedio https://www.youtube.com/watch?v=7YZ5DwlLSt8
@@ -5,12 +11,6 @@
     ☐ watchEffect 是如何识别对应元素挂载的?
 
     todo
-===
-**前言:记录代办事项**
-
----
-
-## 测试 vue mpa 实践
 * [ ] 测试 vue 多页应用的状态管理问题。
 
 ## 原理资料

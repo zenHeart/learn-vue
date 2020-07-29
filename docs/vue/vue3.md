@@ -55,7 +55,6 @@
 ## hooks 
 * [ ] 学习 react hooks!!!
 
-追踪 [rfcs](https://github.com/vuejs/rfcs) !!!
 
 
 ## vue2 -> vue3

@@ -1,0 +1,37 @@
+<script src="https://unpkg.com/vue@2"></script>
+<script>
+  const C1 = {
+    render(h) {
+      console.log('slots', this.$slots);
+      var header = this.$slots.header
+      var body = this.$slots.default
+      var footer = this.$slots.footer
+      return h('div', [
+        h('header', header),
+        h('main', body),
+        h('footer', footer)
+      ])
+    }
+  }
+</script>
+<div id="app">
+  <h2>验证 $slots.slotName 引用具名插槽</h2>
+  <C1>
+    <template v-slot:header>
+      <h1>header</h1>
+    </template>
+    <p>content</p>
+    <p>content1</p>
+    <template v-slot:footer>
+      <h3>footer</h3>
+    </template>
+  </C1>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    components: {
+      C1
+    }
+  })
+</script>

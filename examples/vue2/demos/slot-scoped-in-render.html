@@ -1,0 +1,36 @@
+<script src="https://unpkg.com/vue@2"></script>
+<script>
+  const C1 = {
+    data() {
+      return {
+        trigger: false
+      }
+    },
+    render(h) {
+      console.log('slots', this.$scopedSlots)
+      return h('button', {
+        on: {
+          click: () => this.trigger ^= 1
+        }
+      }, 
+      // 注意传值支持原始值和对象模式
+      [this.$scopedSlots.default(this.trigger)])
+    }
+  }
+</script>
+<div id="app">
+  <h2>验证 $scopeSlots.default 引用包含数据的插槽</h2>
+  <C1>
+    <template v-slot="d">
+      <h1>scope slot: {{d}}</h1>
+    </template>
+  </C1>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    components: {
+      C1
+    }
+  })
+</script>

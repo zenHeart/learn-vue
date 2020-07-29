@@ -1,0 +1,39 @@
+<script src="https://unpkg.com/vue@2"></script>
+<script>
+  const C1 = {
+    data() {
+      return {
+        trigger: {
+          data: true
+        }
+      }
+    },
+    render(h) {
+      console.log('slots', this.$scopedSlots)
+      return h('button', {
+        on: {
+          click: () => this.trigger.data ^= 1
+        }
+      },
+        // 注意传值支持原始值和对象模式
+        [this.$scopedSlots.default(this.trigger)])
+    }
+  }
+</script>
+<div id="app">
+  <h2>当作用域插槽为对象引用时,实现父组件修改子组件内部状态</h2>
+  <C1>
+    <template v-slot="d">
+      <button @click.stop="d.data^=1">外部修改 scope slot 的值</button>
+      <h1>scope slot: {{d}}</h1>
+    </template>
+  </C1>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    components: {
+      C1
+    }
+  })
+</script>
