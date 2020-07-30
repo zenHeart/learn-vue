@@ -1,0 +1,30 @@
+---
+tags: [ $slots, render ]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <h2>使用 $slots.soltName() 访问具名插槽</h2>
+  <C1>
+    <template #header>header</template>
+    <h2>content</h2>
+    <template #footer>footer</template>
+  </C1>
+</div>
+<script>
+  const { createApp, h } = Vue;
+
+  const C1 = {
+    render() {
+      console.log('slots', this.$slots);
+      const header = this.$slots.header();
+      const content = this.$slots.default();
+      const footer = this.$slots.footer();
+      return h('div', [header, content, footer])
+    }
+  }
+  const app = createApp({
+    components: {
+      C1
+    }
+  }).mount('#app')
+</script>

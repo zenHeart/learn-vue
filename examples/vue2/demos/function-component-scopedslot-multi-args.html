@@ -1,0 +1,28 @@
+---
+tags: [函数组件, slot]
+---
+<script src="https://unpkg.com/vue@2"></script>
+<div id="app">
+  <h2>scopedslot 支持传入多个参数,利用参数扩展可以获取到对应的值</h2>
+  <Func :data="{a:1}">
+    <template #default="...args">
+      <h1>{{args}}</h1>
+    </template>
+  </Func>
+</div>
+<script>
+  const Func = {
+    functional: true,
+    render(h, context) {
+      console.log('slots', context.scopedSlots, context)
+      return h('button', {
+      }, [
+        context.scopedSlots.default(1,2,3),
+      ])
+    }
+  }
+  const app = new Vue({
+    el: '#app',
+    components: { Func },
+  })
+</script>

@@ -1,0 +1,25 @@
+---
+tags: [ $slots, render ]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <h2>移除 $scopedSlots 统一使用 $slots 访问</h2>
+  <C1>
+    <h1>test</h1>
+  </C1>
+</div>
+<script>
+  const { createApp, h } = Vue;
+
+  const C1 = {
+    render() {
+      console.log('slots', this.$slots);
+      return h('div', [this.$slots.default()])
+    }
+  }
+  const app = createApp({
+    components: {
+      C1
+    }
+  }).mount('#app')
+</script>
