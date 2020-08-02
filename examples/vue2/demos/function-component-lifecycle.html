@@ -10,18 +10,19 @@ tags: [函数组件, hooks]
     <h1>注意函数组件没有生命周期</h1>
     <p>
         <button @click="count++">add</button>
-        <button  @click="show^=1">trigger show</button>
+        <button @click="show^=1">trigger show</button>
     </p>
     <Func  v-if="show" :count="count"></Func>
 </div>
 
 <script>
     const Func = {
+        functional: true,
         props: {
             count: Number
         },
-        render(h) {
-            return h('div', `count: ${this.count}`)
+        render(h, ctx) {
+            return h('div', `count: ${ctx.props.count}`)
         },
         beforeCreate() {
             console.group('Func', arguments)
@@ -31,7 +32,7 @@ tags: [函数组件, hooks]
             console.log('created', arguments)
         },
         beforeMount() {
-            console.log('beforeMount', arguments)
+            console.log('creabeforeMountted', arguments)
         },
         mounted() {
             console.log('mounted', arguments)
@@ -42,11 +43,12 @@ tags: [函数组件, hooks]
         updated() {
             console.log('updated', arguments)
         },
-        beforeDestroy() {
-            console.log('beforeDestroy', arguments)
+        beforeDestory() {
+            console.log('beforeDestory', arguments)
+
         },
         destroyed() {
-            console.log('destroyed', arguments)
+            console.log('beforeDestory', arguments)
             console.groupEnd('Func', arguments)
         }
     }
