@@ -1,0 +1,66 @@
+---
+tags: [函数组件, hooks]
+---
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+
+
+<div id="app">
+    <h1>注意函数组件没有生命周期</h1>
+    <p>
+        <button @click="count++">add</button>
+        <button @click="show^=1">trigger show</button>
+    </p>
+    <Func  v-if="show" :count="count"></Func>
+</div>
+
+<script>
+    const Func = {
+        functional: true,
+        props: {
+            count: Number
+        },
+        render(h, ctx) {
+            return h('div', `count: ${ctx.props.count}`)
+        },
+        beforeCreate() {
+            console.group('Func', arguments)
+            console.log('beforeCreate', arguments)
+        },
+        created() {
+            console.log('created', arguments)
+        },
+        beforeMount() {
+            console.log('creabeforeMountted', arguments)
+        },
+        mounted() {
+            console.log('mounted', arguments)
+        },
+        beforeUpdate() {
+            console.log('beforeUpdate', arguments)
+        },
+        updated() {
+            console.log('updated', arguments)
+        },
+        beforeDestory() {
+            console.log('beforeDestory', arguments)
+
+        },
+        destroyed() {
+            console.log('beforeDestory', arguments)
+            console.groupEnd('Func', arguments)
+        }
+    }
+    new Vue({
+        el: '#app',
+        components: {
+            Func
+        },
+        data: {
+            count: 0,
+            show: false
+        }
+    })
+
+</script>
