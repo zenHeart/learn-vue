@@ -1,4 +1,5 @@
 INBOX:
+    ☐  compute 内部定时器是否触发视图改变 
     ☐ add dynamic directive example https://github.com/vuejs/rfcs/blob/master/active-rfcs/0003-dynamic-directive-arguments.md
 TODO:
     ☐ read rfcs https://github.com/vuejs/rfcs
