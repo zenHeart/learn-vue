@@ -1,0 +1,114 @@
+---
+tags: [函数组件, 示例]
+---
+
+<script src="https://unpkg.com/vue@2"></script>
+<script type="text/x-template" id="BasicTr">
+<tr>
+  <td :key="index" v-for="(item,index) in column">
+      {{rowData[item.name]}}
+  </td>
+</tr>
+</script>
+
+<script>
+const BasicTr = {
+  name: 'BasicTr',
+  template:"#BasicTr",
+  props: {
+    rowData:Object,
+    column: Array,
+    extend: Function,
+  }
+}
+</script>
+<script>
+  const SelfTr = {
+    functional: true,
+    props: {
+      column: Array,
+      rowData: Object,
+      extend: Function,
+    },
+    render(h, ctx) {
+      let { column, rowData,extend }  = ctx.props;
+      if(extend && extend(rowData)) {
+        return [
+          h('BasicTr',{
+            props: {
+              rowData,
+              column
+            }
+          }),
+          h('tr','extend')
+        ]
+      } else {
+        return h('BasicTr',{
+          props: {
+            rowData,
+            column
+          }
+        })
+      }
+    }
+
+  }
+</script>
+
+<script type="text/x-template" id="table">
+  <table>
+    <thead>
+      <tr>
+        <th :key="index" v-for="(item,index) in column">{{item.title}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <self-tr :rowData="row" :column="column" :extend="extend" :key="index" v-for="(row,index) in data"/>
+    </tbody>
+  </table>
+</script>
+<script>
+  const SelfTable = {
+    template: '#table',
+    components: {
+      SelfTr
+    },
+    props:{
+      column:Array,
+      data: Array,
+      extend: Function
+    }
+  }
+</script>
+<div id="app">
+  <self-table :extend="(row) => row.extend" :column="column" :data="data"/>
+</div>
+<script>
+Vue.component('BasicTr', BasicTr)
+const app = new Vue({
+  el:'#app',
+  components:{
+    SelfTable
+  },
+  data:{
+    column:[
+      {
+        title:'字段 1',
+        name: 'k1'
+      },
+      {
+        title:'字段 2',
+        name: 'k2'
+      }
+    ],
+    data:[{
+      k1:'test1',
+      k2:'test2',
+    },{
+      k1:'test1---',
+      k2:'test2--',
+      extend: true
+    }]
+  },
+})
+</script>

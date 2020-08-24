@@ -8,10 +8,8 @@ tags: [ thoery ]
   let state = reactive({
     count: 1
   })
-  watch(
-    () => state.count,
-    (...args) => {
-      console.log('chaange',args)
-    }
-  )
+  effect(() => {
+    console.log(state.count)
+  })
+
 </script>

@@ -1,0 +1,36 @@
+<script src="https://unpkg.com/vue@2"></script>
+<script>
+  const NoRoot =  {
+    functional: true,
+    props: {
+      data: Object
+    },
+    render(h,ctx) {
+      console.log(ctx)
+      let {props} = ctx;
+      return props.data.extend ? [
+        h('tr',JSON.stringify(props.data.basic)),
+        h('tr',JSON.stringify(props.data.extendInfo)),
+      ]: h('tr',JSON.stringify(props.data.basic));
+    }
+  }
+</script>
+<div id="app">
+  <no-root :data="{
+    basic:1,
+    extend: true,
+    extendInfo:'extend'
+  }"></no-root>
+  <no-root :data="{
+    basic:1,
+    extendInfo:'extend'
+  }"></no-root>
+</div>
+<script>
+const app = new Vue({
+  el:'#app',
+  components:{
+    NoRoot
+  },
+})
+</script>
