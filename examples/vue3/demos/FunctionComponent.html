@@ -1,0 +1,25 @@
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <h2>vue3 采用函数定义无状态组件</h2>
+  <Func>
+
+  </Func>
+</div>
+<script>
+  /**
+   * props 使用
+   * TODO: 补充示例 https://github.com/vuejs/rfcs/blob/functional-async-api-change/active-rfcs/0007-functional-async-api-change.md
+   */
+  function func(props,slots) {
+
+
+  }
+
+  let  { createApp} = vue
+  const app = createApp({
+    components: {
+      Func
+    }
+  }).mount('#app')
+
+</script>

@@ -17,7 +17,9 @@
    1. 支持解构语法
 7. 使用 `template` 标签,采用 `#[slotName]` 快捷引用插槽
 8. 使用 `template` 标签,采用 `v-slot:[valueName]` 实现动态引用插槽
-
+   <!-- TODO: 9,10 需要补充示例 -->
+9.  使用 `<template><slot/></template>` 的形式定义嵌套插槽
+10. 组件使用 `$slots` 的方式引用插槽
 
 认知模型:
 

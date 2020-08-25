@@ -1,0 +1,50 @@
+---
+tags: [插槽, 嵌套]
+---
+<script src="https://unpkg.com/vue@2"></script>
+<script>
+  const FunC = {
+    functional:true,
+    render(h, ctx) {
+      console.log('---' ,ctx.scopedSlots)
+      return h('div',['test'])
+    }
+  }
+</script>
+
+<script type="text/x-template" id="C1">
+  <div>
+    <fun-c>
+      <slot></slot>
+    </fun-c>
+  </div>
+</script>
+
+<script>
+  const C1 = {
+    template: '#C1',
+    components: {
+      FunC
+    },
+    created() {
+      console.log(this)
+    }
+  }
+
+</script>
+
+<div id="app">
+  <C1>
+    <template #default>
+      <template >
+        <h2 #name>name</h2>
+      </template>
+    </template>
+  </C1>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    components: { C1 },
+  })
+</script>
