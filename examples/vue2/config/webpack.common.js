@@ -17,6 +17,19 @@ module.exports = {
         use: ['vue-style-loader', 'css-loader', 'stylus-loader']
       },
       {
+        test: /\.m?js$/,
+        exclude: file => (
+          /node_modules/.test(file) &&
+          !/\.vue\.js/.test(file)
+        ),
+        use: {
+          loader: 'babel-loader',
+          options: {
+            "plugins": ["transform-vue-jsx"]
+          }
+        }
+      },
+      {
         test: /\.vue/,
         use: ['vue-loader']
       },
