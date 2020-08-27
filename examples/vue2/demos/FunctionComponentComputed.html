@@ -1,0 +1,40 @@
+<script src="https://unpkg.com/vue@2"></script>
+
+<script>
+  const Func = {
+    functional: true,
+    props: {
+      list: Array
+    },
+    computed: {
+      filterList() {
+        // computed 属性不解析
+        return this.list
+      }
+    },
+    render(h, ctx) {
+        console.log('ctx', ctx)
+        return h('p', JSON.stringify(ctx.props.list))
+    }
+  }
+</script>
+
+<div id = "app">
+  <h3>验证函数组件不解析计算属性</h3>
+  <func :list="list"/>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    components:{
+      Func
+    },
+    data:{
+      list: [
+        {text: 'a',finish: false},
+        {text: 'b',finish: true},
+        {text: 'c',finish: false},
+      ]
+    }
+  })
+</script>
