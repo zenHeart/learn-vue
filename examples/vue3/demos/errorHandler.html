@@ -1,0 +1,37 @@
+---
+tags: [ config, errorHandler ]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <button @click="triggerAsyncError">trigger async error</button>
+  <button @click="triggerError">trigger error</button>
+</div>
+<script>
+  const { createApp } = Vue
+  const app = createApp({
+    methods: {
+      triggerAsyncError() {
+        // TODO: 无法捕获异步错误
+        setTimeout(
+          () =>{
+            throw new Error('async error')
+          } ,1
+        )
+      },
+      triggerError() {
+        console.log('---');
+        throw new Error('error')
+      }
+    }
+  })
+  // 只能捕获同步错误
+  app.config.errorHandler = (...args) => {
+    console.log(args)
+  }
+
+  // 捕获异步错误
+  window.onerror = (...args) => {
+    console.log('---', args);
+  }
+  app.mount('#app')
+</script>

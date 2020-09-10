@@ -1,0 +1,25 @@
+---
+tags: [watchEffect, ref ]
+---
+
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <h1>watchEffect 监测 ref 异步的变化</h1>
+  <button @click="asyncAdd">{{ count }}</button>
+</div>
+<script>
+  const { createApp, ref, watchEffect } = Vue;
+  const app = createApp({
+    setup() {
+      const count  = ref(0);
+      const asyncAdd = () => Promise.resolve().then(() => { count.value++ })
+      watchEffect(() => {
+        console.log(`log count:`, count.value)
+      })
+      return {
+        count,
+        asyncAdd
+      }
+    }
+  }).mount('#app');
+</script>
