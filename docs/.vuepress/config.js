@@ -15,8 +15,8 @@ module.exports = {
           title: 'vue',
           collapsable: false,
           children: [
-            'vue/begin.md',
             'vue/concept.md',
+            'vue/jsx.md',
             'vue/component.md',
             'vue/develop.md',
             'vue/hole.md',

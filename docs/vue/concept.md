@@ -1,5 +1,7 @@
 # 基本概念
+
 ## 指令
+
 指令的概念和 angular 类似.
 vue.js 以 v 作为前缀.
 
@@ -230,12 +232,12 @@ v-model 相比 v-bind,省略了
 使用过渡标签会自动把 `name` 对应的名称作为
 前缀连接到一下预定义类名中.其中以中划线隔开.
 
-* <name>-enter 元素插入时生效
-* <name>-enter-active 元素插入时生效
-* <name>-enter-to 在元素插入后,动画执行一帧后生效.
-* <name>-leave 在离开过渡被触发时生效
-* <name>-leave-active 过渡触发后立即生效
-* <name>-leave-to 
+* `<name>-enter` 元素插入时生效
+* `<name>-enter-active` 元素插入时生效
+* `<name>-enter-to` 在元素插入后,动画执行一帧后生效.
+* `<name>-leave` 在离开过渡被触发时生效
+* `<name>-leave-active` 过渡触发后立即生效
+* `<name>-leave-to`
 
 详解如下图
 
@@ -303,11 +305,6 @@ v-model 相比 v-bind,省略了
 * {{}} 不可用于 dom 属性,可以解析表达式
 * v-bind 视图扩充属性和 dom 属性均可
 
-注意相比 angular `{{}}` 可在任意位置解析.
-vue 限定了 `{{}}` 只能用作视图渲染和表达式逻辑.
-
-若只在初始化模板时实现绑定使用 `v-once`.
-类似 angular `{{::}}` 申明.
 
 
 

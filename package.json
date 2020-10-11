@@ -20,7 +20,8 @@
     "babel-plugin-syntax-jsx": "^6.18.0",
     "babel-plugin-transform-vue-jsx": "^3.7.0",
     "babel-preset-env": "^1.7.0",
-    "js-yaml": "3.14.0",
-    "randomcolor": "0.6.2"
+    "js-yaml": "^3.14.0",
+    "randomcolor": "^0.6.2",
+    "vuepress": "^1.6.0"
   }
 }
