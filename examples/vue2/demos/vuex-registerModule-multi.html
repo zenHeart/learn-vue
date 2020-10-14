@@ -1,0 +1,88 @@
+---
+tags: [vuex, registerModule]
+
+---
+<script src="https://unpkg.com/vue@2"></script>
+<script src="https://unpkg.com/vuex"></script>
+<script type="text/x-template" id="c1">
+  <div>
+     <p>c1 {{ id }}: {{ test }}</p>
+     <p><button @click="log">log</button></p>
+  </div>
+</script>
+<script>
+  const { mapActions, mapState } = Vuex
+  const testStore = {
+    state: {
+      count: 1
+    },
+    mutations: {
+      add(state) {
+        state.count++
+      }
+    },
+    actions: {
+      log(ctx) {
+        ctx.commit('add');
+        console.log(`${new Date().toISOString}: add`)
+      }
+    },
+  }
+
+  const C1 = {
+    name: 'C1',
+    template: '#c1',
+    props: {
+      id: String
+    },
+    created() {
+      console.log('create new');
+      this.$store.registerModule('test',testStore)
+    },
+    computed: {
+      ...mapState(['test'])
+    },
+    methods: {
+      ...mapActions(['log'])
+    }
+  }
+
+</script>
+<div>
+  <h3>验证 vuex 重复挂在相同模块问题</h3>
+  <div id="app">
+    <div>
+      <button @click="tab = 1" >tag1</button>
+      <button @click="tab = 2">tag2</button>
+    </div>
+    <div>
+      <p>tab: {{ tab }}</p>
+      <C1 :key="tab" />
+    </div>
+  </div>
+  <script>
+    Vue.config.devtools = true;
+    Vue.use(Vuex);
+    const store = new Vuex.Store({
+      state: {
+        a: 0
+      },
+      mutations: {
+        a1 (state) {
+          state.a++
+        }
+      }
+    })
+    var app = new Vue({
+      el: '#app',
+      store,
+      components: {
+        C1
+      },
+      data: {
+        tab: 1
+      }
+    })
+
+  </script>
+</div>

@@ -129,3 +129,7 @@ actions 处理异步的状态变化
 ## 注意事项
 * 不要直接赋值 `state` 为空,此操作会导致丢失对象观察
 具体原因参见 [state 初始化](https://github.com/vuejs/vuex/issues/1118#issuecomment-376973664)
+
+
+## 知识点
+1. 反复挂在相同 vuex, `_mutations` 会被推入多次，但是模块会被覆盖

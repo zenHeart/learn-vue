@@ -1,0 +1,67 @@
+---
+tags: [vuex, registerModule]
+---
+<script src="https://unpkg.com/vue@2"></script>
+<script src="https://unpkg.com/vuex@3"></script>
+<script type="text/x-template" id="c1">
+  <div>
+     <p>c1: {{ test }}</p>
+     <p><button @click="add">add</button></p>
+  </div>
+</script>
+<script>
+  const {
+    mapMutations,
+    mapState
+  } = Vuex
+  const testStore = {
+    state: {
+      count: 1
+    },
+    mutations: {
+      add(state) {
+        state.count++
+      }
+    }
+  }
+  const C1 = {
+    name: 'C1',
+    template: '#c1',
+    props: {
+      id: String
+    },
+    created() {
+      // simulate some component recreate , but forget unRegisterModule before destroy
+      this.$store.registerModule('test', testStore)
+      
+      // this will make replace same path module, but handler 'add' will push to store._mutations
+      // see code  https://github.com/vuejs/vuex/blob/6b0014cada1bfc249c46322810a8256088d83d40/src/store.js#L464
+      this.$store.registerModule('test', testStore)
+      
+    },
+    computed: {
+      ...mapState(['test'])
+    },
+    methods: {
+      ...mapMutations(['add'])
+    }
+  }
+</script>
+<div>
+  <h3>test vuex mount same register multi times</h3>
+  <div id="app">
+    <C1 />
+  </div>
+  <script>
+    // just init vuex make $store work
+    Vue.use(Vuex);
+    const store = new Vuex.Store({})
+    var app = new Vue({
+      el: '#app',
+      store,
+      components: {
+        C1
+      }
+    })
+  </script>
+</div>
