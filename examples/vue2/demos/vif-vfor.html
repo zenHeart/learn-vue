@@ -4,15 +4,7 @@ tags: [指令]
 <script src="https://unpkg.com/vue/dist/vue.js"></script>
 
 <div id="app">
-  <h1>测试 v-if 和 v-for 一起使用导致 v-else 不生效问题</h1>
-  <div :key="index" v-if="[arr].length" v-for="(item, index) in arr">
-    {{ item }}
-  </div>
-  <div v-else>
-    empty
-  </div>
   <div>
-    <h2>此结果验证 v-for v-if 同时存在时，由于 v-for 编译在外层</h2>
     <div :key="index" v-if="[].length" v-for="(item, index) in [1,2,3]">
       {{ item }}
     </div>

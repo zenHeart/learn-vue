@@ -5,15 +5,18 @@
 模板 
 
 ```vue
-<div v-for="item in arr" v-if="arr.lenght"/>
-<div v-else>empty</div>
+<div v-for="item in arr" v-if="arr.lenght">{{ item }}</div>
+<h1 v-else>empty</h1>
 ```
 
 转换为类似如下效果
 
-```vue
-<div v-for="item in arr">
-
-</div>
-<div v-else>empty</div>
+```js
+{
+  render(h) {
+    return arr.map((item, index) => {
+      return arr.length ? h('div',_v(item)):h('h1',_v('empty'))
+    })
+  }
+}
 ```
