@@ -1,0 +1,33 @@
+<script src="https://unpkg.com/vue@2"></script>
+<script type="text/x-template" id='c1'>
+  <slot>C1 default</slot>
+</script>
+<script>
+  const C1 = {
+    template: '#c1',
+  }
+</script>
+<script type="text/x-template" id='p1'>
+  <!-- 内层 slot 无值会使用 C1 的值 -->
+  <C1><slot></slot></C1>
+</script>
+<script>
+  const P1 = {
+    template: '#p1',
+    components: {
+      C1
+    }
+  }
+</script>
+<div id="root">
+  <p><P1>test content</P1></p>
+  <P1></P1>
+</div>
+<script>
+  app = new Vue({
+    el: '#root',
+    components: {
+      P1
+    }
+  })
+</script>

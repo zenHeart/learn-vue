@@ -20,7 +20,8 @@
    <!-- TODO: 9,10 需要补充示例 -->
 9.  使用 `<template><slot/></template>` 的形式定义嵌套插槽
 10. 组件使用 `$slots` 的方式引用插槽
-
+11. 嵌套 slot 的默认值处理
+12. 
 认知模型:
 
 1. slot 创建插槽,name 设置属性名 `:valueName` 绑定值
