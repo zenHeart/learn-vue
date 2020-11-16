@@ -1,30 +1,41 @@
 <template>
-  <Example text="使用 watchEffect 添加属性监听器">
-    <button @click="() => state.count++">改变 count {{ state.count }}</button>
+  <Example text="使用 watchEffect 监听数据变化">
+    <button @click="count1++">改变 data count {{ count1 }}</button>
   </Example>
 </template>
 
 <script>
-import { reactive, watchEffect } from 'vue';
+import { ref, watchEffect } from 'vue';
 import Example from '../components/Example.vue';
 
-const state = reactive({
-  count: 0
-});
-watchEffect((...args) => {
-  console.log(`count change ${state.count}`, args);
-});
 
 export default {
+  meta: {
+    tags:['watchEffect']
+  },
+  props: {
+    count: {
+      type: Number,
+      default: 0
+    }
+  },
   components: {
     Example
   },
-  setup() {
+  setup(props) {
+    let count1 = ref(0)
+    // 初始绑定便会触发回调执行
+    watchEffect(() => {
+      console.log(`props count change %c${props.count}`, 'color:red;font-size: 2rem');
+    });
+
+    // 初始绑定便会触发回调执行
+    watchEffect(() => {
+      console.log(`data count change %c${count1.value}`, 'color:green;font-size: 2rem');
+    });
     return {
-      state
-    };
+      count1
+    }
   }
 };
 </script>
-
-<style lang="scss" scoped></style>
