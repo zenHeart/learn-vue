@@ -1,0 +1,73 @@
+---
+tags: [vuex, registerModule]
+---
+<script src="https://unpkg.com/vue@2"></script>
+<script src="https://unpkg.com/vuex@3"></script>
+<script type="text/x-template" id="c1">
+  <div>
+     <p>c1: {{ test }}</p>
+     <p><button @click="fetchItems">fetchItems</button></p>
+  </div>
+</script>
+<script>
+  const {
+    mapActions,
+    mapState
+  } = Vuex
+  const testStore = {
+    state: {
+      list: []
+    },
+    mutations: {
+      setList(state, payload ) {
+        state.list = payload.list
+      }
+    },
+    actions: {
+      fetchItems ({commit, state}, payload) {
+        let a;
+        Promise.resolve([
+          {a : 1 }
+        ]).then(list => {
+          a = list;
+          commit('setList', { list })
+          a.push(2)
+        })
+      }
+    }
+  }
+  const C1 = {
+    name: 'C1',
+    template: '#c1',
+    props: {
+      id: String
+    },
+    created() {
+      this.$store.registerModule('test', testStore)
+    },
+    computed: {
+      ...mapState(['test'])
+    },
+    methods: {
+      ...mapActions(['fetchItems'])
+    }
+  }
+</script>
+<div>
+  <h3>test vuex mutate store state outside error </h3>
+  <div id="app">
+    <C1 />
+  </div>
+  <script>
+    // just init vuex make $store work
+    Vue.use(Vuex);
+    const store = new Vuex.Store({})
+    var app = new Vue({
+      el: '#app',
+      store,
+      components: {
+        C1
+      }
+    })
+  </script>
+</div>
