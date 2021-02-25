@@ -1,0 +1,46 @@
+---
+tags: [provide]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<h3>
+  采用 provide 提供变量，利用 inject 进行注入
+</h3>
+<script type="text/x-template" id="C1">
+  <div>{{ a }}</div>
+</script>
+<script>
+  const { inject } = Vue
+  const C1 = {
+    template: '#C1',
+    setup() {
+      let a = inject(Symbol.for('test'))
+      return {
+        a
+      }
+    }
+  }
+  
+
+</script>
+<div id='app'>
+  <C1/>
+</div>
+<script>
+  const { createApp, provide } = Vue
+  const HelloApp = createApp({
+    components: {
+      C1
+    },
+    data() {
+      return {
+        text: 'hello vue'
+      }
+    },
+    setup() {
+      provide(Symbol.for('test'), {
+        a: 1
+      })
+    }
+  })
+  HelloApp.mount('#app')
+</script>
