@@ -7,11 +7,15 @@ const useShareState = (opts) => {
   }
   return share;
 };
+
 export const useCount = () => {
   let shareState = useShareState({ count: 0 });
   let selfState = ref(0);
 
-  const add = () => shareState.count++, selfState.value++ ;
+  const add = () => {
+    shareState.count++ ;
+    selfState.value++ ;
+  } 
   const reset = () => (shareState.count = 0);
   return {
     shareState,
