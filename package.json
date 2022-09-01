@@ -5,8 +5,8 @@
   "scripts": {
     "start:vue2": "cd examples/vue2;npm start",
     "start:vue3": "cd examples/vue3;npm start",
-    "docs:dev": "vuepress dev docs",
-    "docs:build": "vuepress build docs",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -22,6 +22,10 @@
     "babel-preset-env": "^1.7.0",
     "js-yaml": "^3.14.0",
     "randomcolor": "^0.6.2",
-    "vuepress": "^1.6.0"
+    "webpack-cli": "^4.10.0"
+  },
+  "dependencies": {
+    "vitepress": "^1.0.0-alpha.4",
+    "vue": "^3.2.37"
   }
 }
