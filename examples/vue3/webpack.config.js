@@ -1,27 +1,29 @@
-const path = require('path')
-const { VueLoaderPlugin } = require('vue-loader')
-const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const path = require('path');
+const { VueLoaderPlugin } = require('vue-loader');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = (env = {}) => ({
   mode: env.prod ? 'production' : 'development',
-  devtool: env.prod ? 'source-map' : 'cheap-module-eval-source-map',
+  devtool: env.prod ? 'source-map' : 'eval-cheap-module-source-map',
   entry: path.resolve(__dirname, './main.js'),
   output: {
     path: path.resolve(__dirname, './dist'),
-    publicPath: '/dist/'
+    publicPath: '/dist/',
+    filename: '[name].js'
   },
   resolve: {
+    extensions: ['.vue', '.js', '.json'],
     alias: {
-      // this isn't technically needed, since the default `vue` entry for bundlers
-      // is a simple `export * from '@vue/runtime-dom`. However having this
-      // extra re-export somehow causes webpack to always invalidate the module
-      // on the first HMR update and causes the page to reload.
       'vue': '@vue/runtime-dom',
-      "@": path.resolve(__dirname, '..')
+      '@': path.resolve(__dirname, '..')
     }
   },
   module: {
     rules: [
+      {
+        test: /\.vue$/,
+        use: 'vue-loader'
+      },
       {
         test: /\.styl(us)?$/,
         use: [
@@ -35,20 +37,7 @@ module.exports = (env = {}) => ({
         exclude: [
           path.resolve(__dirname, "../examples/vue2/index.html")
         ],
-        use: [
-          'raw-loader',
-        ],
-      },
-      {
-        test: /\.vue$/,
-        use: 'vue-loader'
-      },
-      {
-        test: /\.png$/,
-        use: {
-          loader: 'url-loader',
-          options: { limit: 8192 }
-        }
+        type: 'asset/source',
       },
       {
         test: /\.css$/,
@@ -59,22 +48,31 @@ module.exports = (env = {}) => ({
           },
           'css-loader'
         ]
+      },
+      {
+        test: /\.(png|jpe?g|gif|svg)$/i,
+        type: 'asset/resource',
+        generator: {
+          filename: 'images/[hash][ext][query]'
+        }
       }
     ]
   },
   plugins: [
     new VueLoaderPlugin(),
     new MiniCssExtractPlugin({
-      filename: '[name].css'
+      filename: '[name].css',
+      ignoreOrder: true
     })
   ],
   devServer: {
-    inline: true,
     hot: true,
-    stats: 'minimal',
-    contentBase: __dirname,
-    overlay: true,
-    open: true,
-    openPage: 'index.html',
+    static: {
+      directory: __dirname
+    },
+    client: {
+      overlay: true
+    },
+    open: true
   }
-})
+});
