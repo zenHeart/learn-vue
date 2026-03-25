@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 组件重新渲染调试演示</title>
+  <script src="https://unpkg.com/vue@3"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #1a1a2e;
+      color: #eee;
+    }
+    h1 {
+      text-align: center;
+      color: #00d9ff;
+      margin-bottom: 30px;
+    }
+    h2 {
+      color: #ff6b6b;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
+      margin-top: 40px;
+    }
+    h3 {
+      color: #ffd93d;
+    }
+    .demo-section {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      border: 1px solid #0f3460;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 15px 0;
+    }
+    button {
+      background: #e94560;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    button:hover {
+      background: #ff6b6b;
+      transform: translateY(-2px);
+    }
+    button.active {
+      background: #00d9ff;
+      color: #1a1a2e;
+    }
+    .log-container {
+      background: #0f0f23;
+      border-radius: 8px;
+      padding: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 13px;
+      margin-top: 15px;
+    }
+    .log-entry {
+      padding: 5px 0;
+      border-bottom: 1px solid #222;
+      display: flex;
+      gap: 10px;
+    }
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    .log-time {
+      color: #666;
+      min-width: 60px;
+    }
+    .log-type {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      min-width: 80px;
+      text-align: center;
+    }
+    .log-type.tracked {
+      background: #2d5a27;
+      color: #4ade80;
+    }
+    .log-type.triggered {
+      background: #7c2d12;
+      color: #f97316;
+    }
+    .log-type.render {
+      background: #1e3a5f;
+      color: #60a5fa;
+    }
+    .log-type.update {
+      background: #4a1d6e;
+      color: #c084fc;
+    }
+    .log-message {
+      color: #ddd;
+      flex: 1;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 15px 0;
+    }
+    .stat-card {
+      background: #0f3460;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #00d9ff;
+    }
+    .stat-label {
+      color: #888;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    .component-box {
+      background: #1f4068;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 10px 0;
+      border-left: 4px solid #00d9ff;
+    }
+    .component-box.child {
+      border-left-color: #ff6b6b;
+      margin-left: 20px;
+    }
+    .prop-tag {
+      display: inline-block;
+      background: #e94560;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      margin: 2px;
+    }
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 20px 0;
+    }
+    @media (max-width: 768px) {
+      .comparison {
+        grid-template-columns: 1fr;
+      }
+    }
+    .memo-box {
+      border: 2px solid #4ade80;
+    }
+    .normal-box {
+      border: 2px solid #ef4444;
+    }
+    .highlight {
+      animation: pulse 0.5s ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { background: #1f4068; }
+      50% { background: #2d5a8a; }
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      margin-left: 10px;
+    }
+    .badge.new {
+      background: #22c55e;
+      color: #000;
+    }
+    .badge.skip {
+      background: #f97316;
+      color: #000;
+    }
+    .info-box {
+      background: #1e3a5f;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    .info-box code {
+      background: #0f0f23;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #00d9ff;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>🔄 Vue 组件重新渲染调试演示</h1>
+
+    <!-- Stats Overview -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-value">{{ totalRenders }}</div>
+        <div class="stat-label">总渲染次数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ trackedDeps }}</div>
+        <div class="stat-label">追踪的依赖</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ triggeredUpdates }}</div>
+        <div class="stat-label">触发更新次数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ totalComponents }}</div>
+        <div class="stat-label">组件数量</div>
+      </div>
+    </div>
+
+    <!-- Log Console -->
+    <div class="demo-section">
+      <h2>📋 渲染日志</h2>
+      <div class="controls">
+        <button @click="clearLogs" :class="{ active: false }">清空日志</button>
+        <button @click="enableTracing = !enableTracing" :class="{ active: enableTracing }">
+          {{ enableTracing ? '追踪已开启' : '追踪已关闭' }}
+        </button>
+      </div>
+      <div class="log-container" ref="logContainer">
+        <div v-if="logs.length === 0" class="log-entry">
+          <span class="log-message">点击按钮触发操作，日志将显示在这里...</span>
+        </div>
+        <div v-for="(log, index) in logs" :key="index" class="log-entry" :class="{ highlight: log.isNew }">
+          <span class="log-time">{{ log.time }}</span>
+          <span class="log-type" :class="log.typeClass">{{ log.typeLabel }}</span>
+          <span class="log-message">{{ log.message }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo 1: Basic State Changes -->
+    <div class="demo-section">
+      <h2>1️⃣ 基础状态变化触发重新渲染</h2>
+      <div class="info-box">
+        <p>点击不同按钮，观察哪些操作会触发组件重新渲染：</p>
+        <code>ref</code> 变化 → 触发渲染 | 
+        <code>reactive</code> 对象属性变化 → 触发渲染 |
+        <code>深层修改</code> → 触发渲染
+      </div>
+      <div class="controls">
+        <button @click="incrementRef">count.ref++ ({{ countRef }})</button>
+        <button @click="incrementReactive">count.reactive++ ({{ state.count }})</button>
+        <button @click="updateObject">更新对象属性</button>
+        <button @click="resetDemo1">重置</button>
+      </div>
+      <div class="component-box">
+        <strong>Parent 组件</strong>
+        <p>响应式数据: ref={{ countRef }}, reactive={{ state.count }}, obj.name={{ state.obj.name }}</p>
+        <p>渲染次数: {{ demo1Renders }}</p>
+      </div>
+      <ChildComponent :count="countRef" title="props 测试" @render="onChildRender" />
+    </div>
+
+    <!-- Demo 2: Props Changes -->
+    <div class="demo-section">
+      <h2>2️⃣ Props 变化 vs 本地状态</h2>
+      <div class="info-box">
+        <p>Props 变化会触发子组件重新渲染，但本地状态变化不会影响父组件：</p>
+      </div>
+      <div class="controls">
+        <button @click="changePropValue">改变 props.value</button>
+        <button @click="changePropRef">改变 props.obj (引用)</button>
+        <button @click="incrementLocal">本地 count++ ({{ localCount }})</button>
+      </div>
+      <div class="component-box">
+        <strong>PropsDemo 父组件</strong>
+        <p>渲染次数: {{ propsDemoRenders }}</p>
+        <PropsChild :value="propValue" :obj="propObj" />
+      </div>
+    </div>
+
+    <!-- Demo 3: v-memo Comparison -->
+    <div class="demo-section">
+      <h2>3️⃣ v-memo 性能对比</h2>
+      <div class="info-box">
+        <p><code>v-memo</code> 可缓存子组件，当依赖值未变化时跳过重新渲染：</p>
+        <code>v-memo="[count > 5]"</code> - 仅当 count > 5 时才重新渲染子组件
+      </div>
+      <div class="controls">
+        <button @click="updateMemoCondition">更新条件 (count={{ memoCount }})</button>
+        <button @click="updateMemoOther">更新其他数据</button>
+        <button @click="resetMemoDemo">重置</button>
+      </div>
+      <div class="comparison">
+        <div>
+          <h3>❌ 普通组件 <span class="badge new">每次都渲染</span></h3>
+          <div class="component-box normal-box">
+            <NormalListItem v-for="item in memoItems" :key="item.id" :item="item" :active="memoCount > 5" />
+          </div>
+          <p>渲染次数: {{ normalListRenders }}</p>
+        </div>
+        <div>
+          <h3>✅ v-memo 组件 <span class="badge skip">条件不变跳过</span></h3>
+          <div class="component-box memo-box">
+            <MemoListItem v-for="item in memoItems" :key="item.id" :item="item" :active="memoCount > 5" />
+          </div>
+          <p>渲染次数: {{ memoListRenders }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo 4: shallowRef vs ref -->
+    <div class="demo-section">
+      <h2>4️⃣ shallowRef vs ref 行为对比</h2>
+      <div class="info-box">
+        <p><code>shallowRef</code> 只追踪 .value 的赋值，深层修改不会触发渲染：</p>
+      </div>
+      <div class="comparison">
+        <div>
+          <h3>ref (深层响应式)</h3>
+          <div class="controls">
+            <button @click="deepRefModify">深层修改: state.deep.nested</button>
+            <button @click="deepRefAssign">重新赋值 .value</button>
+          </div>
+          <div class="component-box">
+            <p>当前值: {{ deepRefState.deep?.nested || '未设置' }}</p>
+            <p>渲染次数: {{ deepRefRenders }}</p>
+          </div>
+        </div>
+        <div>
+          <h3>shallowRef (浅层响应式)</h3>
+          <div class="controls">
+            <button @click="shallowRefModify">深层修改: state.deep.nested</button>
+            <button @click="shallowRefAssign">重新赋值 .value</button>
+          </div>
+          <div class="component-box">
+            <p>当前值: {{ shallowRefState.deep?.nested || '未设置' }}</p>
+            <p>渲染次数: {{ shallowRefRenders }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo 5: Render Tracing Hooks -->
+    <div class="demo-section">
+      <h2>5️⃣ onRenderTracked / onRenderTriggered 钩子</h2>
+      <div class="info-box">
+        <p>Vue 3 提供的调试钩子，可精确追踪渲染依赖：</p>
+        <ul>
+          <li><code>onRenderTracked</code>: 首次 render 时，跟踪所有响应式依赖</li>
+          <li><code>onRenderTriggered</code>: 每次重新渲染触发时调用</li>
+        </ul>
+      </div>
+      <div class="controls">
+        <button @click="triggerTrackingDemo">触发追踪演示</button>
+        <button @click="clearTracingLogs">清空追踪日志</button>
+      </div>
+      <div class="log-container" style="max-height: 300px;">
+        <div v-if="tracingLogs.length === 0" class="log-entry">
+          <span class="log-message">点击按钮观察依赖追踪...</span>
+        </div>
+        <div v-for="(log, index) in tracingLogs" :key="index" class="log-entry">
+          <span class="log-time">{{ log.time }}</span>
+          <span class="log-type" :class="log.typeClass">{{ log.type }}</span>
+          <span class="log-message">
+            {{ log.key }} | 
+            <span style="color: #4ade80;">新值: {{ JSON.stringify(log.value) }}</span>
+            <span v-if="log.oldValue !== undefined" style="color: #f97316;"> | 旧值: {{ JSON.stringify(log.oldValue) }}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const { createApp, ref, reactive, computed, shallowRef, onBeforeUpdate, onUpdated, onRenderTracked, onRenderTriggered, markRaw } = Vue
+
+    // 子组件：基础
+    const ChildComponent = {
+      props: ['count', 'title'],
+      emits: ['render'],
+      template: `
+        <div class="component-box child">
+          <strong>Child 组件</strong>
+          <p>Props: count={{ count }}, title={{ title }}</p>
+          <p>渲染次数: {{ renderCount }}</p>
+        </div>
+      `,
+      setup(props, { emit }) {
+        const renderCount = ref(0)
+        onBeforeUpdate(() => {
+          renderCount.value++
+          emit('render')
+        })
+        return { renderCount }
+      }
+    }
+
+    // 子组件：Props 演示
+    const PropsChild = {
+      props: ['value', 'obj'],
+      template: `
+        <div class="component-box child" style="border-left-color: #4ade80;">
+          <strong>PropsChild 子组件</strong>
+          <p>props.value: {{ value }}</p>
+          <p>props.obj: {{ obj ? obj.name : 'undefined' }}</p>
+          <p>渲染次数: {{ renderCount }}</p>
+        </div>
+      `,
+      setup() {
+        const renderCount = ref(0)
+        onBeforeUpdate(() => renderCount.value++)
+        return { renderCount }
+      }
+    }
+
+    // 普通列表项
+    const NormalListItem = {
+      props: ['item', 'active'],
+      template: `
+        <div class="component-box child" style="padding: 10px; margin: 5px 0;">
+          <span>{{ item.name }}</span>
+          <span v-if="active" style="color: #4ade80;"> ●</span>
+          <span style="float: right; color: #666;">渲染</span>
+        </div>
+      `,
+      setup() {
+        const renderCount = ref(0)
+        onBeforeUpdate(() => renderCount.value++)
+        return { renderCount }
+      }
+    }
+
+    // Memo 列表项
+    const MemoListItem = {
+      props: ['item', 'active'],
+      directives: {
+        memo: {
+          mounted() {},
+          updated() {}
+        }
+      },
+      template: `
+        <div class="component-box child" style="padding: 10px; margin: 5px 0; border-left-color: #4ade80;">
+          <span>{{ item.name }}</span>
+          <span v-if="active" style="color: #4ade80;"> ●</span>
+          <span style="float: right; color: #4ade80;">v-memo</span>
+        </div>
+      `,
+      setup() {
+        const renderCount = ref(0)
+        onBeforeUpdate(() => renderCount.value++)
+        return { renderCount }
+      }
+    }
+
+    // 主应用
+    const app = createApp({
+      components: {
+        ChildComponent,
+        PropsChild,
+        NormalListItem,
+        MemoListItem
+      },
+      setup() {
+        // 全局状态
+        const totalRenders = ref(0)
+        const trackedDeps = ref(0)
+        const triggeredUpdates = ref(0)
+        const totalComponents = ref(2)
+        const logs = ref([])
+        const enableTracing = ref(true)
+        const tracingLogs = ref([])
+        const logContainer = ref(null)
+
+        // Demo 1: 基础状态
+        const countRef = ref(0)
+        const state = reactive({ count: 0, obj: { name: 'initial' } })
+        const demo1Renders = ref(0)
+
+        function onChildRender() {
+          totalComponents.value++
+        }
+
+        function incrementRef() {
+          countRef.value++
+          addLog('triggered', `countRef.value++ → ${countRef.value}`)
+        }
+        function incrementReactive() {
+          state.count++
+          addLog('triggered', `state.count++ → ${state.count}`)
+        }
+        function updateObject() {
+          state.obj.name = 'updated-' + Date.now()
+          addLog('triggered', `state.obj.name = '${state.obj.name}'`)
+        }
+        function resetDemo1() {
+          countRef.value = 0
+          state.count = 0
+          state.obj.name = 'initial'
+          addLog('render', 'Demo1 重置')
+        }
+
+        // Demo 2: Props
+        const propValue = ref(0)
+        const propObj = ref({ name: 'obj-1' })
+        const localCount = ref(0)
+        const propsDemoRenders = ref(0)
+
+        function changePropValue() {
+          propValue.value++
+          addLog('triggered', `propValue.value++ → ${propValue.value}`)
+        }
+        function changePropRef() {
+          propObj.value = { name: 'obj-' + Date.now() }
+          addLog('triggered', `propObj.value 引用变化`)
+        }
+        function incrementLocal() {
+          localCount.value++
+          addLog('render', `localCount++ (本地状态，不影响父组件)`)
+        }
+
+        // Demo 3: v-memo
+        const memoCount = ref(0)
+        const memoItems = ref([
+          { id: 1, name: '列表项 1' },
+          { id: 2, name: '列表项 2' },
+          { id: 3, name: '列表项 3' }
+        ])
+        const normalListRenders = ref(0)
+        const memoListRenders = ref(0)
+        const memoOtherData = ref('other')
+
+        function updateMemoCondition() {
+          memoCount.value++
+          addLog('triggered', `memoCount++ → ${memoCount.value}`)
+        }
+        function updateMemoOther() {
+          memoOtherData.value = 'changed-' + Date.now()
+          addLog('render', `memoOtherData 变化 (不影响列表)`)
+        }
+        function resetMemoDemo() {
+          memoCount.value = 0
+          memoOtherData.value = 'other'
+        }
+
+        // Demo 4: shallowRef vs ref
+        const deepRefState = ref({ deep: { nested: 'initial' } })
+        const shallowRefState = shallowRef({ deep: { nested: 'initial' } })
+        const deepRefRenders = ref(0)
+        const shallowRefRenders = ref(0)
+
+        function deepRefModify() {
+          deepRefState.value.deep.nested = 'modified-' + Date.now()
+          addLog('triggered', `ref 深层修改触发渲染`)
+        }
+        function deepRefAssign() {
+          deepRefState.value = { deep: { nested: 'reassigned-' + Date.now() } }
+          addLog('triggered', `ref .value 重新赋值触发渲染`)
+        }
+        function shallowRefModify() {
+          shallowRefState.value.deep.nested = 'modified-' + Date.now()
+          addLog('render', `shallowRef 深层修改 (不触发渲染)`)
+        }
+        function shallowRefAssign() {
+          shallowRefState.value = { deep: { nested: 'reassigned-' + Date.now() } }
+          addLog('triggered', `shallowRef .value 重新赋值触发渲染`)
+        }
+
+        // 追踪演示
+        function triggerTrackingDemo() {
+          // 触发一些响应式变化
+          countRef.value++
+          state.count++
+        }
+
+        // 追踪钩子
+        onRenderTracked((e) => {
+          if (!enableTracing.value) return
+          trackedDeps.value++
+          tracingLogs.value.push({
+            time: new Date().toLocaleTimeString(),
+            type: 'TRACKED',
+            typeClass: 'tracked',
+            key: String(e.key),
+            value: e.newValue,
+            oldValue: e.oldValue
+          })
+          addLog('tracked', `追踪依赖: ${e.key}`)
+        })
+
+        onRenderTriggered((e) => {
+          if (!enableTracing.value) return
+          triggeredUpdates.value++
+          tracingLogs.value.push({
+            time: new Date().toLocaleTimeString(),
+            type: 'TRIGGERED',
+            typeClass: 'triggered',
+            key: String(e.key),
+            value: e.newValue,
+            oldValue: e.oldValue
+          })
+          addLog('triggered', `触发渲染: ${e.key}`)
+        })
+
+        onBeforeUpdate(() => {
+          totalRenders.value++
+        })
+
+        // 日志函数
+        function addLog(type, message) {
+          const typeClass = type === 'tracked' ? 'tracked' : type === 'triggered' ? 'triggered' : 'render'
+          const typeLabel = type === 'tracked' ? '追踪' : type === 'triggered' ? '触发' : '渲染'
+          logs.value.push({
+            time: new Date().toLocaleTimeString(),
+            typeClass,
+            typeLabel,
+            message,
+            isNew: true
+          })
+          setTimeout(() => {
+            const log = logs.value.find(l => l === arguments.callee)
+            if (log) log.isNew = false
+          }, 500)
+          
+          // scroll to bottom
+          setTimeout(() => {
+            if (logContainer.value) {
+              logContainer.value.scrollTop = logContainer.value.scrollHeight
+            }
+          }, 10)
+        }
+
+        function clearLogs() {
+          logs.value = []
+        }
+
+        function clearTracingLogs() {
+          tracingLogs.value = []
+          trackedDeps.value = 0
+          triggeredUpdates.value = 0
+        }
+
+        return {
+          // 全局
+          totalRenders,
+          trackedDeps,
+          triggeredUpdates,
+          totalComponents,
+          logs,
+          enableTracing,
+          tracingLogs,
+          logContainer,
+          
+          // Demo 1
+          countRef,
+          state,
+          demo1Renders,
+          onChildRender,
+          incrementRef,
+          incrementReactive,
+          updateObject,
+          resetDemo1,
+          
+          // Demo 2
+          propValue,
+          propObj,
+          localCount,
+          propsDemoRenders,
+          changePropValue,
+          changePropRef,
+          incrementLocal,
+          
+          // Demo 3
+          memoCount,
+          memoItems,
+          normalListRenders,
+          memoListRenders,
+          updateMemoCondition,
+          updateMemoOther,
+          resetMemoDemo,
+          
+          // Demo 4
+          deepRefState,
+          shallowRefState,
+          deepRefRenders,
+          shallowRefRenders,
+          deepRefModify,
+          deepRefAssign,
+          shallowRefModify,
+          shallowRefAssign,
+          
+          // Demo 5
+          triggerTrackingDemo,
+          clearTracingLogs,
+          
+          // Methods
+          clearLogs
+        }
+      }
+    })
+
+    app.mount('#app')
+  </script>
+</body>
+</html>
