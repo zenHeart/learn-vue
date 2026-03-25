@@ -1,0 +1,498 @@
+---
+tags: [watch, cleanup, memory leak]
+---
+
+<script src="https://unpkg.com/vue@next"></script>
+
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+    background: #f5f5f5;
+  }
+  h1 {
+    color: #42b883;
+    border-bottom: 2px solid #42b883;
+    padding-bottom: 10px;
+  }
+  h2 {
+    color: #35495e;
+    margin-top: 30px;
+  }
+  .demo-section {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .demo-section h3 {
+    color: #42b883;
+    margin-top: 0;
+  }
+  button {
+    background: #42b883;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px;
+    font-size: 14px;
+  }
+  button:hover {
+    background: #359268;
+  }
+  button.danger {
+    background: #e74c3c;
+  }
+  button.danger:hover {
+    background: #c0392b;
+  }
+  button.warning {
+    background: #f39c12;
+  }
+  button.warning:hover {
+    background: #d68910;
+  }
+  .output {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 15px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 13px;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 10px;
+  }
+  .output .log-entry {
+    margin: 4px 0;
+    padding: 2px 0;
+  }
+  .output .watch-trigger {
+    color: #4ec9b0;
+  }
+  .output .cleanup-trigger {
+    color: #ce9178;
+  }
+  .output .info {
+    color: #9cdcfe;
+  }
+  .output .error {
+    color: #f44747;
+  }
+  .log-time {
+    color: #6a9955;
+  }
+  .status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  .status.active {
+    background: #27ae60;
+    color: white;
+  }
+  .status.inactive {
+    background: #95a5a6;
+    color: white;
+  }
+  .status.warning {
+    background: #f39c12;
+    color: white;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+  }
+  th {
+    background: #42b883;
+    color: white;
+  }
+  .description {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 15px;
+  }
+  .counter {
+    font-size: 24px;
+    font-weight: bold;
+    color: #42b883;
+    margin: 10px 0;
+  }
+</style>
+
+<div id="app">
+  <h1>Vue 3 Watch 内存泄漏与清理</h1>
+  <p class="description">
+    本演示展示 Vue 3 Composition API 中 watch 的触发机制、清理机制以及内存泄漏问题的解决方法。
+  </p>
+
+  <!-- 演示1: watch vs watchEffect 初始执行 -->
+  <div class="demo-section">
+    <h3>1. watch vs watchEffect 初始执行时机</h3>
+    <p class="description">
+      <strong>watch</strong> 默认不执行（immediate: false），<strong>watchEffect</strong> 默认立即执行。
+    </p>
+    <button @click="changeCount">改变 count</button>
+    <button @click="resetInitDemo">重置</button>
+    <div class="counter">count = {{ initCount }}</div>
+    <div class="output" ref="initOutput1">
+      <div v-if="initLogs1.length === 0" class="info">点击"改变 count"按钮查看 watch 触发</div>
+      <div v-for="(log, i) in initLogs1" :key="i" :class="'log-entry ' + log.type">
+        <span class="log-time">[{{ log.time }}]</span> {{ log.msg }}
+      </div>
+    </div>
+    <div class="output" ref="initOutput2">
+      <div v-if="initLogs2.length === 0" class="info">watchEffect 立即执行并追踪 count</div>
+      <div v-for="(log, i) in initLogs2" :key="i" :class="'log-entry ' + log.type">
+        <span class="log-time">[{{ log.time }}]</span> {{ log.msg }}
+      </div>
+    </div>
+  </div>
+
+  <!-- 演示2: flush 选项的影响 -->
+  <div class="demo-section">
+    <h3>2. flush 选项的影响</h3>
+    <p class="description">
+      <strong>pre</strong>: 组件更新前触发（默认）<br>
+      <strong>post</strong>: 组件更新后触发（用于访问更新后的 DOM）<br>
+      <strong>sync</strong>: 同步触发（不推荐）
+    </p>
+    <button @click="testFlush('pre')">测试 pre</button>
+    <button @click="testFlush('post')">测试 post</button>
+    <button @click="testFlush('sync')">测试 sync</button>
+    <div class="counter">value = {{ flushValue }}</div>
+    <div class="output">
+      <div v-if="flushLogs.length === 0" class="info">选择 flush 类型并点击按钮测试</div>
+      <div v-for="(log, i) in flushLogs" :key="i" :class="'log-entry ' + log.type">
+        <span class="log-time">[{{ log.time }}]</span> {{ log.msg }}
+      </div>
+    </div>
+  </div>
+
+  <!-- 演示3: 清理机制 -->
+  <div class="demo-section">
+    <h3>3. Watch 清理机制</h3>
+    <p class="description">
+      演示 onWatcherCleanup 如何在 watch 重新运行或组件卸载时自动调用清理函数。
+    </p>
+    <button @click="startCleanupDemo">启动定时器</button>
+    <button @click="stopCleanupDemo" class="danger">停止清理演示</button>
+    <div class="counter">timer count = {{ timerCount }}</div>
+    <div class="status" :class="timerActive ? 'active' : 'inactive'">
+      {{ timerActive ? '定时器运行中' : '定时器已停止' }}
+    </div>
+    <div class="output">
+      <div v-if="cleanupLogs.length === 0" class="info">点击"启动定时器"开始演示</div>
+      <div v-for="(log, i) in cleanupLogs" :key="i" :class="'log-entry ' + log.type">
+        <span class="log-time">[{{ log.time }}]</span> {{ log.msg }}
+      </div>
+    </div>
+  </div>
+
+  <!-- 演示4: 内存泄漏问题 -->
+  <div class="demo-section">
+    <h3>4. 内存泄漏问题演示</h3>
+    <p class="description">
+      演示未清理定时器导致的内存泄漏问题。
+    </p>
+    <button @click="simulateLeak">模拟内存泄漏</button>
+    <button @click="clearLeakDemo" class="danger">清理</button>
+    <div>
+      <span class="status" :class="leakActive ? 'warning' : 'inactive'">
+        {{ leakActive ? '警告: 定时器泄漏!' : '已清理' }}
+      </span>
+    </div>
+    <div>活跃定时器数量: <strong>{{ activeTimers }}</strong></div>
+    <div class="output">
+      <div v-if="leakLogs.length === 0" class="info">点击"模拟内存泄漏"查看问题</div>
+      <div v-for="(log, i) in leakLogs" :key="i" :class="'log-entry ' + log.type">
+        <span class="log-time">[{{ log.time }}]</span> {{ log.msg }}
+      </div>
+    </div>
+  </div>
+
+  <!-- 演示5: 正确清理模式 -->
+  <div class="demo-section">
+    <h3>5. 正确清理模式</h3>
+    <p class="description">
+      使用 onWatcherCleanup 确保定时器被正确清理。
+    </p>
+    <button @click="startProperCleanup">启动定时器（正确方式）</button>
+    <button @click="changeUserId">切换用户</button>
+    <button @click="stopProperCleanup" class="danger">停止</button>
+    <div>当前用户: {{ properUserId }}</div>
+    <div>定时器状态: <span class="status" :class="properTimerActive ? 'active' : 'inactive'">
+      {{ properTimerActive ? '运行中' : '已停止' }}
+    </span></div>
+    <div class="output">
+      <div v-if="properLogs.length === 0" class="info">点击"启动定时器（正确方式）"开始</div>
+      <div v-for="(log, i) in properLogs" :key="i" :class="'log-entry ' + log.type">
+        <span class="log-time">[{{ log.time }}]</span> {{ log.msg }}
+      </div>
+    </div>
+  </div>
+
+  <!-- 表格总结 -->
+  <div class="demo-section">
+    <h3>知识点总结</h3>
+    <table>
+      <tr>
+        <th>特性</th>
+        <th>说明</th>
+      </tr>
+      <tr>
+        <td>watch 默认不执行</td>
+        <td>需要设置 <code>immediate: true</code> 才会在创建时执行</td>
+      </tr>
+      <tr>
+        <td>watchEffect 立即执行</td>
+        <td>默认在创建时立即执行，可使用 <code>flush: 'post'</code> 延迟</td>
+      </tr>
+      <tr>
+        <td>onWatcherCleanup</td>
+        <td>Vue 3.5+ 推荐使用，在 watch 重新运行前或组件卸载时调用</td>
+      </tr>
+      <tr>
+        <td>stop() 函数</td>
+        <td>watch 返回的停止函数，可手动调用停止监听</td>
+      </tr>
+      <tr>
+        <td>flush: 'pre'</td>
+        <td>组件更新前触发（默认）</td>
+      </tr>
+      <tr>
+        <td>flush: 'post'</td>
+        <td>组件更新后触发，用于访问更新后的 DOM</td>
+      </tr>
+      <tr>
+        <td>flush: 'sync'</td>
+        <td>同步触发，不推荐使用（性能问题）</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, watch, watchEffect, onWatcherCleanup, onUnmounted, nextTick } = Vue
+
+createApp({
+  setup() {
+    // ========== 演示1: watch vs watchEffect 初始执行 ==========
+    const initCount = ref(0)
+    const initLogs1 = ref([])
+    const initLogs2 = ref([])
+
+    const log = (logs, msg, type = 'info') => {
+      const now = new Date()
+      const time = `${now.getMinutes()}:${String(now.getSeconds()).padStart(2, '0')}`
+      logs.push({ msg, type, time })
+    }
+
+    // watch 默认不立即执行
+    watch(initCount, (newVal, oldVal) => {
+      log(initLogs1.value, `watch 触发: ${oldVal} -> ${newVal}`, 'watch-trigger')
+    })
+
+    // watchEffect 立即执行
+    watchEffect(() => {
+      log(initLogs2.value, `watchEffect 执行，count = ${initCount.value}`, 'info')
+    })
+
+    const changeCount = () => {
+      initCount.value++
+    }
+
+    const resetInitDemo = () => {
+      initCount.value = 0
+      initLogs1.value = []
+      initLogs2.value = []
+    }
+
+    // ========== 演示2: flush 选项 ==========
+    const flushValue = ref(0)
+    const flushLogs = ref([])
+
+    const testFlush = (flushType) => {
+      flushLogs.value = []
+      flushValue.value = 0
+
+      const testWatch = watch(flushValue, (newVal) => {
+        log(flushLogs.value, `${flushType}: count = ${newVal}`, 'watch-trigger')
+      }, { flush: flushType })
+
+      // 立即触发一次
+      flushValue.value = 1
+
+      // 使用 nextTick 测试 post
+      if (flushType === 'pre' || flushType === 'post') {
+        nextTick(() => {
+          flushValue.value = 2
+          nextTick(() => {
+            flushValue.value = 3
+            setTimeout(() => {
+              testWatch()
+            }, 50)
+          })
+        })
+      } else {
+        // sync 模式下同步执行
+        flushValue.value = 2
+        flushValue.value = 3
+        testWatch()
+      }
+    }
+
+    // ========== 演示3: 清理机制 ==========
+    const timerCount = ref(0)
+    const timerActive = ref(false)
+    const cleanupLogs = ref([])
+    let timerId = null
+
+    const startCleanupDemo = () => {
+      if (timerActive.value) return
+      timerActive.value = true
+      timerCount.value = 0
+      log(cleanupLogs.value, '定时器已启动', 'info')
+
+      // 使用 watch 配合 cleanup
+      const startTimer = () => {
+        timerId = setInterval(() => {
+          timerCount.value++
+          log(cleanupLogs.value, `定时器 tick: ${timerCount.value}`, 'watch-trigger')
+        }, 1000)
+      }
+
+      watch(timerActive, (isActive) => {
+        if (isActive && !timerId) {
+          startTimer()
+        } else if (!isActive && timerId) {
+          clearInterval(timerId)
+          timerId = null
+          log(cleanupLogs.value, '定时器已清理', 'cleanup-trigger')
+        }
+      }, { immediate: true })
+
+      onWatcherCleanup(() => {
+        if (timerId) {
+          clearInterval(timerId)
+          timerId = null
+          log(cleanupLogs.value, 'onWatcherCleanup: 定时器已清理', 'cleanup-trigger')
+        }
+      })
+    }
+
+    const stopCleanupDemo = () => {
+      timerActive.value = false
+    }
+
+    // ========== 演示4: 内存泄漏 ==========
+    const activeTimers = ref(0)
+    const leakActive = ref(false)
+    const leakLogs = ref([])
+    const leakedTimers = []
+
+    const simulateLeak = () => {
+      leakActive.value = true
+      log(leakLogs.value, '创建定时器（未清理）', 'info')
+
+      // 不保存定时器引用，也不清理
+      setInterval(() => {
+        log(leakLogs.value, '定时器仍在运行（泄漏）', 'error')
+      }, 1000)
+
+      leakedTimers.push(Date.now())
+      activeTimers.value = leakedTimers.length
+      log(leakLogs.value, `活跃定时器数量: ${activeTimers.value}`, 'error')
+    }
+
+    const clearLeakDemo = () => {
+      leakedTimers.forEach(() => {})
+      leakActive.value = false
+      leakLogs.value = []
+      activeTimers.value = 0
+      log(leakLogs.value, '演示已清理（实际无法清理已泄漏的定时器）', 'info')
+    }
+
+    // ========== 演示5: 正确清理 ==========
+    const properUserId = ref(1)
+    const properTimerActive = ref(false)
+    const properLogs = ref([])
+    let properTimerId = null
+
+    const startProperCleanup = () => {
+      properTimerActive.value = true
+      log(properLogs.value, `启动定时器，用户: ${properUserId.value}`, 'info')
+    }
+
+    const changeUserId = () => {
+      properUserId.value = properUserId.value === 1 ? 2 : 1
+      log(properLogs.value, `切换用户到: ${properUserId.value}`, 'info')
+    }
+
+    const stopProperCleanup = () => {
+      properTimerActive.value = false
+    }
+
+    // 正确使用 cleanup
+    watch(properUserId, (newId, oldId) => {
+      log(properLogs.value, `用户变化: ${oldId} -> ${newId}，重新设置定时器`, 'watch-trigger')
+
+      // 清理旧的定时器
+      if (properTimerId) {
+        clearInterval(properTimerId)
+        log(properLogs.value, '清理旧定时器', 'cleanup-trigger')
+      }
+
+      // 创建新的定时器
+      properTimerId = setInterval(() => {
+        log(properLogs.value, `用户 ${newId} 的定时器 tick`, 'watch-trigger')
+      }, 2000)
+
+      // 使用 onWatcherCleanup 清理
+      onWatcherCleanup(() => {
+        if (properTimerId) {
+          clearInterval(properTimerId)
+          properTimerId = null
+          log(properLogs.value, 'onWatcherCleanup: 定时器已清理', 'cleanup-trigger')
+        }
+      })
+    })
+
+    // 监听 active 状态停止定时器
+    watch(properTimerActive, (active) => {
+      if (!active && properTimerId) {
+        clearInterval(properTimerId)
+        properTimerId = null
+        log(properLogs.value, '定时器已停止', 'cleanup-trigger')
+      }
+    })
+
+    return {
+      // 演示1
+      initCount, initLogs1, initLogs2, changeCount, resetInitDemo,
+      // 演示2
+      flushValue, flushLogs, testFlush,
+      // 演示3
+      timerCount, timerActive, cleanupLogs, startCleanupDemo, stopCleanupDemo,
+      // 演示4
+      activeTimers, leakActive, leakLogs, simulateLeak, clearLeakDemo,
+      // 演示5
+      properUserId, properTimerActive, properLogs,
+      startProperCleanup, changeUserId, stopProperCleanup
+    }
+  }
+}).mount('#app')
+</script>
