@@ -1,0 +1,931 @@
+---
+tags: [computed, reactivity, shallowRef, markRaw]
+---
+
+<script src="https://unpkg.com/vue@next"></script>
+
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px;
+    background: #f5f5f5;
+  }
+  h1 {
+    color: #42b883;
+    border-bottom: 3px solid #42b883;
+    padding-bottom: 10px;
+  }
+  h2 {
+    color: #35495e;
+    margin-top: 30px;
+  }
+  h3 {
+    color: #42b883;
+    margin-top: 20px;
+  }
+  .demo-section {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  button {
+    background: #42b883;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px;
+    font-size: 14px;
+  }
+  button:hover {
+    background: #359268;
+  }
+  button.danger {
+    background: #e74c3c;
+  }
+  button.danger:hover {
+    background: #c0392b;
+  }
+  button.warning {
+    background: #f39c12;
+  }
+  button.warning:hover {
+    background: #d68910;
+  }
+  button.success {
+    background: #27ae60;
+  }
+  button.success:hover {
+    background: #219a52;
+  }
+  .output {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 15px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 13px;
+    max-height: 250px;
+    overflow-y: auto;
+    margin-top: 10px;
+  }
+  .output .log-entry {
+    margin: 4px 0;
+    padding: 2px 0;
+    border-left: 3px solid transparent;
+    padding-left: 8px;
+  }
+  .output .computed-trigger {
+    color: #4ec9b0;
+    border-left-color: #4ec9b0;
+  }
+  .output .ref-trigger {
+    color: #ce9178;
+    border-left-color: #ce9178;
+  }
+  .output .shallow-trigger {
+    color: #dcdcaa;
+    border-left-color: #dcdcaa;
+  }
+  .output .markraw-trigger {
+    color: #c586c0;
+    border-left-color: #c586c0;
+  }
+  .output .info {
+    color: #9cdcfe;
+  }
+  .output .success {
+    color: #6a9955;
+  }
+  .output .warning {
+    color: #d7ba7d;
+  }
+  .output .error {
+    color: #f44747;
+  }
+  .log-time {
+    color: #6a9955;
+    margin-right: 8px;
+  }
+  .state-display {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 15px 0;
+  }
+  .state-item {
+    background: #f8f8f8;
+    padding: 10px 15px;
+    border-radius: 4px;
+    border-left: 4px solid #42b883;
+  }
+  .state-item .label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  .state-item .value {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 8px;
+  }
+  .badge.ref {
+    background: #ce9178;
+    color: white;
+  }
+  .badge.shallow {
+    background: #d7ba7d;
+    color: #333;
+  }
+  .badge.markraw {
+    background: #c586c0;
+    color: white;
+  }
+  .badge.reactive {
+    background: #4ec9b0;
+    color: #333;
+  }
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+  }
+  .comparison-table th,
+  .comparison-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+  .comparison-table th {
+    background: #f5f5f5;
+    color: #35495e;
+  }
+  .comparison-table tr:hover {
+    background: #fafafa;
+  }
+  .highlight-box {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+  }
+  .highlight-box.danger {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+  }
+  .highlight-box.success {
+    background: #d4edda;
+    border-color: #c3e6cb;
+  }
+  .flow-diagram {
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 15px 0;
+    font-family: monospace;
+  }
+  .flow-diagram .step {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+    padding: 8px;
+    background: white;
+    border-radius: 4px;
+    border-left: 4px solid #42b883;
+  }
+  .flow-diagram .step-number {
+    background: #42b883;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 12px;
+  }
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 15px 0;
+    padding: 10px;
+    background: #f8f8f8;
+    border-radius: 4px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+</style>
+
+# Vue Computed 重复触发刷新问题 - 交互演示
+
+本页面演示 Vue 3 中 computed 的响应式行为，包括缓存机制、重复触发问题和解决方案。
+
+---
+
+## 演示 1: Computed 缓存机制
+
+computed 使用 dirty flag 实现缓存，只有依赖变化时才重新计算。
+
+<div id="demo1" class="demo-section">
+  <h3>Computed 缓存演示 <span class="badge reactive">ref</span></h3>
+  
+  <div class="state-display">
+    <div class="state-item">
+      <div class="label">count (ref)</div>
+      <div class="value">{{ count }}</div>
+    </div>
+    <div class="state-item">
+      <div class="label">doubled (computed)</div>
+      <div class="value">{{ doubled }}</div>
+    </div>
+  </div>
+  
+  <button @click="count++">count++</button>
+  <button @click="readDoubled">读取 doubled</button>
+  <button @click="clearLog">清空日志</button>
+  
+  <div class="output" ref="log1">
+    <div v-for="(log, i) in logs1" :key="i" :class="['log-entry', log.type]">
+      <span class="log-time">{{ log.time }}</span>
+      {{ log.msg }}
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed } = Vue
+
+createApp({
+  setup() {
+    const count = ref(0)
+    const logs1 = ref([])
+    const log1 = ref(null)
+    
+    const doubled = computed(() => {
+      logs1.value.push({
+        type: 'computed-trigger',
+        time: new Date().toLocaleTimeString(),
+        msg: '💭 computed 执行了！count = ' + count.value
+      })
+      return count.value * 2
+    })
+    
+    const readDoubled = () => {
+      logs1.value.push({
+        type: 'info',
+        time: new Date().toLocaleTimeString(),
+        msg: '📖 读取 doubled = ' + doubled.value
+      })
+    }
+    
+    const clearLog = () => {
+      logs1.value = []
+    }
+    
+    return { count, doubled, logs1, log1, readDoubled, clearLog }
+  }
+}).mount('#demo1')
+</script>
+
+**观察要点：**
+1. 点击 "count++" 后，computed 会重新计算（看到 "computed 执行了"）
+2. 点击 "读取 doubled" 不改变 count，computed **不会**重新执行（没有新日志）
+3. 再次点击 "count++" 后访问 doubled，才会重新计算
+
+---
+
+## 演示 2: shallowRef vs ref 深层响应式对比
+
+ref 追踪深层变化，shallowRef 只追踪 .value 的引用变化。
+
+<div id="demo2" class="demo-section">
+  <h3>shallowRef vs ref 对比 <span class="badge shallow">shallowRef</span> <span class="badge ref">ref</span></h3>
+  
+  <table class="comparison-table">
+    <thead>
+      <tr>
+        <th>操作</th>
+        <th>ref (深层响应式)</th>
+        <th>shallowRef (浅层响应式)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>修改 .value</td>
+        <td>✅ 触发</td>
+        <td>✅ 触发</td>
+      </tr>
+      <tr>
+        <td>修改深层属性 (obj.nested.value)</td>
+        <td>✅ 触发</td>
+        <td>❌ 不触发</td>
+      </tr>
+      <tr>
+        <td>数组 push/splice</td>
+        <td>✅ 触发</td>
+        <td>❌ 不触发</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <div class="state-display">
+    <div class="state-item">
+      <div class="label">shallowRef 数据</div>
+      <div class="value">{{ shallowState.items }}</div>
+    </div>
+    <div class="state-item">
+      <div class="label">shallowRef computed</div>
+      <div class="value">{{ shallowComputed }}</div>
+    </div>
+  </div>
+  
+  <div class="state-display">
+    <div class="state-item">
+      <div class="label">ref 数据</div>
+      <div class="value">{{ refState.items }}</div>
+    </div>
+    <div class="state-item">
+      <div class="label">ref computed</div>
+      <div class="value">{{ refComputed }}</div>
+    </div>
+  </div>
+  
+  <button @click="shallowPush" class="warning">shallow.push()</button>
+  <button @click="refPush" class="warning">ref.push()</button>
+  <button @click="shallowReplace" class="success">shallow.replace</button>
+  <button @click="refReplace" class="success">ref.replace</button>
+  <button @click="clearLog2">清空日志</button>
+  
+  <div class="output" ref="log2">
+    <div v-for="(log, i) in logs2" :key="i" :class="['log-entry', log.type]">
+      <span class="log-time">{{ log.time }}</span>
+      {{ log.msg }}
+    </div>
+  </div>
+</div>
+
+<script>
+createApp({
+  setup() {
+    const logs2 = ref([])
+    const log2 = ref(null)
+    
+    // shallowRef - 只追踪 .value
+    const shallowState = shallowRef({ items: [1, 2, 3] })
+    const shallowComputed = computed(() => {
+      logs2.value.push({
+        type: 'shallow-trigger',
+        time: new Date().toLocaleTimeString(),
+        msg: '🟡 shallowRef computed 执行了！items.length = ' + shallowState.value.items.length
+      })
+      return shallowState.value.items.reduce((a, b) => a + b, 0)
+    })
+    
+    // ref - 深层响应式
+    const refState = ref({ items: [1, 2, 3] })
+    const refComputed = computed(() => {
+      logs2.value.push({
+        type: 'ref-trigger',
+        time: new Date().toLocaleTimeString(),
+        msg: '🟠 ref computed 执行了！items.length = ' + refState.value.items.length
+      })
+      return refState.value.items.reduce((a, b) => a + b, 0)
+    })
+    
+    const shallowPush = () => {
+      shallowState.value.items.push(4)
+      logs2.value.push({
+        type: 'warning',
+        time: new Date().toLocaleTimeString(),
+        msg: '⚠️ shallowState.items.push(4) - 不会触发 computed！'
+      })
+    }
+    
+    const refPush = () => {
+      refState.value.items.push(4)
+      logs2.value.push({
+        type: 'success',
+        time: new Date().toLocaleTimeString(),
+        msg: '✅ refState.items.push(4) - 会触发 computed！'
+      })
+    }
+    
+    const shallowReplace = () => {
+      shallowState.value = { items: [...shallowState.value.items, 4] }
+      logs2.value.push({
+        type: 'success',
+        time: new Date().toLocaleTimeString(),
+        msg: '✅ shallowState.value = new obj - 触发 computed（替换 .value）'
+      })
+    }
+    
+    const refReplace = () => {
+      refState.value = { items: [...refState.value.items, 4] }
+      logs2.value.push({
+        type: 'success',
+        time: new Date().toLocaleTimeString(),
+        msg: '✅ refState.value = new obj - 触发 computed'
+      })
+    }
+    
+    const clearLog2 = () => {
+      logs2.value = []
+    }
+    
+    return {
+      shallowState, shallowComputed,
+      refState, refComputed,
+      logs2, log2,
+      shallowPush, refPush,
+      shallowReplace, refReplace,
+      clearLog2
+    }
+  }
+}).mount('#demo2')
+</script>
+
+**观察要点：**
+1. **shallowRef + push()**: 不会触发 computed（因为 .value 引用没变）
+2. **ref + push()**: 会触发 computed（因为 ref 深层响应式）
+3. **shallowRef + replace**: 触发 computed（因为 .value 引用变了）
+4. **ref + replace**: 触发 computed
+
+---
+
+## 演示 3: markRaw 阻止响应式追踪
+
+markRaw 标记的对象不会被代理，不触发响应式更新。
+
+<div id="demo3" class="demo-section">
+  <h3>markRaw 演示 <span class="badge markraw">markRaw</span></h3>
+  
+  <div class="highlight-box">
+    <strong>markRaw 的作用：</strong>标记对象为"原始对象"，Vue 不会将其转换为响应式代理。
+    适用于：大型第三方库实例、不需要响应式的配置对象等。
+  </div>
+  
+  <div class="state-display">
+    <div class="state-item">
+      <div class="label">reactive.count</div>
+      <div class="value">{{ state.count }}</div>
+    </div>
+    <div class="state-item">
+      <div class="label">normalObj.value</div>
+      <div class="value">{{ state.normalObj.value }}</div>
+    </div>
+    <div class="state-item">
+      <div class="label">markedObj.value</div>
+      <div class="value">{{ state.markedObj.value }}</div>
+    </div>
+  </div>
+  
+  <button @click="state.count++" class="success">count++</button>
+  <button @click="state.normalObj.value++" class="warning">normalObj++</button>
+  <button @click="state.markedObj.value++" class="danger">markedObj++ (不会更新!)</button>
+  <button @click="clearLog3">清空日志</button>
+  
+  <div class="output" ref="log3">
+    <div v-for="(log, i) in logs3" :key="i" :class="['log-entry', log.type]">
+      <span class="log-time">{{ log.time }}</span>
+      {{ log.msg }}
+    </div>
+  </div>
+</div>
+
+<script>
+createApp({
+  setup() {
+    const logs3 = ref([])
+    const log3 = ref(null)
+    
+    const markedRawObj = markRaw({ value: 100 })
+    const normalObj = { value: 100 }
+    
+    const state = reactive({
+      count: 0,
+      normalObj: normalObj,
+      markedObj: markedRawObj
+    })
+    
+    const computedValue = computed(() => {
+      logs3.value.push({
+        type: 'computed-trigger',
+        time: new Date().toLocaleTimeString(),
+        msg: '💭 computed 执行了！count = ' + state.count + 
+             ', normalObj = ' + state.normalObj.value +
+             ', markedObj = ' + state.markedObj.value
+      })
+      return state.count + state.normalObj.value + state.markedObj.value
+    })
+    
+    // 动态添加 computed 监听
+    const displayValue = computed(() => {
+      logs3.value.push({
+        type: 'computed-trigger',
+        time: new Date().toLocaleTimeString(),
+        msg: '📊 显示值 computed: ' + computedValue.value
+      })
+      return computedValue.value
+    })
+    
+    // 为了在模板中显示 computedValue，我们需要一个显示用的 computed
+    const clearLog3 = () => {
+      logs3.value = []
+    }
+    
+    return {
+      state, logs3, log3, computedValue, displayValue, clearLog3
+    }
+  }
+}).mount('#demo3')
+</script>
+
+**观察要点：**
+1. **count++** - 触发 computed
+2. **normalObj++** - 触发 computed（normalObj 是响应式的）
+3. **markedObj++** - 不触发 computed（markedObj 是原始对象，不是代理）
+
+---
+
+## 演示 4: reactive() 深层代理问题
+
+reactive() 创建深层代理，可能导致不必要的 computed 触发。
+
+<div id="demo4" class="demo-section">
+  <h3>reactive 深层代理问题 <span class="badge reactive">reactive</span></h3>
+  
+  <div class="highlight-box danger">
+    <strong>问题场景：</strong>reactive 创建的对象是深层代理，任何嵌套属性变化都会通知所有依赖。
+    当 computed 依赖其中一个嵌套对象时，其他嵌套对象的变化也可能触发它。
+  </div>
+  
+  <div class="flow-diagram">
+    <div class="step">
+      <span class="step-number">1</span>
+      <span>reactive({ user: {...}, config: {...} }) 创建深层代理</span>
+    </div>
+    <div class="step">
+      <span class="step-number">2</span>
+      <span>user 变化 → 通知所有依赖（包括 config 相关的 computed）</span>
+    </div>
+    <div class="step">
+      <span class="step-number">3</span>
+      <span>computed 可能意外重新计算</span>
+    </div>
+  </div>
+  
+  <div class="state-display">
+    <div class="state-item">
+      <div class="label">user.name</div>
+      <div class="value">{{ form.user.name }}</div>
+    </div>
+    <div class="state-item">
+      <div class="label">config.theme</div>
+      <div class="value">{{ form.config.theme }}</div>
+    </div>
+    <div class="state-item">
+      <div class="label">isValid computed</div>
+      <div class="value">{{ isValid }}</div>
+    </div>
+  </div>
+  
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #4ec9b0;"></div>
+      <span>isValid 触发</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #ce9178;"></div>
+      <span>意外触发</span>
+    </div>
+  </div>
+  
+  <button @click="changeUserName" class="success">改变 user.name</button>
+  <button @click="changeConfig" class="warning">改变 config.theme (意外触发!)</button>
+  <button @click="clearLog4">清空日志</button>
+  
+  <div class="output" ref="log4">
+    <div v-for="(log, i) in logs4" :key="i" :class="['log-entry', log.type]">
+      <span class="log-time">{{ log.time }}</span>
+      {{ log.msg }}
+    </div>
+  </div>
+</div>
+
+<script>
+createApp({
+  setup() {
+    const logs4 = ref([])
+    const log4 = ref(null)
+    
+    const form = reactive({
+      user: { name: '', email: '' },
+      config: { theme: 'dark', language: 'en', fontSize: 14 }
+    })
+    
+    const isValid = computed(() => {
+      logs4.value.push({
+        type: 'computed-trigger',
+        time: new Date().toLocaleTimeString(),
+        msg: '🔍 isValid computed 执行了！user.name = "' + form.user.name + '"'
+      })
+      return form.user.name.length > 0
+    })
+    
+    const changeUserName = () => {
+      form.user.name = form.user.name ? '' : 'Alice'
+      logs4.value.push({
+        type: 'success',
+        time: new Date().toLocaleTimeString(),
+        msg: '✅ 改变 user.name → 应该触发 isValid'
+      })
+    }
+    
+    const changeConfig = () => {
+      form.config.theme = form.config.theme === 'dark' ? 'light' : 'dark'
+      logs4.value.push({
+        type: 'ref-trigger',
+        time: new Date().toLocaleTimeString(),
+        msg: '⚠️ 改变 config.theme → 意外触发了 isValid（config 不在依赖中）'
+      })
+    }
+    
+    const clearLog4 = () => {
+      logs4.value = []
+    }
+    
+    return { form, isValid, logs4, log4, changeUserName, changeConfig, clearLog4 }
+  }
+}).mount('#demo4')
+</script>
+
+**观察要点：**
+1. 改变 `config.theme` 时，isValid computed **意外重新执行**
+2. 这是因为 reactive 创建了深层代理，form.config 的变化也会触发 form 相关的依赖
+
+---
+
+## 演示 5: 解决方案 - 使用 toRefs 限制依赖
+
+<div id="demo5" class="demo-section">
+  <h3>解决方案: toRefs 限制依赖</h3>
+  
+  <div class="highlight-box success">
+    <strong>解决方案：</strong>使用 toRefs 只解构需要的响应式属性，减少 computed 的依赖范围。
+  </div>
+  
+  <div class="state-display">
+    <div class="state-item">
+      <div class="label">user.name (来自 toRefs)</div>
+      <div class="value">{{ user.name }}</div>
+    </div>
+    <div class="state-item">
+      <div class="label">config.theme (reactive 直接访问)</div>
+      <div class="value">{{ form2.config.theme }}</div>
+    </div>
+    <div class="state-item">
+      <div class="label">isValid (只依赖 user)</div>
+      <div class="value">{{ isValid2 }}</div>
+    </div>
+  </div>
+  
+  <button @click="changeUserName2" class="success">改变 user.name</button>
+  <button @click="changeConfig2" class="warning">改变 config.theme (不再触发!)</button>
+  <button @click="clearLog5">清空日志</button>
+  
+  <div class="output" ref="log5">
+    <div v-for="(log, i) in logs5" :key="i" :class="['log-entry', log.type]">
+      <span class="log-time">{{ log.time }}</span>
+      {{ log.msg }}
+    </div>
+  </div>
+</div>
+
+<script>
+createApp({
+  setup() {
+    const logs5 = ref([])
+    const log5 = ref(null)
+    
+    const form2 = reactive({
+      user: { name: '', email: '' },
+      config: { theme: 'dark', language: 'en', fontSize: 14 }
+    })
+    
+    // 使用 toRefs 只追踪 user
+    const { user } = toRefs(form2)
+    
+    const isValid2 = computed(() => {
+      logs5.value.push({
+        type: 'computed-trigger',
+        time: new Date().toLocaleTimeString(),
+        msg: '🔍 isValid computed 执行了！user.name = "' + user.value.name + '"'
+      })
+      return user.value.name.length > 0
+    })
+    
+    const changeUserName2 = () => {
+      form2.user.name = form2.user.name ? '' : 'Bob'
+      logs5.value.push({
+        type: 'success',
+        time: new Date().toLocaleTimeString(),
+        msg: '✅ 改变 user.name → 触发 isValid'
+      })
+    }
+    
+    const changeConfig2 = () => {
+      form2.config.theme = form2.config.theme === 'dark' ? 'light' : 'dark'
+      logs5.value.push({
+        type: 'warning',
+        time: new Date().toLocaleTimeString(),
+        msg: '⚠️ 改变 config.theme → 不再触发 isValid（不在依赖中）'
+      })
+    }
+    
+    const clearLog5 = () => {
+      logs5.value = []
+    }
+    
+    return { form2, user, isValid2, logs5, log5, changeUserName2, changeConfig2, clearLog5 }
+  }
+}).mount('#demo5')
+</script>
+
+**观察要点：**
+1. 改变 `config.theme` 时，isValid **不再触发**
+2. 这是因为 isValid 只依赖 `user` (通过 toRefs)，不依赖 `form2.config`
+
+---
+
+## 演示 6: watch vs computed 触发时机对比
+
+<div id="demo6" class="demo-section">
+  <h3>watch vs computed vs watchEffect</h3>
+  
+  <table class="comparison-table">
+    <thead>
+      <tr>
+        <th>特性</th>
+        <th>computed</th>
+        <th>watch</th>
+        <th>watchEffect</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>默认初始执行</td>
+        <td>否（懒执行）</td>
+        <td>否</td>
+        <td>✅ 是</td>
+      </tr>
+      <tr>
+        <td>获取旧值</td>
+        <td>❌</td>
+        <td>✅</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>返回缓存</td>
+        <td>✅</td>
+        <td>❌</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>适用场景</td>
+        <td>派生值</td>
+        <td>副作用/API调用</td>
+        <td>自动追踪依赖</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <div class="state-display">
+    <div class="state-item">
+      <div class="label">count</div>
+      <div class="value">{{ count3 }}</div>
+    </div>
+    <div class="state-item">
+      <div class="label">computed</div>
+      <div class="value">{{ computedVal }}</div>
+    </div>
+    <div class="state-item">
+      <div class="label">watch 触发次数</div>
+      <div class="value">{{ watchCount }}</div>
+    </div>
+    <div class="state-item">
+      <div class="label">watchEffect 触发次数</div>
+      <div class="value">{{ watchEffectCount }}</div>
+    </div>
+  </div>
+  
+  <button @click="count3++">count++</button>
+  <button @click="readComputed">读取 computed</button>
+  <button @click="clearLog6">清空日志</button>
+  
+  <div class="output" ref="log6">
+    <div v-for="(log, i) in logs6" :key="i" :class="['log-entry', log.type]">
+      <span class="log-time">{{ log.time }}</span>
+      {{ log.msg }}
+    </div>
+  </div>
+</div>
+
+<script>
+createApp({
+  setup() {
+    const logs6 = ref([])
+    const log6 = ref(null)
+    const count3 = ref(0)
+    const watchCount = ref(0)
+    const watchEffectCount = ref(0)
+    
+    const computedVal = computed(() => {
+      logs6.value.push({
+        type: 'computed-trigger',
+        time: new Date().toLocaleTimeString(),
+        msg: '💭 computed 执行了'
+      })
+      return count3.value * 2
+    })
+    
+    watch(count3, (newVal, oldVal) => {
+      watchCount.value++
+      logs6.value.push({
+        type: 'ref-trigger',
+        time: new Date().toLocaleTimeString(),
+        msg: '👀 watch 触发: ' + oldVal + ' → ' + newVal
+      })
+    })
+    
+    watchEffect(() => {
+      const _ = count3.value
+      watchEffectCount.value++
+      logs6.value.push({
+        type: 'markraw-trigger',
+        time: new Date().toLocaleTimeString(),
+        msg: '⚡ watchEffect 执行了'
+      })
+    })
+    
+    const readComputed = () => {
+      logs6.value.push({
+        type: 'info',
+        time: new Date().toLocaleTimeString(),
+        msg: '📖 读取 computed: ' + computedVal.value
+      })
+    }
+    
+    const clearLog6 = () => {
+      logs6.value = []
+      watchCount.value = 0
+      watchEffectCount.value = 0
+    }
+    
+    return { count3, computedVal, watchCount, watchEffectCount, logs6, log6, readComputed, clearLog6 }
+  }
+}).mount('#demo6')
+</script>
+
+**观察要点：**
+1. 页面加载时，只有 **watchEffect 立即执行一次**
+2. **count++** 触发所有三个（computed, watch, watchEffect）
+3. **读取 computed** 只触发 computed（如果 dirty）或返回缓存
+
+---
+
+## 总结
+
+| 场景 | 推荐方案 |
+|------|---------|
+| 需要深层响应式 | `ref()` |
+| 只需要顶层响应式 | `shallowRef()` |
+| 大型不需要响应的对象 | `markRaw()` |
+| 限制 computed 依赖范围 | `toRefs()` |
+| 派生值（模板使用） | `computed()` |
+| 副作用（API调用等） | `watch()` 或 `watchEffect()` |
