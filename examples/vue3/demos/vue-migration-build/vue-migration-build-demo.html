@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 3 Migration Build - 交互演示</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-secondary: #8b949e;
+      --accent: #58a6ff;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger: #f85149;
+      --purple: #a371f7;
+      --orange: #f0883e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 8px; color: var(--accent); }
+    .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 24px; }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 8px 16px; background: transparent; border: none;
+      color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;
+      border-bottom: 2px solid transparent; transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+    .card h3 { font-size: 1rem; margin-bottom: 12px; color: var(--purple); }
+    .card p { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px; }
+    pre { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; padding: 12px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5; }
+    code { font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace; }
+    .keyword { color: #ff7b72; }
+    .string { color: #a5d6ff; }
+    .comment { color: var(--text-secondary); }
+    .property { color: #7ee787; }
+    .comparison-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 12px 0; }
+    .comparison-table th, .comparison-table td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+    .comparison-table th { background: var(--bg-tertiary); color: var(--accent); }
+    .comparison-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-right: 4px; }
+    .tag-recommended { background: rgba(63, 185, 80, 0.2); color: var(--success); }
+    .tag-caution { background: rgba(210, 153, 34, 0.2); color: var(--warning); }
+    .tag-danger { background: rgba(248, 81, 73, 0.2); color: var(--danger); }
+    .tag-vue2 { background: rgba(65, 184, 131, 0.2); color: #65b894; }
+    .tag-vue3 { background: rgba(69, 123, 157, 0.2); color: #457b9d; }
+    .workflow { display: flex; align-items: center; gap: 8px; padding: 12px 0; flex-wrap: wrap; }
+    .workflow-step { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; min-width: 120px; text-align: center; }
+    .workflow-step .cmd { font-family: monospace; color: var(--accent); margin-top: 4px; font-size: 0.75rem; }
+    .workflow-arrow { color: var(--text-secondary); font-size: 1.2rem; }
+    .scenario { background: var(--bg-tertiary); border-left: 3px solid var(--accent); padding: 12px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+    .scenario-title { font-weight: 600; margin-bottom: 8px; color: var(--accent); }
+    .highlight-box { background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.3); border-radius: 6px; padding: 12px; margin: 12px 0; }
+    .warning-box { background: rgba(210, 153, 34, 0.1); border: 1px solid rgba(210, 153, 34, 0.3); border-radius: 6px; padding: 12px; margin: 12px 0; }
+    .danger-box { background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.3); border-radius: 6px; padding: 12px; margin: 12px 0; }
+    .timeline { position: relative; padding-left: 24px; margin: 16px 0; }
+    .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+    .timeline-item { position: relative; margin-bottom: 16px; }
+    .timeline-item::before { content: ''; position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+    .timeline-item h4 { font-size: 0.9rem; margin-bottom: 4px; color: var(--text); }
+    .timeline-item p { font-size: 0.8rem; color: var(--text-secondary); }
+    .icon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+    .icon-item { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; padding: 12px; text-align: center; }
+    .icon-item .emoji { font-size: 2rem; margin-bottom: 8px; }
+    .icon-item .title { font-weight: 600; margin-bottom: 4px; }
+    .icon-item .desc { font-size: 0.75rem; color: var(--text-secondary); }
+    .version-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 600; }
+    .version-badge.v2 { background: rgba(65, 184, 131, 0.2); color: #65b894; }
+    .version-badge.v3 { background: rgba(69, 123, 157, 0.2); color: #457b9d; }
+    footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-secondary); font-size: 0.8rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>Vue 3 Migration Build 交互演示</h1>
+  <p class="subtitle">@vue/compat 完全指南 | 从 Vue 2 平滑迁移到 Vue 3</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="overview">概念总览</button>
+    <button class="tab-btn" data-tab="concepts">核心概念</button>
+    <button class="tab-btn" data-tab="setup">快速配置</button>
+    <button class="tab-btn" data-tab="steps">迁移步骤</button>
+    <button class="tab-btn" data-tab="comparison">API 对照</button>
+  </div>
+
+  <div id="overview" class="tab-content active">
+    <div class="card">
+      <h3>什么是 Vue 3 Migration Build</h3>
+      <p>Vue 3 提供了一个特殊的迁移构建版本（@vue/compat），在 Vue 3 上提供可配置的 Vue 2 兼容行为，让你可以在迁移过程中逐步处理问题。</p>
+      <div class="icon-grid">
+        <div class="icon-item"><div class="emoji">⚠️</div><div class="title">运行时警告</div><div class="desc">废弃 API 会发出警告</div></div>
+        <div class="icon-item"><div class="emoji">🔄</div><div class="title">Vue 2 兼容</div><div class="desc">默认模拟 Vue 2 行为</div></div>
+        <div class="icon-item"><div class="emoji">⚙️</div><div class="title">逐特性配置</div><div class="desc">每个特性单独开关</div></div>
+        <div class="icon-item"><div class="emoji">📦</div><div class="title">体积略大</div><div class="desc">比纯 Vue 3 大约 20-30%</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>迁移流程</h3>
+      <div class="timeline">
+        <div class="timeline-item">
+          <h4>1. 安装 @vue/compat</h4>
+          <p>将 vue 替换为 @vue/compat</p>
+        </div>
+        <div class="timeline-item">
+          <h4>2. 运行应用</h4>
+          <p>记录所有运行时警告</p>
+        </div>
+        <div class="timeline-item">
+          <h4>3. 逐个处理警告</h4>
+          <p>按照警告信息修改代码</p>
+        </div>
+        <div class="timeline-item">
+          <h4>4. 关闭兼容层</h4>
+          <p>切换到纯 Vue 3</p>
+        </div>
+        <div class="timeline-item">
+          <h4>5. 完成迁移</h4>
+          <p>使用纯 vue@3，移除 @vue/compat</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>@vue/compat vs vue</h3>
+      <table class="comparison-table">
+        <thead><tr><th>对比项</th><th>@vue/compat</th><th>vue@3</th></tr></thead>
+        <tbody>
+          <tr><td>Vue 2 兼容</td><td><span class="tag tag-recommended">支持</span></td><td><span class="tag tag-danger">不支持</span></td></tr>
+          <tr><td>体积</td><td>约 33KB</td><td>约 22KB</td></tr>
+          <tr><td>警告</td><td>有（帮助迁移）</td><td>无</td></tr>
+          <tr><td>适用阶段</td><td>迁移过程中</td><td>迁移完成后</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="concepts" class="tab-content">
+    <div class="card">
+      <h3>三种兼容模式</h3>
+      <table class="comparison-table">
+        <thead><tr><th>模式</th><th>配置值</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><span class="version-badge v2">Vue 2 模式</span></td><td><code>'vue2'</code></td><td>完全模拟 Vue 2 行为（默认）</td></tr>
+          <tr><td><span class="version-badge v3">Vue 3 模式</span></td><td><code>'vue3'</code></td><td>完全使用 Vue 3 行为</td></tr>
+          <tr><td>配置模式</td><td><code>'conf'</code></td><td>每个特性单独配置</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>兼容层工作原理</h3>
+      <pre><code><span class="comment">// Vue 2 API</span>
+<span class="keyword">import</span> Vue <span class="keyword">from</span> <span class="string">'vue'</span>
+Vue.filter(<span class="string">'myFilter'</span>, fn)  <span class="comment">// → 自动转为全局 mixin</span>
+
+<span class="comment">// @vue/compat 内部映射</span>
+Vue.filter()  <span class="comment">// → app.config.globalProperties.$filters</span>
+Vue.component()  <span class="comment">// → app.component()</span>
+vm.$watch()  <span class="comment">// → 自动映射到 Vue 3 watch()</span></code></pre>
+    </div>
+
+    <div class="card">
+      <h3>逐特性兼容配置</h3>
+      <pre><code><span class="comment">// vite.config.js</span>
+vue({
+  template: {
+    compatConfig: {
+      <span class="property">MODE</span>: <span class="number">2</span>,  <span class="comment">// 全部兼容模式</span>
+      
+      <span class="comment">// 或者逐特性配置</span>
+      <span class="property">INSTANCE_EVENT_EMITTER</span>: <span class="keyword">false</span>,  <span class="comment">// 关闭 $on/$off 兼容</span>
+      <span class="property">FEATURE_OPTIONS_API</span>: <span class="keyword">false</span>,  <span class="comment">// 关闭选项 API</span>
+      <span class="property">FEATURE_TELEPORT</span>: <span class="keyword">false</span>   <span class="comment">// 关闭 Teleport 警告</span>
+    }
+  }
+})</code></pre>
+    </div>
+  </div>
+
+  <div id="setup" class="tab-content">
+    <div class="card">
+      <h3>安装</h3>
+      <pre><code><span class="keyword">npm</span> install vue@3 @vue/compat@3 --save
+<span class="comment"># 或</span>
+<span class="keyword">yarn</span> add vue@3 @vue/compat@3</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>Vite 配置</h3>
+      <pre><code><span class="comment">// vite.config.js</span>
+<span class="keyword">import</span> { defineConfig } <span class="keyword">from</span> <span class="string">'vite'</span>
+<span class="keyword">import</span> vue <span class="keyword">from</span> <span class="string">'@vitejs/plugin-vue'</span>
+
+<span class="keyword">export default</span> defineConfig({
+  plugins: [
+    vue({
+      template: {
+        compatConfig: {
+          <span class="property">MODE</span>: <span class="number">2</span>  <span class="comment">// Vue 2 兼容模式</span>
+        }
+      }
+    })
+  ],
+  resolve: {
+    alias: {
+      <span class="property">'vue'</span>: <span class="string">'@vue/compat'</span>  <span class="comment">// 替换为兼容版本</span>
+    }
+  }
+})</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>Vue CLI / Webpack 配置</h3>
+      <pre><code><span class="comment">// vue.config.js (Vue CLI)</span>
+<span class="keyword">module</span>.exports = {
+  chainWebpack: config => {
+    config.resolve.alias.set(<span class="string">'vue$'</span>, <span class="string">'@vue/compat'</span>)
+  }
+}
+
+<span class="comment">// webpack.config.js</span>
+<span class="keyword">module</span>.exports = {
+  resolve: {
+    alias: {
+      <span class="property">'vue$'`</span>: <span class="string">'@vue/compat'</span>
+    }
+  }
+}</code></pre>
+    </div>
+
+    <div class="warning-box">
+      <strong>⚠️ 注意：</strong>仅在迁移阶段使用 @vue/compat，迁移完成后切换到纯 vue@3
+    </div>
+  </div>
+
+  <div id="steps" class="tab-content">
+    <div class="card">
+      <h3>步骤一：评估现状</h3>
+      <pre><code><span class="comment"># 1. 安装 @vue/compat</span>
+<span class="keyword">npm</span> install @vue/compat@3 --save
+
+<span class="comment"># 2. 配置别名</span>
+<span class="comment"># vite/webpack 配置 vue → @vue/compat</span>
+
+<span class="comment"># 3. 启动应用，记录所有警告</span>
+<span class="keyword">npm</span> run dev</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>步骤二：处理全局 API</h3>
+      <div class="scenario">
+        <div class="scenario-title">Vue 2 → Vue 3 全局 API 变化</div>
+      </div>
+      <table class="comparison-table">
+        <thead><tr><th>Vue 2</th><th>Vue 3</th></tr></thead>
+        <tbody>
+          <tr><td><code>Vue.extend()</code></td><td><code>defineComponent()</code></td></tr>
+          <tr><td><code>Vue.filter()</code></td><td>已移除，用 app.config.globalProperties</td></tr>
+          <tr><td><code>Vue.mixin()</code></td><td>已移除，用 composable</td></tr>
+          <tr><td><code>Vue.directive()</code></td><td><code>app.directive()</code></td></tr>
+          <tr><td><code>Vue.prototype</code></td><td><code>app.config.globalProperties</code></td></tr>
+          <tr><td><code>beforeDestroy</code></td><td><code>beforeUnmount</code></td></tr>
+          <tr><td><code>destroyed</code></td><td><code>unmounted</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>步骤三：选项 API → 组合式 API</h3>
+      <pre><code><span class="comment">// Vue 2 选项式</span>
+<span class="keyword">export default</span> {
+  data() { <span class="keyword">return</span> { count: <span class="number">0</span> } },
+  computed: {
+    double() { <span class="keyword">return</span> <span class="keyword">this</span>.count * <span class="number">2</span> }
+  },
+  methods: {
+    increment() { <span class="keyword">this</span>.count++ }
+  }
+}
+
+<span class="comment">// Vue 3 组合式（推荐目标）</span>
+<span class="keyword">import</span> { ref, computed } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">export default</span> {
+  setup() {
+    <span class="keyword">const</span> count = ref(<span class="number">0</span>)
+    <span class="keyword">const</span> double = computed(() => count.value * <span class="number">2</span>)
+    <span class="keyword">const</span> increment = () => count.value++
+    <span class="keyword">return</span> { count, double, increment }
+  }
+}</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>步骤四：处理已移除 API</h3>
+      <table class="comparison-table">
+        <thead><tr><th>已移除</th><th>替代方案</th></tr></thead>
+        <tbody>
+          <tr><td><code>v-bind.sync</code></td><td><code>v-model</code> 参数</td></tr>
+          <tr><td><code>keyCode 修饰符</code></td><td><code>event.key</code></td></tr>
+          <tr><td><code>$listeners</code></td><td>合并到 <code>$attrs</code></td></tr>
+          <tr><td><code>slot-scope</code></td><td><code>v-slot</code></td></tr>
+          <tr><td><code>filters</code></td><td>方法或计算属性</td></tr>
+          <tr><td><code>$children</code></td><td>ref 或 Pinia</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>步骤五：关闭兼容层</h3>
+      <pre><code><span class="comment">// 当所有警告处理完毕后</span>
+vue({
+  template: {
+    compatConfig: {
+      <span class="property">MODE</span>: <span class="number">3</span>  <span class="comment">// 切换到 Vue 3 模式</span>
+    }
+  }
+})
+
+<span class="comment"># 最终：移除 @vue/compat，使用纯 vue@3</span>
+<span class="keyword">npm</span> uninstall @vue/compat
+<span class="keyword">npm</span> install vue@3</code></pre>
+    </div>
+  </div>
+
+  <div id="comparison" class="tab-content">
+    <div class="card">
+      <h3>API 变化对照表</h3>
+      <table class="comparison-table">
+        <thead><tr><th>分类</th><th>Vue 2</th><th>Vue 3</th></tr></thead>
+        <tbody>
+          <tr><td><strong>组件定义</strong></td><td><code>Vue.extend({})</code></td><td><code>defineComponent({})</code></td></tr>
+          <tr><td><strong>全局 API</strong></td><td><code>Vue.use(plugin)</code></td><td><code>app.use(plugin)</code></td></tr>
+          <tr><td><strong>全局属性</strong></td><td><code>Vue.prototype.$http</code></td><td><code>app.config.globalProperties.$http</code></td></tr>
+          <tr><td><strong>生命周期</strong></td><td><code>beforeDestroy</code></td><td><code>beforeUnmount</code></td></tr>
+          <tr><td><strong>事件</strong></td><td><code>vm.$on / $off / $once</code></td><td>移至mitt或自定义事件系统</td></tr>
+          <tr><td><strong>双向绑定</strong></td><td><code>v-bind.sync="foo"</code></td><td><code>v-model:foo="foo"</code></td></tr>
+          <tr><td><strong>插槽</strong></td><td><code>slot-scope</code></td><td><code>v-slot</code></td></tr>
+          <tr><td><strong>Attrs</strong></td><td><code>$listeners</code></td><td>合并到 <code>$attrs</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>组件库迁移对照</h3>
+      <table class="comparison-table">
+        <thead><tr><th>Vue 2 组件库</th><th>Vue 3 版本</th></tr></thead>
+        <tbody>
+          <tr><td>Element UI</td><td><a href="https://element-plus.org" style="color: var(--accent);">Element Plus</a></td></tr>
+          <tr><td>iView</td><td>View UI Plus</td></tr>
+          <tr><td>Vuetify 2</td><td>Vuetify 3</td></tr>
+          <tr><td>Vue Router 3</td><td>Vue Router 4</td></tr>
+          <tr><td>Vuex 3</td><td>Pinia（推荐）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    <p>Vue 3 Migration Build 交互演示 | learn-vue</p>
+    <p>Reminder ID: AA465845-2CCB-480B-AB7F-597B4DC9A9C7</p>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
