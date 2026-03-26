@@ -1,0 +1,280 @@
+---
+tags: [provide, inject, composition-api]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<h3>Provide/Inject 合并行为演示</h3>
+
+<div id="app">
+  <h4>场景一：默认覆盖行为</h4>
+  <div class="demo-section">
+    <div class="parent-box">
+      <strong>父组件</strong>
+      <div>provide('config', {{ JSON.stringify(parentConfig) }})</div>
+    </div>
+    <div class="child-box">
+      <strong>子组件</strong>
+      <div>provide('config', {{ JSON.stringify(childConfig) }})</div>
+    </div>
+    <div class="grandson-box">
+      <strong>孙组件（最终获取）</strong>
+      <div class="result">{{ JSON.stringify(finalConfig) }}</div>
+      <div class="note">注意：父组件的 name 属性丢失，被完全覆盖</div>
+    </div>
+  </div>
+
+  <h4>场景二：手动合并策略</h4>
+  <div class="demo-section">
+    <div class="parent-box">
+      <strong>父组件提供</strong>
+      <div>{ name: 'Alice', age: 30, city: 'Beijing' }</div>
+    </div>
+    <div class="child-box merge-demo">
+      <strong>子组件使用 mergeProvider 合并</strong>
+      <pre>function mergeProvider(key, newValue) {
+  const parentValue = inject(key, {})
+  const merged = { ...parentValue, ...newValue }
+  provide(key, merged)
+}</pre>
+      <div>提供: { age: 25, gender: 'female' }</div>
+    </div>
+    <div class="grandson-box">
+      <strong>孙组件获取结果</strong>
+      <div class="result merged-result">{{ JSON.stringify(mergedResult) }}</div>
+      <div class="success">合并成功：保留父级属性，新增子级属性</div>
+    </div>
+  </div>
+
+  <h4>场景三：Reactive 响应式共享</h4>
+  <div class="demo-section">
+    <div class="shared-state-demo">
+      <div class="state-display">
+        <strong>共享响应式状态</strong>
+        <div>count: {{ sharedCount }}</div>
+        <button @click="sharedCount++">+1</button>
+      </div>
+      <div class="state-display">
+        <strong>另一个组件观察</strong>
+        <div>count: {{ sharedCount }}</div>
+      </div>
+      <div class="note">修改会实时同步，因为是同一个 reactive 引用</div>
+    </div>
+  </div>
+
+  <h4>场景四：配置合并演示</h4>
+  <div class="demo-section">
+    <div class="config-demo">
+      <div class="config-step">
+        <strong>根组件基础配置</strong>
+        <pre>{{ JSON.stringify(baseConfig, null, 2) }}</pre>
+      </div>
+      <div class="config-step">
+        <strong>子模块扩展配置</strong>
+        <button @click="extendModuleConfig">添加模块配置</button>
+      </div>
+      <div class="config-step">
+        <strong>孙组件获取完整配置</strong>
+        <pre>{{ JSON.stringify(finalMergedConfig, null, 2) }}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const { createApp, provide, inject, reactive, readonly } = Vue
+
+  // 手动合并 Provider
+  function mergeProvider(key, newValue) {
+    const parentValue = inject(key, {})
+    const merged = { ...parentValue, ...newValue }
+    provide(key, merged)
+    return merged
+  }
+
+  // 创建根应用
+  const App = {
+    setup() {
+      // 场景一：默认覆盖行为
+      const parentConfig = { name: 'Alice', age: 30 }
+      provide('config', parentConfig)
+
+      const childConfig = { name: 'Bob' }
+      // 模拟子组件覆盖
+      provide('config', childConfig)
+      const finalConfig = inject('config')
+
+      // 场景二：手动合并
+      const baseForMerge = { name: 'Alice', age: 30, city: 'Beijing' }
+      provide('mergedConfig', baseForMerge)
+
+      // 模拟子组件调用合并
+      const mergedChild = { age: 25, gender: 'female' }
+      const mergedResult = { ...baseForMerge, ...mergedChild }
+
+      // 场景三：Reactive 响应式共享
+      const sharedState = reactive({ count: 0 })
+      provide('sharedState', sharedState)
+      const sharedCount = sharedState.count
+
+      // 场景四：配置合并
+      const baseConfig = reactive({
+        apiUrl: 'https://api.example.com',
+        timeout: 3000,
+        retries: 3
+      })
+      provide('appConfig', baseConfig)
+
+      const finalMergedConfig = reactive({
+        ...baseConfig,
+        moduleConfigs: []
+      })
+
+      function extendModuleConfig() {
+        const newModule = {
+          name: `Module${Date.now()}`,
+          enabled: true
+        }
+        finalMergedConfig.moduleConfigs.push(newModule)
+      }
+
+      return {
+        parentConfig,
+        childConfig,
+        finalConfig,
+        mergedResult,
+        sharedCount,
+        baseConfig,
+        finalMergedConfig,
+        extendModuleConfig
+      }
+    }
+  }
+
+  createApp(App).mount('#app')
+</script>
+
+<style>
+  .demo-section {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    background: #fafafa;
+  }
+
+  .parent-box, .child-box, .grandson-box {
+    border: 1px solid #42b983;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 8px 0;
+  }
+
+  .parent-box { background: #e8f5e9; }
+  .child-box { background: #fff3e0; margin-left: 20px; }
+  .grandson-box { background: #e3f2fd; margin-left: 40px; }
+
+  .result {
+    font-weight: bold;
+    color: #e91e63;
+    font-size: 1.1em;
+  }
+
+  .merged-result {
+    color: #4caf50;
+  }
+
+  .note {
+    color: #666;
+    font-size: 0.9em;
+    font-style: italic;
+    margin-top: 8px;
+  }
+
+  .success {
+    color: #4caf50;
+    font-weight: bold;
+    margin-top: 8px;
+  }
+
+  .merge-demo pre {
+    background: #263238;
+    color: #aed581;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    overflow-x: auto;
+  }
+
+  .shared-state-demo {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .state-display {
+    flex: 1;
+    min-width: 200px;
+    border: 1px solid #9c27b0;
+    border-radius: 4px;
+    padding: 12px;
+    background: #f3e5f5;
+  }
+
+  .state-display button {
+    background: #9c27b0;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+
+  .state-display button:hover {
+    background: #7b1fa2;
+  }
+
+  .config-demo {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .config-step {
+    flex: 1;
+    min-width: 200px;
+    border: 1px solid #ff5722;
+    border-radius: 4px;
+    padding: 12px;
+    background: #fff3e0;
+  }
+
+  .config-step pre {
+    background: #37474f;
+    color: #ffcc80;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    overflow-x: auto;
+  }
+
+  .config-step button {
+    background: #ff5722;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+
+  .config-step button:hover {
+    background: #e64a19;
+  }
+
+  h4 {
+    color: #333;
+    margin-top: 24px;
+    border-bottom: 2px solid #42b983;
+    padding-bottom: 8px;
+  }
+</style>
