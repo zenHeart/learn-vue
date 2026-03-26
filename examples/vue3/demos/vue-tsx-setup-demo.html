@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 3 setup + TSX 演示</title>
+  <script src="https://unpkg.com/vue@3.4/dist/vue.global.prod.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    h1, h2, h3 { color: #58a6ff; }
+
+    /* 布局 */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    /* 卡片 */
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .card h2 {
+      font-size: 16px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    /* 左侧：实时演示 */
+    .demo-area { min-height: 200px; }
+
+    /* 右侧：代码对照 */
+    .code-block {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 16px;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre;
+      color: #c9d1d9;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .code-block .keyword { color: #ff7b72; }
+    .code-block .string { color: #a5d6ff; }
+    .code-block .comment { color: #8b949e; font-style: italic; }
+    .code-block .fn { color: #d2a8ff; }
+    .code-block .tag { color: #7ee787; }
+    .code-block .attr { color: #79c0ff; }
+
+    /* 按钮 */
+    button {
+      background: #238636;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      margin: 4px;
+      transition: background 0.2s;
+    }
+    button:hover { background: #2ea043; }
+    button.danger { background: #da3633; }
+    button.danger:hover { background: #f85149; }
+    button.info { background: #1f6feb; }
+    button.info:hover { background: #388bfd; }
+
+    /* 计数器演示 */
+    .counter-demo {
+      text-align: center;
+      padding: 24px;
+    }
+    .counter-demo .count {
+      font-size: 48px;
+      font-weight: bold;
+      color: #58a6ff;
+      margin: 16px 0;
+    }
+    .counter-demo .controls button {
+      font-size: 18px;
+      padding: 10px 24px;
+    }
+
+    /* 列表演示 */
+    .list-demo { padding: 8px; }
+    .list-demo .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+    }
+    .list-demo .item span { color: #c9d1d9; }
+    .list-demo .empty { color: #8b949e; text-align: center; padding: 24px; }
+
+    /* 特性卡片 */
+    .feature-card-demo { padding: 8px; }
+    .fc-card {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .fc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+    }
+    .fc-header h3 { font-size: 14px; color: #e6edf3; }
+    .fc-badge {
+      background: #1f6feb;
+      color: #fff;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+    .fc-body { padding: 12px 16px; color: #8b949e; font-size: 13px; }
+    .fc-footer {
+      padding: 12px 16px;
+      border-top: 1px solid #30363d;
+      display: flex;
+      gap: 8px;
+    }
+    .fc-footer button { font-size: 12px; padding: 4px 12px; }
+
+    /* Tab 切换 */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .tabs .tab {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      background: #21262d;
+      color: #8b949e;
+      border: 1px solid transparent;
+    }
+    .tabs .tab.active {
+      background: #1f6feb;
+      color: #fff;
+    }
+
+    /* 进度条 */
+    .progress-bar {
+      height: 6px;
+      background: #30363d;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-bar .fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1f6feb, #58a6ff);
+      transition: width 0.3s ease;
+    }
+
+    /* 说明 */
+    .note {
+      background: #1c2128;
+      border-left: 3px solid #58a6ff;
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      font-size: 13px;
+      color: #8b949e;
+      margin-top: 16px;
+    }
+
+    /* 全宽区块 */
+    .full-width { grid-column: 1 / -1; }
+
+    /* Header */
+    .page-header {
+      max-width: 1400px;
+      margin: 0 auto 24px;
+    }
+    .page-header h1 { font-size: 24px; margin-bottom: 8px; }
+    .page-header p { color: #8b949e; font-size: 14px; }
+
+    /* syntax highlight */
+    .hl-red { color: #ff7b72; }
+    .hl-blue { color: #79c0ff; }
+    .hl-green { color: #7ee787; }
+    .hl-purple { color: #d2a8ff; }
+    .hl-yellow { color: #e3b341; }
+    .hl-gray { color: #8b949e; }
+    .hl-orange { color: #ffa657; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 页头 -->
+    <div class="page-header">
+      <h1>⚡ Vue 3 setup + TSX 交互式演示</h1>
+      <p>本页面使用 Vue 3 运行时 h() 函数演示 setup 组合式 API 渲染方式，对应 TSX 语法的等价代码。</p>
+    </div>
+
+    <div class="layout">
+
+      <!-- ===== 演示 1：计数器 ===== -->
+      <div class="card">
+        <h2>1. setup + h() — 计数器</h2>
+        <div class="tabs">
+          <div class="tab" :class="{ active: activeTab === 'counter' }" @click="activeTab = 'counter'">运行效果</div>
+          <div class="tab" :class="{ active: activeTab === 'counter-code' }" @click="activeTab = 'counter-code'">TSX 代码</div>
+          <div class="tab" :class="{ active: activeTab === 'counter-h' }" @click="activeTab = 'counter-h'">h() 等价</div>
+        </div>
+
+        <div v-if="activeTab === 'counter'" class="demo-area">
+          <div class="counter-demo">
+            <p style="color:#8b949e;font-size:13px">当前计数</p>
+            <div class="count">{{ count }}</div>
+            <div class="progress-bar">
+              <div class="fill" :style="{ width: Math.min(count * 10, 100) + '%' }"></div>
+            </div>
+            <div class="controls" style="margin-top:16px">
+              <button @click="decrement">-1</button>
+              <button @click="reset">重置</button>
+              <button @click="increment">+1</button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'counter-code'" class="code-block"><span class="hl-gray">// tsx/Counter.tsx</span>
+<span class="hl-purple">import</span> { defineComponent, ref } <span class="hl-purple">from</span> <span class="hl-string">'vue'</span>
+
+<span class="hl-purple">export default</span> defineComponent({
+  <span class="hl-blue">name</span>: <span class="hl-string">'Counter'</span>,
+  <span class="hl-blue">props</span>: {
+    initial: { <span class="hl-blue">type</span>: Number, <span class="hl-blue">default</span>: <span class="hl-orange">0</span> }
+  },
+  <span class="hl-purple">setup</span>(props) {
+    <span class="hl-purple">const</span> count = <span class="hl-blue">ref</span>(props.initial)
+
+    <span class="hl-purple">const</span> increment = () => count.value++
+    <span class="hl-purple">const</span> decrement = () => count.value--
+    <span class="hl-purple">const</span> reset = () => { count.value = <span class="hl-orange">0</span> }
+
+    <span class="hl-gray">// setup 返回 JSX — 等价于右侧 h() 版本</span>
+    <span class="hl-purple">return</span> () => (
+      &lt;div <span class="hl-blue">class</span>=<span class="hl-string">"counter"</span>&gt;
+        &lt;span&gt;{count.value}&lt;/span&gt;
+        &lt;button <span class="hl-blue">onClick</span>={increment}&gt;+1&lt;/button&gt;
+        &lt;button <span class="hl-blue">onClick</span>={decrement}&gt;-1&lt;/button&gt;
+        &lt;button <span class="hl-blue">onClick</span>={reset}&gt;重置&lt;/button&gt;
+      &lt;/div&gt;
+    )
+  }
+})
+</div>
+
+        <div v-if="activeTab === 'counter-h'" class="code-block"><span class="hl-gray">// 等价的 h() render 函数写法</span>
+<span class="hl-purple">import</span> { h, ref } <span class="hl-purple">from</span> <span class="hl-string">'vue'</span>
+
+<span class="hl-purple">setup</span>(props) {
+  <span class="hl-purple">const</span> count = <span class="hl-blue">ref</span>(<span class="hl-orange">0</span>)
+
+  <span class="hl-purple">return</span> () => <span class="hl-blue">h</span>(<span class="hl-string">'div'</span>, { <span class="hl-blue">class</span>: <span class="hl-string">'counter'</span> }, [
+    <span class="hl-blue">h</span>(<span class="hl-string">'span'</span>, {}, count.value),
+    <span class="hl-blue">h</span>(<span class="hl-string">'button'</span>, { <span class="hl-blue">onClick</span>: () =&gt; count.value++ }, <span class="hl-string">'+1'</span>),
+    <span class="hl-blue">h</span>(<span class="hl-string">'button'</span>, { <span class="hl-blue">onClick</span>: () =&gt; count.value-- }, <span class="hl-string">'-1'</span>),
+    <span class="hl-blue">h</span>(<span class="hl-string">'button'</span>, { <span class="hl-blue">onClick</span>: () =&gt; { count.value = <span class="hl-orange">0</span> }}, <span class="hl-string">'重置'</span>),
+  ])
+}
+</div>
+
+        <div class="note">
+          <strong>要点：</strong>setup 返回一个渲染函数，count 在 TSX 中无需 .value 自动解包，事件用 onClick 而非 @click。
+        </div>
+      </div>
+
+      <!-- ===== 演示 2：列表渲染 ===== -->
+      <div class="card">
+        <h2>2. setup + h() — 动态列表</h2>
+        <div class="tabs">
+          <div class="tab" :class="{ active: activeTab2 === 'list' }" @click="activeTab2 = 'list'">运行效果</div>
+          <div class="tab" :class="{ active: activeTab2 === 'list-code' }" @click="activeTab2 = 'list-code'">TSX 代码</div>
+        </div>
+
+        <div v-if="activeTab2 === 'list'" class="demo-area">
+          <div class="list-demo">
+            <div v-if="todoItems.length === 0" class="empty">暂无数据，添加一个吧 👇</div>
+            <div v-for="(item, i) in todoItems" :key="item.id" class="item">
+              <span :style="{ textDecoration: item.done ? 'line-through' : 'none', opacity: item.done ? 0.5 : 1 }">
+                {{ i + 1 }}. {{ item.text }}
+              </span>
+              <div>
+                <button class="info" @click="toggleItem(item.id)" style="padding:4px 10px;font-size:12px">
+                  {{ item.done ? '撤销' : '完成' }}
+                </button>
+                <button class="danger" @click="removeItem(item.id)" style="padding:4px 10px;font-size:12px">删除</button>
+              </div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <input
+                v-model="newTodoText"
+                placeholder="输入待办事项..."
+                style="flex:1;background:#21262d;border:1px solid #30363d;border-radius:6px;padding:8px;color:#e6edf3;font-size:13px"
+                @keyup.enter="addItem"
+              />
+              <button @click="addItem">添加</button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="activeTab2 === 'list-code'" class="code-block"><span class="hl-gray">// setup 中 v-for → .map() 替换</span>
+<span class="hl-purple">setup</span>() {
+  <span class="hl-purple">const</span> items = <span class="hl-blue">ref</span>([
+    { <span class="hl-blue">id</span>: <span class="hl-orange">1</span>, <span class="hl-blue">text</span>: <span class="hl-string">'学习 Vue 3'</span>, <span class="hl-blue">done</span>: <span class="hl-purple">false</span> },
+    { <span class="hl-blue">id</span>: <span class="hl-orange">2</span>, <span class="hl-blue">text</span>: <span class="hl-string">'掌握 TSX'</span>, <span class="hl-blue">done</span>: <span class="hl-purple">false</span> },
+  ])
+
+  <span class="hl-gray">// 添加、删除、切换逻辑省略...</span>
+
+  <span class="hl-purple">return</span> () => (
+    &lt;div&gt;
+      {
+        items.value.<span class="hl-blue">map</span>(item =&gt; (
+          &lt;div <span class="hl-blue">key</span>={item.id} <span class="hl-blue">class</span>=<span class="hl-string">"item"</span>&gt;
+            &lt;span&gt;{item.text}&lt;/span&gt;
+            &lt;button <span class="hl-blue">onClick</span={() =&gt; toggle(item.id)}&gt;切换&lt;/button&gt;
+          &lt;/div&gt;
+        ))
+      }
+    &lt;/div&gt;
+  )
+}
+
+<span class="hl-gray">// v-if → { condition && &lt;Element /&gt; }</span>
+{showFlag && &lt;div&gt;显示内容&lt;/div&gt;}
+{flag ? &lt;A /&gt; : &lt;B /&gt;}
+
+<span class="hl-gray">// v-show → style.display</span>
+&lt;div <span class="hl-blue">style</span>={{ <span class="hl-blue">display</span>: showFlag ? <span class="hl-string">'block'</span> : <span class="hl-string">'none'</span> }}&gt;内容&lt;/div&gt;
+</div>
+
+        <div class="note">
+          <strong>要点：</strong>TSX 中 v-for 用 .map() 替代，v-if 用逻辑运算符替代，key 绑定方式不变。
+        </div>
+      </div>
+
+      <!-- ===== 演示 3：带插槽的组件 ===== -->
+      <div class="card">
+        <h2>3. setup + h() — 插槽与 emit</h2>
+        <div class="tabs">
+          <div class="tab" :class="{ active: activeTab3 === 'slot-demo' }" @click="activeTab3 = 'slot-demo'">运行效果</div>
+          <div class="tab" :class="{ active: activeTab3 === 'slot-code' }" @click="activeTab3 = 'slot-code'">TSX 代码</div>
+        </div>
+
+        <div v-if="activeTab3 === 'slot-demo'" class="demo-area">
+          <div class="feature-card-demo">
+            <!-- 模拟 FeatureCard 组件的渲染 -->
+            <div class="fc-card">
+              <div class="fc-header">
+                <h3>{{ fcTitle }}</h3>
+                <span class="fc-badge">{{ fcCount }}</span>
+              </div>
+              <div class="fc-body">
+                <p style="margin-bottom:8px">🚀 Vue 3 TSX 让组件定义更灵活</p>
+                <p style="color:#6e7681;font-size:12px">支持完整的类型推导和组合式 API</p>
+              </div>
+              <div class="fc-footer">
+                <button class="info" @click="fcCount++">增加计数</button>
+                <button class="danger" @click="showSlotContent = !showSlotContent">
+                  {{ showSlotContent ? '隐藏' : '显示' }}插槽内容
+                </button>
+              </div>
+              <div v-if="showSlotContent" style="padding:12px 16px;background:#0d1117;font-size:13px;color:#7ee787;border-top:1px solid #30363d">
+                ✨ 这是通过插槽传入的扩展内容
+              </div>
+            </div>
+            <div style="font-size:13px;color:#8b949e;margin-top:8px">
+              当前计数：<strong style="color:#58a6ff">{{ fcCount }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="activeTab3 === 'slot-code'" class="code-block"><span class="hl-gray">// tsx/FeatureCard.tsx — 含插槽和 emit</span>
+<span class="hl-purple">import</span> { defineComponent, ref, <span class="hl-blue">useSlots</span> } <span class="hl-purple">from</span> <span class="hl-string">'vue'</span>
+
+<span class="hl-purple">export default</span> defineComponent({
+  <span class="hl-blue">name</span>: <span class="hl-string">'FeatureCard'</span>,
+  <span class="hl-blue">props</span>: {
+    <span class="hl-blue">title</span>: { <span class="hl-blue">type</span>: String, <span class="hl-blue">required</span>: <span class="hl-purple">true</span> }
+  },
+  <span class="hl-blue">emits</span>: [<span class="hl-string">'update:count'</span>],
+  <span class="hl-purple">setup</span>(props, { emit, slots }) {
+    <span class="hl-purple">const</span> count = <span class="hl-blue">ref</span>(<span class="hl-orange">0</span>)
+    <span class="hl-purple">const</span> s = <span class="hl-blue">useSlots</span>()
+
+    <span class="hl-purple">return</span> () => (
+      &lt;div <span class="hl-blue">class</span>=<span class="hl-string">"fc-card"</span>&gt;
+        &lt;div <span class="hl-blue">class</span>=<span class="hl-string">"fc-header"</span>&gt;
+          &lt;h3&gt;{props.title}&lt;/h3&gt;
+          &lt;span <span class="hl-blue">class</span>=<span class="hl-string">"badge"</span>&gt;{count.value}&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div <span class="hl-blue">class</span>=<span class="hl-string">"fc-body"</span>&gt;
+          {s.<span class="hl-blue">default</span>?.()}
+        &lt;/div&gt;
+        &lt;button <span class="hl-blue">onClick</span={() =&gt; {
+          count.value++
+          emit(<span class="hl-string">'update:count'</span>, count.value)
+        }}&gt;增加&lt;/button&gt;
+      &lt;/div&gt;
+    )
+  }
+})
+
+<span class="hl-gray">// 使用 TSX 组件（父组件 template 中）</span>
+<span class="hl-comment">// &lt;FeatureCard title="特性" #default&gt;
+</span>{/*   &lt;p&gt;插槽内容&lt;/p&gt;
+</span>{/* &lt;/FeatureCard&gt; */}
+
+<span class="hl-gray">// TSX 中的插槽写法：v-slots</span>
+&lt;FeatureCard
+  <span class="hl-blue">title</span>=<span class="hl-string">"特性"</span>
+  <span class="hl-blue">v-slots</span>={{
+    <span class="hl-blue">default</span>: () =&gt; &lt;p&gt;插槽内容&lt;/p&gt;
+  }}
+/&gt;
+</div>
+
+        <div class="note">
+          <strong>要点：</strong>TSX 组件中通过 <code>useSlots()</code> 获取插槽，emit 用 <code>emit('event', payload)</code> 调用，父组件用 v-slots 传递插槽。
+        </div>
+      </div>
+
+      <!-- ===== 演示 4：v-model 手动实现 ===== -->
+      <div class="card">
+        <h2>4. setup + h() — v-model 手动实现</h2>
+        <div class="tabs">
+          <div class="tab" :class="{ active: activeTab4 === 'model-demo' }" @click="activeTab4 = 'model-demo'">运行效果</div>
+          <div class="tab" :class="{ active: activeTab4 === 'model-code' }" @click="activeTab4 = 'model-code'">TSX 代码</div>
+        </div>
+
+        <div v-if="activeTab4 === 'model-demo'" class="demo-area">
+          <div style="padding:12px">
+            <p style="color:#8b949e;font-size:13px;margin-bottom:8px">输入内容（实时同步）：</p>
+            <input
+              :value="inputValue"
+              @input="inputValue = $event.target.value"
+              placeholder="在此输入..."
+              style="width:100%;background:#21262d;border:1px solid #30363d;border-radius:6px;padding:10px;color:#e6edf3;font-size:14px"
+            />
+            <div style="margin-top:12px;padding:12px;background:#0d1117;border-radius:6px;font-size:14px">
+              <span style="color:#8b949e">显示：</span>
+              <span style="color:#7ee787">{{ inputValue || '(空)' }}</span>
+              <span style="color:#8b949e;margin-left:16px">字数：</span>
+              <span style="color:#ffa657">{{ inputValue.length }}</span>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <button class="info" @click="inputValue = 'Hello Vue 3 TSX!'">填充示例</button>
+              <button class="danger" @click="inputValue = ''">清空</button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="activeTab4 === 'model-code'" class="code-block"><span class="hl-gray">// Vue 3 TSX 中 v-model 需手动实现</span>
+<span class="hl-gray">// template: &lt;input v-model="text" /&gt;</span>
+<span class="hl-gray">// TSX: </span>
+
+<span class="hl-purple">setup</span>() {
+  <span class="hl-purple">const</span> [text, setText] = <span class="hl-blue">useState</span>(<span class="hl-string">''</span>)
+
+  <span class="hl-purple">return</span> () => (
+    &lt;input
+      <span class="hl-blue">value</span>={text.value}
+      <span class="hl-blue">onInput</span>={(e) =&gt; setText(e.target.value)}
+    /&gt;
+  )
+}
+
+<span class="hl-gray">// 使用 ref 的等价写法</span>
+<span class="hl-purple">const</span> text = <span class="hl-blue">ref</span>(<span class="hl-string">''</span>)
+&lt;input
+  <span class="hl-blue">value</span>={text.value}
+  <span class="hl-blue">onInput</span>={(e) =&gt; { text.value = e.target.value }}
+/&gt;
+
+<span class="hl-gray">// 常用事件修饰符对应</span>
+<span class="hl-comment">// @click.stop  → e.stopPropagation()</span>
+<span class="hl-comment">// @click.prevent → e.preventDefault()</span>
+<span class="hl-comment">// @keyup.enter → e.key === 'Enter'</span>
+</div>
+
+        <div class="note">
+          <strong>要点：</strong>TSX 中没有 v-model 指令，需要绑定 value + onInput。事件修饰符 .stop/.prevent 也需手动处理。
+        </div>
+      </div>
+
+      <!-- ===== 全宽：对比表 ===== -->
+      <div class="card full-width">
+        <h2>📊 template vs render 函数 vs TSX 对照表</h2>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:700px">
+            <thead>
+              <tr style="background:#161b22">
+                <th style="text-align:left;padding:10px 14px;border:1px solid #30363d;color:#58a6ff">特性</th>
+                <th style="text-align:left;padding:10px 14px;border:1px solid #30363d;color:#58a6ff">template</th>
+                <th style="text-align:left;padding:10px 14px;border:1px solid #30363d;color:#58a6ff">h() render 函数</th>
+                <th style="text-align:left;padding:10px 14px;border:1px solid #30363d;color:#58a6ff">TSX</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in comparisonTable" :key="row.feature" style="background:#0d1117">
+                <td style="padding:9px 14px;border:1px solid #30363d;color:#c9d1d9;font-weight:500">{{ row.feature }}</td>
+                <td style="padding:9px 14px;border:1px solid #30363d;color:#7ee787">{{ row.template }}</td>
+                <td style="padding:9px 14px;border:1px solid #30363d;color:#c9d1d9;font-family:monospace;font-size:12px">{{ row.h }}</td>
+                <td style="padding:9px 14px;border:1px solid #30363d;color:#c9d1d9;font-family:monospace;font-size:12px">{{ row.tsx }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note" style="margin-top:16px">
+          <strong>建议：</strong>大部分组件用 template 即可；需要程序化生成组件或处理极端动态渲染时用 TSX；需要最底层控制时用 h()。
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive } = Vue
+
+    createApp({
+      setup() {
+        // === 计数器 ===
+        const count = ref(0)
+        const increment = () => count.value++
+        const decrement = () => count.value--
+        const reset = () => { count.value = 0 }
+
+        const activeTab = ref('counter')
+
+        // === 列表 ===
+        const todoItems = ref([
+          { id: 1, text: '配置 @vitejs/plugin-vue-jsx', done: false },
+          { id: 2, text: '编写第一个 TSX 组件', done: false },
+          { id: 3, text: '掌握 setup + TSX 写法', done: true },
+        ])
+        const newTodoText = ref('')
+        const activeTab2 = ref('list')
+
+        const addItem = () => {
+          if (!newTodoText.value.trim()) return
+          todoItems.value.push({
+            id: Date.now(),
+            text: newTodoText.value.trim(),
+            done: false
+          })
+          newTodoText.value = ''
+        }
+        const removeItem = (id) => {
+          todoItems.value = todoItems.value.filter(i => i.id !== id)
+        }
+        const toggleItem = (id) => {
+          const item = todoItems.value.find(i => i.id === id)
+          if (item) item.done = !item.done
+        }
+
+        // === 插槽 ===
+        const fcTitle = ref('Vue 3 TSX 特性')
+        const fcCount = ref(0)
+        const showSlotContent = ref(false)
+        const activeTab3 = ref('slot-demo')
+
+        // === v-model ===
+        const inputValue = ref('')
+        const activeTab4 = ref('model-demo')
+
+        // === 对照表 ===
+        const comparisonTable = reactive([
+          { feature: '条件渲染', template: 'v-if / v-show', h: '三元、&&', tsx: '{ flag && <A/> }' },
+          { feature: '列表渲染', template: 'v-for', h: '.map()', tsx: '{ items.map(x => <A/>) }' },
+          { feature: '事件绑定', template: '@click', h: 'onClick', tsx: 'onClick' },
+          { feature: '事件修饰符', template: '@click.stop', h: 'e.stopPropagation()', tsx: 'e.stopPropagation()' },
+          { feature: '双向绑定', template: 'v-model', h: 'value + onInput', tsx: 'value + onInput' },
+          { feature: '插槽', template: '<slot>', h: 'slots.default?.()', tsx: 'slots.default?.()' },
+          { feature: '动态组件', template: '<component :is="x">', h: 'h(comp)', tsx: '<component is={x} />' },
+          { feature: '样式绑定', template: ':class / :style', h: '{ class, style }', tsx: '{ class, style }' },
+          { feature: 'Props 类型', template: '自动推导', h: '手动标注', tsx: '自动推导' },
+          { feature: '编译产物', template: '需编译', h: '无编译', tsx: '需编译' },
+          { feature: '适用场景', template: '90% 业务组件', h: '底层/动态渲染', tsx: '复杂逻辑/类型推导' },
+        ])
+
+        return {
+          count, increment, decrement, reset, activeTab,
+          todoItems, newTodoText, addItem, removeItem, toggleItem, activeTab2,
+          fcTitle, fcCount, showSlotContent, activeTab3,
+          inputValue, activeTab4,
+          comparisonTable
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
