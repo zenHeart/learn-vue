@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 组件渲染调试演示</title>
+  <script src="https://unpkg.com/vue@next"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f7fa;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    h1 {
+      text-align: center;
+      color: #42b883;
+      margin-bottom: 30px;
+      font-weight: 600;
+    }
+
+    /* Tab Navigation */
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      background: #fff;
+      padding: 8px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      background: #f0f9f4;
+      color: #42b883;
+    }
+    .tab-btn.active {
+      background: #42b883;
+      color: #fff;
+    }
+
+    /* Demo Sections */
+    .demo-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: none;
+    }
+    .demo-section.active { display: block; }
+
+    .demo-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #42b883;
+    }
+
+    /* Demo Grid */
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 768px) {
+      .demo-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Demo Box */
+    .demo-box {
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .demo-box h4 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    /* Preview Area */
+    .preview {
+      background: #f8f9fa;
+      border: 1px dashed #ccc;
+      border-radius: 6px;
+      padding: 20px;
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .preview-item {
+      padding: 8px 16px;
+      background: #42b883;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .preview-item.hidden {
+      background: #999;
+    }
+
+    /* Code Display */
+    .code-block {
+      background: #2d2d2d;
+      color: #ccc;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    .code-block .keyword { color: #c678dd; }
+    .code-block .string { color: #98c379; }
+    .code-block .attr { color: #e5c07b; }
+    .code-block .comment { color: #5c6370; }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #42b883;
+      color: #fff;
+    }
+    .btn-primary:hover { background: #3aa876; }
+    .btn-secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+    .btn-secondary:hover { background: #d0d0d0; }
+
+    /* Checklist */
+    .checklist {
+      list-style: none;
+    }
+    .checklist li {
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .checklist li:last-child { border-bottom: none; }
+    .check-icon {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .checklist li.checked .check-icon {
+      background: #42b883;
+      border-color: #42b883;
+    }
+    .checklist li.checked .check-text {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    /* Counter Demo */
+    .counter-box {
+      text-align: center;
+    }
+    .counter-value {
+      font-size: 48px;
+      font-weight: 700;
+      color: #42b883;
+      margin: 16px 0;
+    }
+
+    /* Info Box */
+    .info-box {
+      background: #e8f5e9;
+      border-left: 4px solid #42b883;
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+    .warning-box {
+      background: #fff3e0;
+      border-left: 4px solid #ff9800;
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <h1>Vue 组件渲染调试演示</h1>
+
+    <!-- Tab Navigation -->
+    <div class="tabs">
+      <button
+        v-for="(tab, index) in tabs"
+        :key="index"
+        :class="['tab-btn', { active: activeTab === index }]"
+        @click="activeTab = index"
+      >
+        {{ tab.title }}
+      </button>
+    </div>
+
+    <!-- Demo 1: v-if vs v-show -->
+    <div :class="['demo-section', { active: activeTab === 0 }]">
+      <h3 class="demo-title">v-if vs v-show 行为对比</h3>
+      <div class="demo-grid">
+        <div class="demo-box">
+          <h4>v-if（条件渲染）</h4>
+          <div class="preview">
+            <div v-if="showIf" class="preview-item">v-if 显示</div>
+            <span v-if="!showIf" style="color: #999;">组件未渲染</span>
+          </div>
+          <div class="controls">
+            <button class="btn btn-primary" @click="showIf = !showIf">
+              切换 (showIf = {{ showIf }})
+            </button>
+          </div>
+          <div class="code-block">
+<span class="comment">&lt;!-- v-if: false 时 DOM 完全不存在 --&gt;</span>
+<span class="attr">&lt;div</span> <span class="keyword">v-if</span>=<span class="string">"showIf"</span><span class="attr">&gt;</span>v-if 显示<span class="attr">&lt;/div&gt;</span>
+<span class="comment">&lt;!-- 检查 DOM: elements 中无此元素 --&gt;</span>
+          </div>
+        </div>
+
+        <div class="demo-box">
+          <h4>v-show（CSS 显示切换）</h4>
+          <div class="preview">
+            <div v-show="showShow" class="preview-item">v-show 显示</div>
+            <span v-show="!showShow" style="color: #999;">元素仍存在于 DOM</span>
+          </div>
+          <div class="controls">
+            <button class="btn btn-primary" @click="showShow = !showShow">
+              切换 (showShow = {{ showShow }})
+            </button>
+          </div>
+          <div class="code-block">
+<span class="comment">&lt;!-- v-show: 始终渲染，仅切换 display --&gt;</span>
+<span class="attr">&lt;div</span> <span class="keyword">v-show</span>=<span class="string">"showShow"</span><span class="attr">&gt;</span>v-show 显示<span class="attr">&lt;/div&gt;</span>
+<span class="comment">&lt;!-- 检查 DOM: elements 中存在，仅 display:none --&gt;</span>
+          </div>
+        </div>
+      </div>
+      <div class="info-box">
+        <strong>调试提示：</strong>打开浏览器开发者工具 → Elements 面板，观察两种方式的 DOM 差异。
+      </div>
+    </div>
+
+    <!-- Demo 2: Props 传递问题 -->
+    <div :class="['demo-section', { active: activeTab === 1 }]">
+      <h3 class="demo-title">Props 传递问题演示</h3>
+      <div class="demo-grid">
+        <div class="demo-box">
+          <h4>Props 正确传递</h4>
+          <div class="preview">
+            <div class="preview-item" :style="{ background: correctProps }">
+              {{ correctProps || '无背景色' }}
+            </div>
+          </div>
+          <div class="controls">
+            <button class="btn btn-primary" @click="correctProps = 'green'">
+              设置绿色
+            </button>
+            <button class="btn btn-secondary" @click="correctProps = ''">
+              清空
+            </button>
+          </div>
+          <div class="code-block">
+<span class="comment">// 子组件接收 props</span>
+props: {
+  <span class="attr">color</span>: { type: String, default: <span class="string">''</span> }
+}
+<span class="comment">// 模板中使用</span>
+<span class="attr">&lt;div :style</span>=<span class="string">"{ background: color }"</span><span class="attr">&gt;</span>{{ }}<span class="attr">&lt;/div&gt;</span>
+          </div>
+        </div>
+
+        <div class="demo-box">
+          <h4>Props 为 undefined</h4>
+          <div class="preview">
+            <div class="preview-item" :style="{ background: undefinedProps }">
+              显示红色（默认值）
+            </div>
+          </div>
+          <div class="controls">
+            <button class="btn btn-primary" @click="undefinedProps = 'blue'">
+              设置蓝色
+            </button>
+            <button class="btn btn-secondary" @click="undefinedProps = undefined">
+              设为 undefined
+            </button>
+          </div>
+          <div class="code-block">
+<span class="comment">// 问题：传递 undefined 导致无背景色</span>
+<span class="attr">&lt;Child :color</span>=<span class="string">"undefinedProps"</span> /&gt;
+
+<span class="comment">// 解决：使用可选链或默认值</span>
+<span class="attr">&lt;Child :color</span>=<span class="string">"props?.color || 'red'"</span> /&gt;
+          </div>
+        </div>
+      </div>
+      <div class="warning-box">
+        <strong>常见问题：</strong>父组件数据未定义或为 null 时，子组件 props 收到 undefined/null，需提供默认值。
+      </div>
+    </div>
+
+    <!-- Demo 3: CSS 隐藏 -->
+    <div :class="['demo-section', { active: activeTab === 2 }]">
+      <h3 class="demo-title">CSS visibility/opacity 隐藏</h3>
+      <div class="demo-grid">
+        <div class="demo-box">
+          <h4>opacity: 0（透明但占位）</h4>
+          <div class="preview" style="position: relative;">
+            <div v-if="!opacityHidden" class="preview-item" style="opacity: 0;">
+              透明元素（仍占据空间）
+            </div>
+            <span v-if="opacityHidden" style="color: #42b883;">元素已移除</span>
+          </div>
+          <div class="controls">
+            <button class="btn btn-primary" @click="opacityHidden = !opacityHidden">
+              切换
+            </button>
+          </div>
+          <div class="code-block">
+<span class="attr">.invisible</span> {
+  <span class="keyword">opacity</span>: <span class="string">0</span>;  <span class="comment">/* 元素可见但透明 */</span>
+}
+<span class="comment">检查：DOM 存在，computed 显示 opacity:0</span>
+          </div>
+        </div>
+
+        <div class="demo-box">
+          <h4>visibility: hidden（隐藏但占位）</h4>
+          <div class="preview" style="position: relative;">
+            <div v-if="!visibilityHidden" style="visibility: hidden;" class="preview-item">
+              visibility 隐藏
+            </div>
+            <span v-if="visibilityHidden" style="color: #42b883;">元素已移除</span>
+          </div>
+          <div class="controls">
+            <button class="btn btn-primary" @click="visibilityHidden = !visibilityHidden">
+              切换
+            </button>
+          </div>
+          <div class="code-block">
+<span class="attr">.hidden</span> {
+  <span class="keyword">visibility</span>: <span class="string">hidden</span>;  <span class="comment">/* 占据空间但不可见 */</span>
+}
+<span class="comment">检查：DOM 存在，computed 显示 visibility:hidden</span>
+          </div>
+        </div>
+      </div>
+      <div class="info-box">
+        <strong>调试提示：</strong>使用 Chrome DevTools → Elements → Computed 面板查看元素的最终样式。
+      </div>
+    </div>
+
+    <!-- Demo 4: 响应式数据更新 -->
+    <div :class="['demo-section', { active: activeTab === 3 }]">
+      <h3 class="demo-title">响应式数据更新演示</h3>
+      <div class="demo-grid">
+        <div class="demo-box">
+          <h4>ref 响应式数据</h4>
+          <div class="preview counter-box">
+            <div class="counter-value">{{ count }}</div>
+          </div>
+          <div class="controls">
+            <button class="btn btn-primary" @click="count++">
+              +1
+            </button>
+            <button class="btn btn-secondary" @click="count = 0">
+              重置
+            </button>
+          </div>
+          <div class="code-block">
+<span class="comment">// setup 中定义 ref</span>
+<span class="keyword">const</span> count = <span class="attr">ref</span>(0)
+
+<span class="comment">// 模板中自动解包，直接使用 {{ count }}</span>
+<span class="comment">// 值变化 → 自动触发更新</span>
+          </div>
+        </div>
+
+        <div class="demo-box">
+          <h4>reactive 对象</h4>
+          <div class="preview counter-box">
+            <div class="counter-value">{{ state.count }}</div>
+          </div>
+          <div class="controls">
+            <button class="btn btn-primary" @click="state.count++">
+              +1
+            </button>
+            <button class="btn btn-secondary" @click="state.count = 0">
+              重置
+            </button>
+          </div>
+          <div class="code-block">
+<span class="comment">// setup 中定义 reactive</span>
+<span class="keyword">const</span> state = <span class="attr">reactive</span>({ count: 0 })
+
+<span class="comment">// 模板中使用 state.count</span>
+<span class="comment">// 直接修改属性，保持响应式</span>
+          </div>
+        </div>
+      </div>
+      <div class="warning-box">
+        <strong>常见问题：</strong>解构 reactive 对象会丢失响应性，应使用 `toRefs` 或在模板中直接访问。
+      </div>
+    </div>
+
+    <!-- Demo 5: 完整排查检查清单 -->
+    <div :class="['demo-section', { active: activeTab === 4 }]">
+      <h3 class="demo-title">完整排查检查清单</h3>
+      <div class="demo-grid">
+        <div class="demo-box">
+          <h4>组件显示问题排查</h4>
+          <ul class="checklist">
+            <li
+              v-for="(item, index) in checklist"
+              :key="index"
+              :class="{ checked: item.done }"
+              @click="item.done = !item.done"
+            >
+              <span class="check-icon"></span>
+              <span class="check-text">{{ item.text }}</span>
+            </li>
+          </ul>
+          <div class="controls" style="margin-top: 16px;">
+            <button class="btn btn-secondary" @click="resetChecklist">重置</button>
+          </div>
+        </div>
+
+        <div class="demo-box">
+          <h4>调试命令</h4>
+          <div class="code-block">
+<span class="comment">// Vue 3 DevTools Console</span>
+<span class="keyword">__VUE_DEVTOOLS_GLOBAL_HOOK__</span>
+
+<span class="comment">// 检查组件实例</span>
+<span class="attr">$vm0</span>.<span class="attr">data</span>.<span class="attr">count</span>  <span class="comment">// 访问数据</span>
+
+<span class="comment">// 强制更新（Vue 2）</span>
+<span class="attr">$forceUpdate</span>()
+
+<span class="comment">// 检查响应式</span>
+<span class="attr">Vue</span>.<span class="attr"> reactive</span>(obj)  <span class="comment">// 是否是 reactive</span>
+          </div>
+          <div class="info-box" style="margin-top: 12px;">
+            <strong>提示：</strong>在浏览器控制台中使用以上命令快速调试。
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 24px;">
+        <h4 style="margin-bottom: 12px; color: #2c3e50;">常见问题快速对照表</h4>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background: #f5f7fa;">
+              <th style="padding: 10px; text-align: left; border: 1px solid #e0e0e0;">问题现象</th>
+              <th style="padding: 10px; text-align: left; border: 1px solid #e0e0e0;">可能原因</th>
+              <th style="padding: 10px; text-align: left; border: 1px solid #e0e0e0;">解决方法</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #e0e0e0;">组件不显示</td>
+              <td style="padding: 10px; border: 1px solid #e0e0e0;">未注册组件</td>
+              <td style="padding: 10px; border: 1px solid #e0e0e0;">局部/全局注册</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #e0e0e0;">条件为 true 但不显示</td>
+              <td style="padding: 10px; border: 1px solid #e0e0e0;">CSS 隐藏</td>
+              <td style="padding: 10px; border: 1px solid #e0e0e0;">检查 display/visibility</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #e0e0e0;">数据变了界面不更新</td>
+              <td style="padding: 10px; border: 1px solid #e0e0e0;">非响应式修改</td>
+              <td style="padding: 10px; border: 1px solid #e0e0e0;">使用 ref/reactive</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #e0e0e0;">Props 为 undefined</td>
+              <td style="padding: 10px; border: 1px solid #e0e0e0;">父组件未传递</td>
+              <td style="padding: 10px; border: 1px solid #e0e0e0;">检查父组件模板</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive } = Vue
+
+    createApp({
+      setup() {
+        // Tab state
+        const activeTab = ref(0)
+        const tabs = [
+          { title: 'v-if vs v-show' },
+          { title: 'Props 传递' },
+          { title: 'CSS 隐藏' },
+          { title: '响应式数据' },
+          { title: '排查清单' }
+        ]
+
+        // Demo 1: v-if vs v-show
+        const showIf = ref(true)
+        const showShow = ref(true)
+
+        // Demo 2: Props
+        const correctProps = ref('')
+        const undefinedProps = ref('red')
+
+        // Demo 3: CSS
+        const opacityHidden = ref(true)
+        const visibilityHidden = ref(true)
+
+        // Demo 4: Reactive
+        const count = ref(0)
+        const state = reactive({ count: 0 })
+
+        // Demo 5: Checklist
+        const checklist = ref([
+          { text: '检查组件是否正确注册（import + components）', done: false },
+          { text: '检查渲染条件（v-if="true"）', done: false },
+          { text: '检查 Vue DevTools 组件树', done: false },
+          { text: '检查 Elements 面板 DOM 是否存在', done: false },
+          { text: '检查 Computed 样式（display/visibility/opacity）', done: false },
+          { text: '检查 Props 是否正确传递', done: false },
+          { text: '检查数据是否响应式（ref/reactive）', done: false },
+          { text: '检查控制台是否有错误', done: false }
+        ])
+
+        const resetChecklist = () => {
+          checklist.value.forEach(item => item.done = false)
+        }
+
+        return {
+          activeTab,
+          tabs,
+          showIf,
+          showShow,
+          correctProps,
+          undefinedProps,
+          opacityHidden,
+          visibilityHidden,
+          count,
+          state,
+          checklist,
+          resetChecklist
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
