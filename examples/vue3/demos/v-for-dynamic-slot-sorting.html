@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>v-for 动态插槽排序异常演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+    }
+
+    h1 {
+      color: #fff;
+      text-align: center;
+      margin-bottom: 8px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    /* Tab Navigation */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,0.05);
+      padding: 6px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 140px;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Tab Content */
+    .tab-content {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .panel-title {
+      font-size: 22px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .panel-desc {
+      color: #666;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+      color: white;
+    }
+
+    .btn-success:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+    }
+
+    /* Item Grid */
+    .items-grid {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+
+    .item-box {
+      flex: 1;
+      min-width: 160px;
+      max-width: 220px;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      position: relative;
+      transition: all 0.3s;
+    }
+
+    .item-box.red {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+      color: white;
+    }
+
+    .item-box.green {
+      background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+      color: white;
+    }
+
+    .item-box.blue {
+      background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+      color: white;
+    }
+
+    .item-box.orange {
+      background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+      color: white;
+    }
+
+    .item-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .component-label {
+      font-size: 12px;
+      opacity: 0.85;
+      background: rgba(0,0,0,0.15);
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: inline-block;
+    }
+
+    .component-status {
+      margin-top: 12px;
+      font-size: 11px;
+      opacity: 0.75;
+    }
+
+    .component-id {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.2);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+    }
+
+    /* Problem indicator */
+    .problem-indicator {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      border: 2px solid #f87171;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+
+    .problem-indicator.success {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      border-color: #34d399;
+    }
+
+    .problem-indicator h4 {
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .problem-indicator.success h4 {
+      color: #065f46;
+    }
+
+    .problem-indicator:not(.success) h4 {
+      color: #991b1b;
+    }
+
+    .problem-indicator p {
+      font-size: 13px;
+      color: #374151;
+    }
+
+    /* Code block */
+    .code-block {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 16px;
+      margin: 16px 0;
+      overflow-x: auto;
+    }
+
+    .code-block pre {
+      color: #e2e8f0;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .code-block .keyword { color: #c792ea; }
+    .code-block .string { color: #c3e88d; }
+    .code-block .number { color: #f78c6c; }
+    .code-block .comment { color: #697098; }
+    .code-block .attr { color: #ffcb6b; }
+    .code-block .tag { color: #89ddff; }
+
+    /* Key comparison table */
+    .key-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+
+    .key-table th {
+      background: #f1f5f9;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .key-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .key-table tr:hover {
+      background: #f8fafc;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-recommended {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .badge-danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    /* Status display */
+    .status-bar {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 20px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .status-bar h4 {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-bar p {
+      font-size: 14px;
+      color: #334155;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .status-bar .arrow {
+      color: #667eea;
+      font-weight: bold;
+    }
+
+    /* Reset info */
+    .reset-info {
+      background: #fffbeb;
+      border: 1px solid #fbbf24;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #92400e;
+    }
+
+    .reset-info strong {
+      color: #b45309;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>🔄 v-for 动态插槽排序异常</h1>
+    <p class="subtitle">演示 v-for + 动态组件 + 作用域插槽 + 排序场景下的渲染问题与解决方案</p>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button
+        v-for="(tab, idx) in tabs"
+        :key="idx"
+        class="tab-btn"
+        :class="{ active: currentTab === idx }"
+        @click="switchTab(idx)"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Tab 0: Problem Demo -->
+      <div class="tab-panel" :class="{ active: currentTab === 0 }">
+        <h2 class="panel-title">❌ 问题演示：使用 index 作为 Key</h2>
+        <p class="panel-desc">点击"触发排序"后，观察组件实例复用导致的数据错乱问题。</p>
+
+        <div class="reset-info">
+          <strong>⚠️ 注意：</strong>每次切换到该 Tab 时数据会重置为初始顺序。排序后红色组件可能显示绿色文本，或绿色组件显示红色文本。
+        </div>
+
+        <button class="btn btn-danger" @click="problemShuffle">
+          触发排序（打乱顺序）
+        </button>
+        <button class="btn btn-primary" @click="problemReset">
+          重置
+        </button>
+
+        <div class="items-grid">
+          <div
+            v-for="(item, index) in problemItems"
+            :key="index"
+            class="item-box"
+            :class="item.color"
+          >
+            <span class="component-id">idx={{ index }}</span>
+            <div class="item-name">{{ item.name }}</div>
+            <div class="component-label">{{ item.componentName }}</div>
+            <div class="component-status">
+              实例 #{{ item.instanceId }} | color={{ item.color }}
+            </div>
+          </div>
+        </div>
+
+        <div class="problem-indicator">
+          <h4>🔍 问题分析</h4>
+          <p>使用 <code>index</code> 作为 key 时，排序后 Vue diff 算法认为 key=0、key=1 的节点仍然存在，于是复用了组件实例。但此时 index=0 的数据已经从 <code>{id:1, color:'red'}</code> 变成了 <code>{id:2, color:'green'}</code>，导致显示错乱。</p>
+        </div>
+
+        <div class="code-block">
+          <pre><span class="comment">// ❌ 错误代码：使用 index 作为 key</span>
+<span class="tag">&lt;div</span> <span class="attr">v-for</span>="(item, index) <span class="keyword">in</span> items" <span class="attr">:key</span>="index"<span class="tag">&gt;</span>
+  <span class="tag">&lt;component</span> <span class="attr">:is</span>="item.component" <span class="attr">:data</span>="item" <span class="tag">/&gt;</span>
+<span class="tag">&lt;/div&gt;</span></pre>
+        </div>
+
+        <div class="status-bar">
+          <h4>📋 当前数据顺序</h4>
+          <p>
+            <span v-for="(item, i) in problemItems" :key="i">
+              <span v-if="i > 0"><span class="arrow"> → </span></span>{{ item.name }}<span class="arrow">({{ item.color }})</span>
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Tab 1: Solution 1 - Stable Key -->
+      <div class="tab-panel" :class="{ active: currentTab === 1 }">
+        <h2 class="panel-title">✅ 方案一：使用稳定的唯一 Key</h2>
+        <p class="panel-desc">使用 <code>item.id</code> 作为 key，确保每个组件实例与数据一一对应。</p>
+
+        <div class="reset-info">
+          <strong>✅ 正确做法：</strong>每次切换到该 Tab 时数据会重置为初始顺序。排序后每个组件正确显示对应的数据和颜色。
+        </div>
+
+        <button class="btn btn-success" @click="solution1Shuffle">
+          触发排序（打乱顺序）
+        </button>
+        <button class="btn btn-primary" @click="solution1Reset">
+          重置
+        </button>
+
+        <div class="items-grid">
+          <div
+            v-for="item in solution1Items"
+            :key="item.id"
+            class="item-box"
+            :class="item.color"
+          >
+            <span class="component-id">id={{ item.id }}</span>
+            <div class="item-name">{{ item.name }}</div>
+            <div class="component-label">{{ item.componentName }}</div>
+            <div class="component-status">
+              实例 #{{ item.instanceId }} | color={{ item.color }}
+            </div>
+          </div>
+        </div>
+
+        <div class="problem-indicator success">
+          <h4>✨ 解决方案</h4>
+          <p>使用 <code>item.id</code> 作为 key。排序后，Vue diff 能正确识别 id=1 和 id=2 的节点位置发生了变化，并正确移动组件实例。每个实例都能正确渲染对应的数据。</p>
+        </div>
+
+        <div class="code-block">
+          <pre><span class="comment">// ✅ 正确代码：使用唯一 id 作为 key</span>
+<span class="tag">&lt;div</span> <span class="attr">v-for</span>="item <span class="keyword">in</span> items" <span class="attr">:key</span>="item.id"<span class="tag">&gt;</span>
+  <span class="tag">&lt;component</span> <span class="attr">:is</span>="item.component" <span class="attr">:data</span>="item" <span class="tag">/&gt;</span>
+<span class="tag">&lt;/div&gt;</span></pre>
+        </div>
+
+        <div class="status-bar">
+          <h4>📋 当前数据顺序</h4>
+          <p>
+            <span v-for="(item, i) in solution1Items" :key="i">
+              <span v-if="i > 0"><span class="arrow"> → </span></span>{{ item.name }}<span class="arrow">(id={{ item.id }})</span>
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Tab 2: Solution 2 - Computed Sort -->
+      <div class="tab-panel" :class="{ active: currentTab === 2 }">
+        <h2 class="panel-title">✅ 方案二：Computed 中先排序再遍历</h2>
+        <p class="panel-desc">在 computed 中完成排序，确保遍历的数据顺序稳定，组件实例不复用问题。</p>
+
+        <div class="reset-info">
+          <strong>✅ 正确做法：</strong>通过切换升序/降序来改变排序，每次排序后数据完全更新，组件实例不复用。
+        </div>
+
+        <button class="btn btn-success" @click="solution2Toggle">
+          {{ solution2Asc ? '切换为降序' : '切换为升序' }}
+        </button>
+        <button class="btn btn-primary" @click="solution2Reset">
+          重置
+        </button>
+
+        <div class="items-grid">
+          <div
+            v-for="item in solution2SortedItems"
+            :key="item.id"
+            class="item-box"
+            :class="item.color"
+          >
+            <span class="component-id">id={{ item.id }}</span>
+            <div class="item-name">{{ item.name }}</div>
+            <div class="component-label">{{ item.componentName }}</div>
+            <div class="component-status">
+              实例 #{{ item.instanceId }} | color={{ item.color }}
+            </div>
+          </div>
+        </div>
+
+        <div class="problem-indicator success">
+          <h4>✨ 解决方案</h4>
+          <p>在 computed 中返回排序后的新数组 <code>[...items].sort(...)</code>。这样每次排序后，v-for 遍历的是全新的数组，Vue 会认为这是全新的数据，创建新的组件实例。</p>
+        </div>
+
+        <div class="code-block">
+          <pre><span class="comment">// ✅ 正确代码：computed 中排序</span>
+<span class="keyword">const</span> sortedItems = <span class="attr">computed</span>(() => {
+  <span class="keyword">return</span> [...items.value].<span class="attr">sort</span>((a, b) =>
+    sortAsc.<span class="attr">value</span> ? a.id - b.id : b.id - a.id
+  )
+})
+
+<span class="comment">// 模板中遍历 sortedItems</span>
+<span class="tag">&lt;div</span> <span class="attr">v-for</span>="item <span class="keyword">in</span> sortedItems" <span class="attr">:key</span>="item.id"<span class="tag">&gt;</span>
+  <span class="tag">&lt;component</span> <span class="attr">:is</span>="item.component" <span class="tag">/&gt;</span>
+<span class="tag">&lt;/div&gt;</span></pre>
+        </div>
+
+        <div class="status-bar">
+          <h4>📋 当前排序顺序</h4>
+          <p>
+            <span v-for="(item, i) in solution2SortedItems" :key="i">
+              <span v-if="i > 0"><span class="arrow"> → </span></span>{{ item.name }}
+            </span>
+            <br><small style="color:#64748b">排序方式: {{ solution2Asc ? '升序 (id: 1→2→3)' : '降序 (id: 3→2→1)' }}</small>
+          </p>
+        </div>
+      </div>
+
+      <!-- Tab 3: Solution 3 - Dynamic is + Props -->
+      <div class="tab-panel" :class="{ active: currentTab === 3 }">
+        <h2 class="panel-title">✅ 方案三：动态 :is + 直接 Props 传递</h2>
+        <p class="panel-desc">通过 props 直接传递数据给动态组件，避免作用域插槽的闭包捕获问题。</p>
+
+        <div class="reset-info">
+          <strong>✅ 正确做法：</strong>每次切换到该 Tab 时数据会重置为初始顺序。排序后组件正确显示，且没有作用域插槽的闭包问题。
+        </div>
+
+        <button class="btn btn-success" @click="solution3Shuffle">
+          触发排序（打乱顺序）
+        </button>
+        <button class="btn btn-primary" @click="solution3Reset">
+          重置
+        </button>
+
+        <div class="items-grid">
+          <div
+            v-for="item in solution3Items"
+            :key="item.id"
+            class="item-box"
+            :class="item.color"
+          >
+            <span class="component-id">id={{ item.id }}</span>
+            <div class="item-name">{{ item.name }}</div>
+            <div class="component-label">{{ item.componentName }}</div>
+            <div class="component-status">
+              实例 #{{ item.instanceId }} | color={{ item.color }}
+            </div>
+          </div>
+        </div>
+
+        <div class="problem-indicator success">
+          <h4>✨ 解决方案</h4>
+          <p>不使用作用域插槽，而是通过 props 直接传递 <code>:name</code>、<code>:color</code>、<code>:item-id</code>。这样数据流清晰明确，排序后组件正确更新，不会出现闭包捕获旧引用的问题。</p>
+        </div>
+
+        <div class="code-block">
+          <pre><span class="comment">// ✅ 正确代码：动态组件 + 直接 props</span>
+<span class="tag">&lt;component</span>
+  <span class="attr">:is</span>="item.component"
+  <span class="attr">:name</span>="item.name"
+  <span class="attr">:color</span>="item.color"
+  <span class="attr">:item-id</span>="item.id"
+<span class="tag">/&gt;</span>
+
+<span class="comment">// 不再使用作用域插槽</span>
+<span class="comment">// &lt;template #default="{ data }"&gt;</span>
+<span class="comment">//   &lt;span :style="{ color: data.color }"&gt;{{ item.name }}&lt;/span&gt;</span>
+<span class="comment">// &lt;/template&gt;</span></pre>
+        </div>
+
+        <div class="status-bar">
+          <h4>📋 当前数据顺序</h4>
+          <p>
+            <span v-for="(item, i) in solution3Items" :key="i">
+              <span v-if="i > 0"><span class="arrow"> → </span></span>{{ item.name }}<span class="arrow">({{ item.color }})</span>
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Tab 4: Key Selection Guide -->
+      <div class="tab-panel" :class="{ active: currentTab === 4 }">
+        <h2 class="panel-title">🔑 Key 选择指南</h2>
+        <p class="panel-desc">了解不同 key 类型的行为和适用场景，避免常见的 key 使用错误。</p>
+
+        <table class="key-table">
+          <thead>
+            <tr>
+              <th>Key 类型</th>
+              <th>可用性</th>
+              <th>说明</th>
+              <th>排序后行为</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>item.id</code></td>
+              <td><span class="badge badge-recommended">推荐</span></td>
+              <td>数据的唯一标识，稳定且有意义</td>
+              <td>✅ 正确复用和移动组件实例</td>
+            </tr>
+            <tr>
+              <td><code>item.uuid</code></td>
+              <td><span class="badge badge-recommended">推荐</span></td>
+              <td>业务生成的唯一 ID</td>
+              <td>✅ 正确复用和移动组件实例</td>
+            </tr>
+            <tr>
+              <td><code>index</code></td>
+              <td><span class="badge badge-danger">禁止</span></td>
+              <td>数组索引，随排序改变</td>
+              <td>❌ 错误复用组件实例</td>
+            </tr>
+            <tr>
+              <td><code>Math.random()</code></td>
+              <td><span class="badge badge-danger">禁止</span></td>
+              <td>每次渲染都是新值</td>
+              <td>❌ 完全破坏 Vue 复用机制</td>
+            </tr>
+            <tr>
+              <td><code>item.id + index</code></td>
+              <td><span class="badge badge-warning">慎用</span></td>
+              <td>复合 key，形式复杂</td>
+              <td>⚠️ 可能导致意外行为</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-block">
+          <pre><span class="comment">// ❌ 错误示例</span>
+<span class="tag">&lt;div</span> <span class="attr">v-for</span>="(item, index) <span class="keyword">in</span> items" <span class="attr">:key</span>="index"<span class="tag">&gt;</span>  <span class="comment">// index 会变化！</span>
+<span class="tag">&lt;div</span> <span class="attr">v-for</span>="item <span class="keyword">in</span> items" <span class="attr">:key</span>="<span class="attr">Math.random</span>()"<span class="tag">&gt;</span>  <span class="comment">// 永远不同！</span>
+
+<span class="comment">// ✅ 正确示例</span>
+<span class="tag">&lt;div</span> <span class="attr">v-for</span>="item <span class="keyword">in</span> items" <span class="attr">:key</span>="item.id"<span class="tag">&gt;</span>  <span class="comment">// 稳定唯一</span>
+<span class="tag">&lt;div</span> <span class="attr">v-for</span>="item <span class="keyword">in</span> items" <span class="attr">:key</span>="item.uuid"<span class="tag">&gt;</span>  <span class="comment">// 业务唯一 ID</span></pre>
+        </div>
+
+        <h3 style="margin-top: 24px; color: #334155;">v-for + 动态组件 Checklist</h3>
+        <div class="problem-indicator success" style="margin-top: 12px;">
+          <h4>✅ 最佳实践</h4>
+          <p>
+            <input type="checkbox" checked disabled> v-for 使用数据的唯一标识（id/uuid）作为 key<br>
+            <input type="checkbox" checked disabled> 避免在作用域插槽中捕获易变的索引变量<br>
+            <input type="checkbox" checked disabled> 优先使用 computed 排序后再遍历<br>
+            <input type="checkbox" checked disabled> 优先通过 props 传递数据，而不是作用域插槽<br>
+            <input type="checkbox" checked disabled> 组件实例需要保持状态时，确保 key 的稳定性
+          </p>
+        </div>
+
+        <div class="code-block">
+          <pre><span class="comment">// 🎯 核心原则</span>
+<span class="comment">// 在 v-for 中，永远不要使用 index 作为 key</span>
+<span class="comment">// 始终使用能够唯一标识每条数据的稳定标识符</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, watch } = Vue
+
+    createApp({
+      setup() {
+        // ==================== Tab Navigation ====================
+        const currentTab = ref(0)
+        const tabs = [
+          { label: '1️⃣ 问题演示' },
+          { label: '2️⃣ 方案一（稳定key）' },
+          { label: '3️⃣ 方案二（computed排序）' },
+          { label: '4️⃣ 方案三（动态is+props）' },
+          { label: '5️⃣ key 选择指南' },
+        ]
+
+        let instanceCounter = 0
+        function createItem(id, name, color) {
+          return {
+            id,
+            name,
+            color,
+            componentName: color === 'red' ? 'RedBox' : color === 'green' ? 'GreenBox' : 'BlueBox',
+            instanceId: ++instanceCounter,
+          }
+        }
+
+        function switchTab(idx) {
+          currentTab.value = idx
+          // Reset data when switching to problem demo tabs to show fresh state
+          if (idx === 0) {
+            resetProblemItems()
+          } else if (idx === 1) {
+            resetSolution1Items()
+          } else if (idx === 2) {
+            resetSolution2Items()
+          } else if (idx === 3) {
+            resetSolution3Items()
+          }
+        }
+
+        // ==================== Problem Demo (Tab 0) ====================
+        const problemInitialItems = [
+          createItem(1, 'Item A', 'red'),
+          createItem(2, 'Item B', 'green'),
+          createItem(3, 'Item C', 'blue'),
+        ]
+        const problemItems = ref([...problemInitialItems.map(i => ({ ...i }))])
+
+        function problemShuffle() {
+          problemItems.value = [...problemItems.value].sort(() => Math.random() - 0.5)
+        }
+
+        function problemReset() {
+          instanceCounter = 0
+          problemItems.value = problemInitialItems.map(i => ({ ...i, instanceId: ++instanceCounter - problemInitialItems.length }))
+          resetProblemItems()
+        }
+
+        function resetProblemItems() {
+          instanceCounter = 0
+          const baseCount = instanceCounter
+          problemItems.value = problemInitialItems.map(i => {
+            baseCount
+            return { ...i, instanceId: ++instanceCounter }
+          })
+        }
+
+        // ==================== Solution 1 - Stable Key (Tab 1) ====================
+        const solution1InitialItems = [
+          createItem(1, 'Item A', 'red'),
+          createItem(2, 'Item B', 'green'),
+          createItem(3, 'Item C', 'blue'),
+        ]
+        const solution1Items = ref([...solution1InitialItems.map(i => ({ ...i }))])
+
+        function solution1Shuffle() {
+          solution1Items.value = [...solution1Items.value].sort(() => Math.random() - 0.5)
+        }
+
+        function solution1Reset() {
+          instanceCounter = 0
+          solution1Items.value = solution1InitialItems.map(i => ({ ...i, instanceId: ++instanceCounter }))
+        }
+
+        function resetSolution1Items() {
+          instanceCounter = 0
+          solution1Items.value = solution1InitialItems.map(i => ({ ...i, instanceId: ++instanceCounter }))
+        }
+
+        // ==================== Solution 2 - Computed Sort (Tab 2) ====================
+        const solution2InitialItems = [
+          createItem(1, 'Item A', 'red'),
+          createItem(2, 'Item B', 'green'),
+          createItem(3, 'Item C', 'blue'),
+        ]
+        const solution2Items = ref([...solution2InitialItems.map(i => ({ ...i }))])
+        const solution2Asc = ref(true)
+
+        const solution2SortedItems = computed(() => {
+          return [...solution2Items.value].sort((a, b) =>
+            solution2Asc.value ? a.id - b.id : b.id - a.id
+          )
+        })
+
+        function solution2Toggle() {
+          solution2Asc.value = !solution2Asc.value
+        }
+
+        function solution2Reset() {
+          instanceCounter = 0
+          solution2Items.value = solution2InitialItems.map(i => ({ ...i, instanceId: ++instanceCounter }))
+          solution2Asc.value = true
+        }
+
+        function resetSolution2Items() {
+          instanceCounter = 0
+          solution2Items.value = solution2InitialItems.map(i => ({ ...i, instanceId: ++instanceCounter }))
+          solution2Asc.value = true
+        }
+
+        // ==================== Solution 3 - Dynamic is + Props (Tab 3) ====================
+        const solution3InitialItems = [
+          createItem(1, 'Item A', 'red'),
+          createItem(2, 'Item B', 'green'),
+          createItem(3, 'Item C', 'blue'),
+        ]
+        const solution3Items = ref([...solution3InitialItems.map(i => ({ ...i }))])
+
+        function solution3Shuffle() {
+          solution3Items.value = [...solution3Items.value].sort(() => Math.random() - 0.5)
+        }
+
+        function solution3Reset() {
+          instanceCounter = 0
+          solution3Items.value = solution3InitialItems.map(i => ({ ...i, instanceId: ++instanceCounter }))
+        }
+
+        function resetSolution3Items() {
+          instanceCounter = 0
+          solution3Items.value = solution3InitialItems.map(i => ({ ...i, instanceId: ++instanceCounter }))
+        }
+
+        return {
+          tabs,
+          currentTab,
+          switchTab,
+
+          // Problem Demo
+          problemItems,
+          problemShuffle,
+          problemReset,
+
+          // Solution 1
+          solution1Items,
+          solution1Shuffle,
+          solution1Reset,
+
+          // Solution 2
+          solution2Items,
+          solution2SortedItems,
+          solution2Asc,
+          solution2Toggle,
+          solution2Reset,
+
+          // Solution 3
+          solution3Items,
+          solution3Shuffle,
+          solution3Reset,
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
