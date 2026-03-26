@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 生命周期钩子与异步 - 交互演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f7; color: #1d1d1f; padding: 20px; }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    .subtitle { color: #86868b; font-size: 14px; margin-bottom: 24px; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab { padding: 8px 16px; border: none; background: #e5e5e7; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+    .tab:hover { background: #d2d2d7; }
+    .tab.active { background: #0071e3; color: white; }
+    .panel { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .panel-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #1d1d1f; }
+    .output { background: #1d1d1f; color: #a1a1a6; padding: 16px; border-radius: 8px; font-family: 'SF Mono', Menlo, monospace; font-size: 13px; line-height: 1.8; max-height: 300px; overflow-y: auto; }
+    .output .log-entry { display: flex; gap: 8px; }
+    .output .time { color: #86868b; min-width: 60px; }
+    .output .phase { color: #bf5af2; min-width: 80px; }
+    .output .msg { color: #fff; }
+    .output .async { color: #30d158; }
+    .output .done { color: #64d2ff; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; background: #0071e3; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: background 0.2s; }
+    .btn:hover { background: #0077ed; }
+    .btn:active { background: #005bb5; }
+    .btn-secondary { background: #e5e5e7; color: #1d1d1f; }
+    .btn-secondary:hover { background: #d2d2d7; }
+    .btn-danger { background: #ff3b30; }
+    .btn-danger:hover { background: #d92f27; }
+    .controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .info-box { background: #f0f0f5; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 14px; }
+    .info-box strong { color: #0071e3; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+    .sequence-diagram { background: #fafafa; border: 1px solid #e5e5e7; border-radius: 8px; padding: 16px; margin: 16px 0; font-size: 13px; }
+    .sequence-diagram .step { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0f0f5; }
+    .sequence-diagram .step:last-child { border-bottom: none; }
+    .sequence-diagram .step-num { background: #0071e3; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+    .sequence-diagram .step-async { color: #30d158; }
+    .sequence-diagram .step-sync { color: #ff9500; }
+    .timeline { position: relative; padding-left: 20px; margin-top: 16px; }
+    .timeline::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: #e5e5e7; }
+    .timeline-item { position: relative; padding: 8px 0; font-size: 14px; }
+    .timeline-item::before { content: ''; position: absolute; left: -17px; top: 12px; width: 10px; height: 10px; border-radius: 50%; background: #e5e5e7; border: 2px solid white; }
+    .timeline-item.async::before { background: #30d158; }
+    .timeline-item.sync::before { background: #ff9500; }
+    .timeline-item.done::before { background: #0071e3; }
+    .highlight-box { border: 1px solid #d2d2d7; border-radius: 8px; padding: 12px; margin: 8px 0; }
+    .highlight-box.warning { border-color: #ff9500; background: #fff9f0; }
+    .highlight-box.danger { border-color: #ff3b30; background: #fff5f5; }
+    .highlight-box.success { border-color: #30d158; background: #f0fff4; }
+    .highlight-box.info { border-color: #0071e3; background: #f0f7ff; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Vue 生命周期钩子与异步</h1>
+    <p class="subtitle">Vue 2 / Vue 3 生命周期 async/await 行为可视化演示</p>
+
+    <div class="tabs">
+      <button class="tab" :class="{active: tab===0}" @click="tab=0">执行时序</button>
+      <button class="tab" :class="{active: tab===1}" @click="tab=1">代码演示</button>
+      <button class="tab" :class="{active: tab===2}" @click="tab=2">执行顺序图</button>
+      <button class="tab" :class="{active: tab===3}" @click="tab=3">关键结论</button>
+    </div>
+
+    <!-- Tab 0: 执行时序 -->
+    <div v-if="tab===0" class="panel">
+      <div class="panel-title">生命周期执行时序（async 钩子不等待）</div>
+      <div class="controls">
+        <button class="btn" @click="runDemo">▶ 运行演示</button>
+        <button class="btn btn-secondary" @click="clearLog">清空日志</button>
+        <button class="btn btn-danger" @click="resetComponent">重置组件</button>
+      </div>
+      <div class="info-box">
+        <strong>执行说明：</strong>mounted async 钩子中有一个 800ms 的延迟，但组件渲染<b>不会等待</b>它完成。
+        注意看日志顺序：组件挂载完成（3）先于 async 完成（4）。
+      </div>
+      <div class="two-col">
+        <div>
+          <div class="highlight-box info">
+            <strong>组件状态</strong>
+            <div>msg = "{{ msg }}"</div>
+            <div>asyncDone = {{ asyncDone }}</div>
+          </div>
+          <div class="highlight-box" :class="msg ? 'success' : 'warning'">
+            <strong>渲染状态：</strong>{{ msg ? '✅ 已渲染（用户可见）' : '⏳ 等待中' }}
+          </div>
+        </div>
+        <div>
+          <div class="output" ref="logOutput">
+            <div v-for="(entry, i) in logs" :key="i" class="log-entry">
+              <span class="time">{{ entry.time }}</span>
+              <span class="phase">{{ entry.phase }}</span>
+              <span class="msg" :class="entry.type">{{ entry.msg }}</span>
+            </div>
+            <div v-if="logs.length===0" style="color:#86868b">点击「运行演示」开始...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 1: 代码演示 -->
+    <div v-if="tab===1" class="panel">
+      <div class="panel-title">代码演示 - async mounted vs sync mounted</div>
+      <div class="controls">
+        <button class="btn" @click="runCompareDemo">▶ 运行对比</button>
+        <button class="btn btn-secondary" @click="clearCompare">清空</button>
+      </div>
+      <div class="two-col">
+        <div>
+          <div class="highlight-box info">
+            <strong>sync mounted</strong>
+            <div>执行顺序：created → mounted → 结束</div>
+            <div>耗时：~50ms</div>
+          </div>
+          <div class="highlight-box warning">
+            <strong>async mounted</strong>
+            <div>执行顺序：created → mounted 开始 → mounted 结束</div>
+            <div>耗时：~800ms（但不阻塞渲染）</div>
+          </div>
+        </div>
+        <div class="output">
+          <div v-for="(log, i) in compareLogs" :key="i" class="log-entry">
+            <span class="time">{{ log.time }}</span>
+            <span class="phase">{{ log.phase }}</span>
+            <span class="msg" :class="log.type">{{ log.msg }}</span>
+          </div>
+          <div v-if="compareLogs.length===0" style="color:#86868b">点击「运行对比」...</div>
+        </div>
+      </div>
+      <div class="highlight-box danger" style="margin-top:16px">
+        <strong>关键结论：</strong>async 钩子中的 `await` 不会阻塞组件渲染。Vue 的生命周期调用不等待 async 函数完成，所以 mounted 会在 created 的 async 操作完成前执行。
+      </div>
+    </div>
+
+    <!-- Tab 2: 执行顺序图 -->
+    <div v-if="tab===2" class="panel">
+      <div class="panel-title">生命周期执行顺序图</div>
+      <div class="timeline">
+        <div class="timeline-item sync">
+          <strong>1. setup() / beforeCreate() / created()</strong> — 组件初始化
+        </div>
+        <div class="timeline-item sync">
+          <strong>2. beforeMount()</strong> — 挂载前
+        </div>
+        <div class="timeline-item sync">
+          <strong>3. mounted()</strong> — 组件渲染到 DOM，<span style="color:#ff9500">用户看到组件</span>
+        </div>
+        <div class="timeline-item async">
+          <strong>4. async mounted 中的 await</strong> — 异步操作执行（<span style="color:#30d158">不阻塞渲染</span>）
+        </div>
+        <div class="timeline-item done">
+          <strong>5. async 操作完成</strong> — 数据更新（可能触发 updated）
+        </div>
+        <div class="timeline-item sync">
+          <strong>6. beforeUpdate() / updated()</strong> — 更新周期
+        </div>
+        <div class="timeline-item sync">
+          <strong>7. beforeUnmount() / unmounted()</strong> — 销毁周期
+        </div>
+      </div>
+      <div class="sequence-diagram">
+        <div class="step">
+          <span class="step-num">1</span>
+          <span>Vue 调用 <strong>created</strong> → async 开始</span>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <span>Vue 调用 <strong>mounted</strong> → 组件渲染（不等待 async）</span>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <span>用户看到页面 → async 才刚开始执行</span>
+        </div>
+        <div class="step">
+          <span class="step-num">4</span>
+          <span>async 完成 → 数据更新（触发 updated）</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: 关键结论 -->
+    <div v-if="tab===3" class="panel">
+      <div class="panel-title">关键结论速查</div>
+      <div class="highlight-box warning">
+        <strong>⚠️ 最重要的一点：</strong>Vue 的组件渲染管线是<b>同步的</b>。所有生命周期钩子无论是否 async，<b>都不会阻塞组件渲染</b>。
+      </div>
+      <div class="highlight-box danger">
+        <strong>❌ 不要这样做：</strong>
+        <pre style="margin-top:8px;font-size:13px;background:#fff5f5;padding:8px;border-radius:4px">
+onMounted(async () => {
+  this.data = await fetchData();
+  // ⚠️ 此时用户已看到组件，但 data 还是旧值
+});</pre>
+      </div>
+      <div class="highlight-box success">
+        <strong>✅ 推荐做法：</strong>
+        <pre style="margin-top:8px;font-size:13px;background:#f0fff4;padding:8px;border-radius:4px">
+// 方案1：v-if 控制渲染
+const ready = ref(false);
+onMounted(async () => {
+  await fetchData();
+  ready.value = true;
+});
+
+// 方案2：setup 顶层 await（需 Suspense）
+const data = await fetchData();</pre>
+      </div>
+      <div class="highlight-box info">
+        <strong>📋 Vue 2 vs Vue 3 对比</strong>
+        <table style="width:100%;margin-top:8px;font-size:13px;border-collapse:collapse">
+          <tr style="border-bottom:1px solid #e5e5e7">
+            <td style="padding:4px 0"><strong>Vue 2</strong></td>
+            <td style="padding:4px 0">`async created` 可用但不等待</td>
+          </tr>
+          <tr style="border-bottom:1px solid #e5e5e7">
+            <td style="padding:4px 0"><strong>Vue 3 setup</strong></td>
+            <td style="padding:4px 0">✅ 支持 async，配合 Suspense 等待</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0"><strong>Vue 3 onMounted</strong></td>
+            <td style="padding:4px 0">⚠️ async 不等待，但不阻塞渲染</td>
+          </tr>
+        </table>
+      </div>
+      <div class="highlight-box" style="margin-top:12px">
+        <strong>🔑 记忆口诀：</strong>
+        <div style="margin-top:4px;font-size:13px">「钩子 async 不等待，setup 顶层才有效」</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted, onBeforeMount, onCreated } = Vue;
+
+    createApp({
+      setup() {
+        const tab = ref(0);
+        const msg = ref('');
+        const asyncDone = ref(false);
+        const logs = ref([]);
+        const compareLogs = ref([]);
+        const logOutput = ref(null);
+
+        let startTime = 0;
+
+        function fmt(ms) {
+          return (ms - startTime).toString().padStart(4, '0') + 'ms';
+        }
+
+        function addLog(phase, msg_text, type='') {
+          logs.value.push({ time: fmt(Date.now() - startTime), phase, msg: msg_text, type });
+          setTimeout(() => {
+            if (logOutput.value) logOutput.value.scrollTop = logOutput.value.scrollHeight;
+          }, 10);
+        }
+
+        // ===== Demo: async mounted 不等待 =====
+        async function runLifecycleDemo() {
+          startTime = Date.now();
+          const step = (label, t) => {
+            setTimeout(() => {
+              addLog('生命周期', label, '');
+            }, t);
+          };
+
+          // Sync steps
+          step('✅ created - 组件创建', 0);
+          step('✅ beforeMount - 即将挂载', 100);
+          step('✅ mounted - 组件渲染完成（用户可见）', 200);
+
+          // Async inside mounted
+          const delay = ms => new Promise(r => setTimeout(r, ms));
+          const mountAsync = async () => {
+            await delay(800);
+            asyncDone.value = true;
+            addLog('生命周期', '🔵 async mounted await 完成（数据更新）', 'async');
+          };
+
+          // Start async immediately when mounted is called
+          setTimeout(() => mountAsync(), 200);
+
+          step('🔵 mounted 开始执行 async', 200);
+        }
+
+        function runDemo() {
+          msg.value = 'Hello';
+          asyncDone.value = false;
+          runLifecycleDemo();
+        }
+
+        function clearLog() { logs.value = []; }
+
+        function resetComponent() {
+          msg.value = '';
+          asyncDone.value = false;
+          logs.value = [];
+        }
+
+        // ===== Compare demo =====
+        async function runCompareDemo() {
+          startTime = Date.now();
+          const delay = ms => new Promise(r => setTimeout(r, ms));
+
+          compareLogs.value = [];
+
+          const addCompare = (phase, text, type) => {
+            compareLogs.value.push({ time: fmt(Date.now() - startTime), phase, msg: text, type });
+          };
+
+          // Sync version simulation
+          addCompare('sync', 'sync created 开始', '');
+          await delay(50);
+          addCompare('sync', 'sync created 完成 → mounted 开始', '');
+          await delay(50);
+          addCompare('sync', 'sync mounted 完成 ✅', 'done');
+
+          await delay(300);
+
+          // Async version
+          addCompare('async', '---', '');
+          addCompare('async', 'async created 开始', '');
+          await delay(50);
+          addCompare('async', 'async created 开始 await...', 'async');
+          await delay(500);
+          addCompare('async', 'async created await 完成 → mounted 开始', 'done');
+          addCompare('async', 'async mounted 开始 await...', 'async');
+          await delay(500);
+          addCompare('async', 'async mounted await 完成 ✅', 'done');
+        }
+
+        function clearCompare() { compareLogs.value = []; }
+
+        return {
+          tab, msg, asyncDone, logs, compareLogs, logOutput,
+          runDemo, clearLog, resetComponent, runCompareDemo, clearCompare
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
