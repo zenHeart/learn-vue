@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue Watch 句柄管理 - 交互演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f7; color: #1d1d1f; padding: 20px; }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    .subtitle { color: #86868b; font-size: 14px; margin-bottom: 24px; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab { padding: 8px 16px; border: none; background: #e5e5e7; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+    .tab:hover { background: #d2d2d7; }
+    .tab.active { background: #0071e3; color: white; }
+    .panel { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .panel-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+    .controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; background: #0071e3; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: background 0.2s; }
+    .btn:hover { background: #0077ed; }
+    .btn-secondary { background: #e5e5e7; color: #1d1d1f; }
+    .btn-secondary:hover { background: #d2d2d7; }
+    .btn-danger { background: #ff3b30; }
+    .btn-danger:hover { background: #d92f27; }
+    .btn-success { background: #30d158; }
+    .btn-success:hover { background: #28b545; }
+    .output { background: #1d1d1f; color: #a1a1a6; padding: 16px; border-radius: 8px; font-family: 'SF Mono', Menlo, monospace; font-size: 13px; line-height: 1.8; max-height: 280px; overflow-y: auto; }
+    .output .log { display: flex; gap: 8px; padding: 2px 0; }
+    .output .time { color: #86868b; min-width: 50px; }
+    .output .tag { color: #bf5af2; min-width: 70px; }
+    .output .msg { color: #fff; }
+    .output .active { color: #30d158; }
+    .output .stopped { color: #ff453a; }
+    .output .info { color: #64d2ff; }
+    .watcher-card { border: 1px solid #e5e5e7; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+    .watcher-card.active { border-color: #30d158; background: #f0fff4; }
+    .watcher-card.stopped { border-color: #ff3b30; background: #fff5f5; opacity: 0.6; }
+    .watcher-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .watcher-name { font-weight: 600; font-size: 14px; }
+    .watcher-status { font-size: 12px; padding: 2px 8px; border-radius: 4px; }
+    .watcher-status.active { background: #30d158; color: white; }
+    .watcher-status.stopped { background: #ff3b30; color: white; }
+    .watcher-value { font-size: 13px; color: #86868b; }
+    .watcher-log { font-size: 12px; color: #30d158; margin-top: 4px; font-family: monospace; }
+    .info-box { background: #f0f0f5; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 14px; }
+    .info-box strong { color: #0071e3; }
+    .highlight-box { border: 1px solid #d2d2d7; border-radius: 8px; padding: 12px; margin: 8px 0; }
+    .highlight-box.info { border-color: #0071e3; background: #f0f7ff; }
+    .highlight-box.success { border-color: #30d158; background: #f0fff4; }
+    .highlight-box.danger { border-color: #ff3b30; background: #fff5f5; }
+    .highlight-box.warning { border-color: #ff9500; background: #fff9f0; }
+    .stats { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .stat { background: #f5f5f7; padding: 12px 16px; border-radius: 8px; min-width: 100px; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #0071e3; }
+    .stat-label { font-size: 12px; color: #86868b; }
+    .code-block { background: #1d1d1f; color: #a1a1a6; padding: 12px; border-radius: 8px; font-family: 'SF Mono', Menlo, monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+    .code-block .kw { color: #ff9f00; }
+    .code-block .fn { color: #5ac8fa; }
+    .code-block .str { color: #30d158; }
+    .code-block .cmt { color: #86868b; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+    input[type="range"] { width: 100%; }
+    .slider-row { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+    .slider-row label { min-width: 80px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Vue Watch 句柄管理 - 交互演示</h1>
+    <p class="subtitle">Vue 3 Composition API watch/watchEffect 返回值与批量管理可视化</p>
+
+    <div class="tabs">
+      <button class="tab" :class="{active: tab===0}" @click="tab=0">批量管理</button>
+      <button class="tab" :class="{active: tab===1}" @click="tab=1">Map 管理</button>
+      <button class="tab" :class="{active: tab===2}" @click="tab=2">watchEffect 清理</button>
+      <button class="tab" :class="{active: tab===3}" @click="tab=3">防抖实例</button>
+    </div>
+
+    <!-- Tab 0: 批量管理 -->
+    <div v-if="tab===0" class="panel">
+      <div class="panel-title">批量管理 Watch - 数组方式</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value">{{ watchers.length }}</div>
+          <div class="stat-label">注册 Watch</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">{{ activeCount }}</div>
+          <div class="stat-label">活跃中</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">{{ totalTriggers }}</div>
+          <div class="stat-label">触发次数</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn" @click="registerAll">📋 批量注册</button>
+        <button class="btn btn-success" @click="triggerAll">⚡ 触发所有</button>
+        <button class="btn btn-danger" @click="cancelAll">✖ 批量取消</button>
+        <button class="btn btn-secondary" @click="resetAll">🔄 重置</button>
+      </div>
+      <div class="two-col">
+        <div>
+          <div v-for="(w, i) in watchers" :key="i" class="watcher-card" :class="w.active ? 'active' : 'stopped'">
+            <div class="watcher-header">
+              <span class="watcher-name">{{ w.name }}</span>
+              <span class="watcher-status" :class="w.active ? 'active' : 'stopped'">
+                {{ w.active ? '活跃' : '已取消' }}
+              </span>
+            </div>
+            <div class="watcher-value">值: {{ w.value }}</div>
+            <div v-if="w.active" class="watcher-log">{{ w.log }}</div>
+          </div>
+          <div v-if="watchers.length===0" class="info-box">
+            点击「批量注册」创建多个 watch
+          </div>
+        </div>
+        <div class="output" ref="log0">
+          <div v-for="(log, i) in logs0" :key="i" class="log">
+            <span class="time">{{ log.time }}</span>
+            <span class="tag">{{ log.tag }}</span>
+            <span class="msg" :class="log.type">{{ log.msg }}</span>
+          </div>
+          <div v-if="logs0.length===0" style="color:#86868b">点击「批量注册」开始...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 1: Map 管理 -->
+    <div v-if="tab===1" class="panel">
+      <div class="panel-title">Map 精准控制 Watch</div>
+      <div class="controls">
+        <button class="btn" @click="initMap">🗺️ 初始化 Map</button>
+        <button class="btn btn-success" @click="updateUser">👤 更新 User</button>
+        <button class="btn btn-success" @click="updateSettings">⚙️ 更新 Settings</button>
+        <button class="btn btn-secondary" @click="cancelUser">✖ 取消 User</button>
+        <button class="btn btn-danger" @click="cancelMapAll">✖ 全部取消</button>
+      </div>
+      <div class="info-box">
+        <strong>Map 优势：</strong>可以通过 key 精准控制单个 watch，无需索引。
+      </div>
+      <div class="two-col">
+        <div>
+          <div v-for="(active, key) in mapState" :key="key" class="watcher-card" :class="active ? 'active' : 'stopped'">
+            <div class="watcher-header">
+              <span class="watcher-name">{{ key }}</span>
+              <span class="watcher-status" :class="active ? 'active' : 'stopped'">
+                {{ active ? '监控中' : '已取消' }}
+              </span>
+            </div>
+            <div v-if="active" class="watcher-log">{{ mapLogs[key] || '等待触发...' }}</div>
+          </div>
+        </div>
+        <div class="output" ref="log1">
+          <div v-for="(log, i) in logs1" :key="i" class="log">
+            <span class="time">{{ log.time }}</span>
+            <span class="tag">{{ log.tag }}</span>
+            <span class="msg" :class="log.type">{{ log.msg }}</span>
+          </div>
+          <div v-if="logs1.length===0" style="color:#86868b">点击「初始化 Map」开始...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: watchEffect 清理 -->
+    <div v-if="tab===2" class="panel">
+      <div class="panel-title">watchEffect 的 onCleanup 清理机制</div>
+      <div class="controls">
+        <button class="btn" @click="runEffectDemo">▶ 运行演示</button>
+        <button class="btn btn-secondary" @click="clearEffectLog">清空</button>
+      </div>
+      <div class="info-box">
+        <strong>onCleanup：</strong>watchEffect 重新执行前会先调用 onCleanup 的回调；watchEffect 取消时也会调用。
+      </div>
+      <div class="output" ref="log2" style="margin-bottom:16px">
+        <div v-for="(log, i) in logs2" :key="i" class="log">
+          <span class="time">{{ log.time }}</span>
+          <span class="tag">{{ log.tag }}</span>
+          <span class="msg" :class="log.type">{{ log.msg }}</span>
+        </div>
+        <div v-if="logs2.length===0" style="color:#86868b">点击「运行演示」...</div>
+      </div>
+      <div class="highlight-box info">
+        <strong>执行逻辑：</strong>
+        <div class="code-block" style="margin-top:8px">
+<span class="cmt">// 每次 source 变化，watchEffect 会：</span>
+<span class="cmt">// 1. 调用 onCleanup() 注册的清理函数</span>
+<span class="cmt">// 2. 重新执行 effect</span>
+<span class="kw">watchEffect</span>((<span class="fn">onCleanup</span>) => {
+  console.log(<span class="str">'effect 执行'</span>, source.value);
+  <span class="fn">onCleanup</span>(() => {
+    console.log(<span class="str">'🧹 清理！上一个 effect 停止'</span>);
+  });
+});
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: 防抖实例 -->
+    <div v-if="tab===3" class="panel">
+      <div class="panel-title">防抖 Watch - 实际应用场景</div>
+      <div class="slider-row">
+        <label>输入值:</label>
+        <input type="range" v-model.number="debounceVal" min="0" max="100" @input="onDebounceInput">
+        <span style="min-width:40px">{{ debounceVal }}</span>
+      </div>
+      <div class="controls">
+        <button class="btn" @click="resetDebounce">🔄 重置</button>
+        <button class="btn btn-secondary" @click="clearDebounceLog">清空日志</button>
+      </div>
+      <div class="info-box">
+        <strong>防抖逻辑：</strong>输入停止 500ms 后才执行搜索。如果 500ms 内再次输入，重置计时器。
+      </div>
+      <div class="two-col">
+        <div>
+          <div class="highlight-box" :class="debounceLoading ? 'warning' : 'success'">
+            <strong>搜索状态：</strong>
+            {{ debounceLoading ? '⏳ 搜索中...' : '✅ 完成' }}
+            <div v-if="debounceResult !== null">
+              <strong>搜索结果：</strong>{{ debounceResult }}
+            </div>
+          </div>
+          <div class="highlight-box info">
+            <strong>防抖说明：</strong>
+            <div>watch 触发次数: {{ debounceTriggerCount }}</div>
+            <div>实际执行次数: {{ debounceExecCount }}</div>
+            <div>节省: {{ debounceTriggerCount - debounceExecCount }} 次</div>
+          </div>
+        </div>
+        <div class="output" ref="log3">
+          <div v-for="(log, i) in logs3" :key="i" class="log">
+            <span class="time">{{ log.time }}</span>
+            <span class="tag">{{ log.tag }}</span>
+            <span class="msg" :class="log.type">{{ log.msg }}</span>
+          </div>
+          <div v-if="logs3.length===0" style="color:#86868b">拖动滑块测试防抖...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, watch, watchEffect, onUnmounted } = Vue;
+
+    createApp({
+      setup() {
+        const tab = ref(0);
+
+        // ===== Tab 0: 批量管理 =====
+        const watchers = ref([]);
+        const logs0 = ref([]);
+        const totalTriggers = ref(0);
+        let idCounter = 0;
+        let start0 = 0;
+
+        function fmt0(ms) { return ms.toString().padStart(4,'0')+'ms'; }
+        function add0(tag, msg, type='') {
+          logs0.value.push({ time: fmt0(Date.now()-start0), tag, msg, type });
+          setTimeout(() => {
+            const el = document.querySelector('[ref=log0]');
+            if (el) el.scrollTop = el.scrollHeight;
+          }, 10);
+        }
+
+        function registerAll() {
+          watchers.value = [];
+          logs0.value = [];
+          start0 = Date.now();
+          totalTriggers.value = 0;
+          idCounter = 0;
+
+          const sources = [
+            { name: 'count', val: ref(0), fn: () => {} },
+            { name: 'name', val: ref('Tom'), fn: () => {} },
+            { name: 'theme', val: ref('dark'), fn: () => {} }
+          ];
+
+          sources.forEach(src => {
+            const stop = watch(src.val, (v) => {
+              const w = watchers.value.find(w => w.name === src.name);
+              if (w && w.active) {
+                w.value = JSON.stringify(v);
+                w.log = `触发: ${JSON.stringify(v)}`;
+                totalTriggers.value++;
+              }
+            });
+            watchers.value.push({
+              name: src.name, val: ref(src.val.value), active: true, log: '', stop
+            });
+          });
+
+          add0('注册', `注册了 ${watchers.value.length} 个 watch`, 'info');
+        }
+
+        function triggerAll() {
+          watchers.value.forEach(w => {
+            if (w.active) {
+              const src = { count: ref((w.name==='count') ? w.val.value+1 : w.val.value),
+                            name: ref((w.name==='name') ? w.val.value+'x' : w.val.value),
+                            theme: ref(w.name==='theme' ? (w.val.value==='dark'?'light':'dark') : w.val.value) };
+              const newVal = src[w.name]?.value ?? w.val.value;
+              w.val.value = typeof newVal === 'string' && newVal.endsWith('x') ? newVal : newVal;
+              if (w.name === 'count') w.val.value++;
+              if (w.name === 'name') w.val.value = w.val.value + '*';
+              if (w.name === 'theme') w.val.value = w.val.value === 'dark' ? 'light' : 'dark';
+              w.value = JSON.stringify(w.val.value);
+              w.log = `触发: ${w.value}`;
+            }
+          });
+          add0('触发', `触发了 ${watchers.value.length} 个 watch`, 'active');
+        }
+
+        function cancelAll() {
+          watchers.value.forEach(w => {
+            if (w.active) {
+              w.stop();
+              w.active = false;
+              w.log = '已取消';
+            }
+          });
+          add0('取消', '批量取消了所有 watch', 'stopped');
+        }
+
+        function resetAll() {
+          watchers.value.forEach(w => { if (!w.active) w.stop(); });
+          watchers.value = [];
+          logs0.value = [];
+          totalTriggers.value = 0;
+          add0('重置', '已重置', 'info');
+        }
+
+        const activeCount = ref(0);
+        watch(watchers, (list) => { activeCount.value = list.filter(w=>w.active).length; }, { deep: true, immediate: true });
+
+        // ===== Tab 1: Map 管理 =====
+        const mapState = ref({});
+        const mapLogs = ref({});
+        const logs1 = ref([]);
+        const userVal = ref('Alice');
+        const settingsVal = ref({ theme: 'dark' });
+        let mapWatchers = new Map();
+        let start1 = 0;
+
+        function fmt1(ms) { return ms.toString().padStart(4,'0')+'ms'; }
+        function add1(tag, msg, type='') {
+          logs1.value.push({ time: fmt1(Date.now()-start1), tag, msg, type });
+        }
+
+        function initMap() {
+          mapWatchers.forEach(s => s());
+          mapWatchers.clear();
+          mapState.value = {};
+          mapLogs.value = {};
+          logs1.value = [];
+          start1 = Date.now();
+
+          // user watch
+          const stopUser = watch(userVal, (v) => {
+            mapLogs.value['user'] = `监控到: ${v}`;
+            add1('User', `触发 - ${v}`, 'active');
+          });
+          mapWatchers.set('user', stopUser);
+          mapState.value['user'] = true;
+
+          // settings watch
+          const stopSettings = watch(settingsVal, (v) => {
+            mapLogs.value['settings'] = `监控到: ${JSON.stringify(v)}`;
+            add1('Settings', `触发 - ${JSON.stringify(v)}`, 'active');
+          }, { deep: true });
+          mapWatchers.set('settings', stopSettings);
+          mapState.value['settings'] = true;
+
+          add1('初始化', 'Map 已初始化，2 个 watch', 'info');
+        }
+
+        function updateUser() {
+          userVal.value = userVal.value === 'Alice' ? 'Bob' : 'Alice';
+        }
+
+        function updateSettings() {
+          settingsVal.value = {
+            ...settingsVal.value,
+            theme: settingsVal.value.theme === 'dark' ? 'light' : 'dark'
+          };
+        }
+
+        function cancelUser() {
+          const stop = mapWatchers.get('user');
+          if (stop) {
+            stop();
+            mapWatchers.delete('user');
+            mapState.value['user'] = false;
+            mapLogs.value['user'] = '已取消';
+            add1('User', '取消 user watch', 'stopped');
+          }
+        }
+
+        function cancelMapAll() {
+          mapWatchers.forEach((stop, key) => {
+            stop();
+            mapState.value[key] = false;
+            mapLogs.value[key] = '已取消';
+          });
+          mapWatchers.clear();
+          add1('全部', '取消所有 watch', 'stopped');
+        }
+
+        // ===== Tab 2: watchEffect 清理 =====
+        const logs2 = ref([]);
+        const effectSource = ref(0);
+        let start2 = 0;
+        let stopEffect = null;
+        let effectActive = false;
+
+        function fmt2(ms) { return ms.toString().padStart(4,'0')+'ms'; }
+        function add2(tag, msg, type='') {
+          logs2.value.push({ time: fmt2(Date.now()-start2), tag, msg, type });
+        }
+
+        function runEffectDemo() {
+          logs2.value = [];
+          start2 = Date.now();
+          effectSource.value = 0;
+
+          if (stopEffect) { stopEffect(); effectActive = false; }
+
+          add2('开始', '创建 watchEffect...', 'info');
+
+          stopEffect = watchEffect((onCleanup) => {
+            add2('Effect', `执行 - source=${effectSource.value}`, 'active');
+            onCleanup(() => {
+              add2('Cleanup', '🧹 清理！上一个 effect 停止', 'stopped');
+            });
+          });
+          effectActive = true;
+
+          // 模拟 3 次变化
+          setTimeout(() => { if(effectActive) { effectSource.value = 1; add2('主线程', 'source = 1 → 触发', ''); } }, 500);
+          setTimeout(() => { if(effectActive) { effectSource.value = 2; add2('主线程', 'source = 2 → 触发', ''); } }, 1000);
+          setTimeout(() => { if(effectActive) { effectSource.value = 3; add2('主线程', 'source = 3 → 触发', ''); } }, 1500);
+          setTimeout(() => {
+            if (stopEffect) { stopEffect(); effectActive = false; }
+            add2('停止', 'watchEffect 已取消', 'stopped');
+          }, 2000);
+        }
+
+        function clearEffectLog() { logs2.value = []; }
+
+        // ===== Tab 3: 防抖实例 =====
+        const debounceVal = ref(0);
+        const debounceLoading = ref(false);
+        const debounceResult = ref(null);
+        const debounceTriggerCount = ref(0);
+        const debounceExecCount = ref(0);
+        const logs3 = ref([]);
+        const debounceStop = ref(null);
+        let debounceTimer = null;
+        let start3 = 0;
+
+        function fmt3(ms) { return ms.toString().padStart(4,'0')+'ms'; }
+        function add3(tag, msg, type='') {
+          logs3.value.push({ time: fmt3(Date.now()-start3), tag, msg, type });
+        }
+
+        function initDebounce() {
+          if (debounceStop.value) debounceStop.value();
+          debounceTimer = null;
+          debounceLoading.value = false;
+          debounceResult.value = null;
+
+          debounceStop.value = watch(debounceVal, () => {
+            debounceTriggerCount.value++;
+            add3('Watch', '触发（即将防抖）', 'active');
+            debounceLoading.value = true;
+
+            if (debounceTimer) {
+              clearTimeout(debounceTimer);
+              add3('防抖', '重置计时器...', '');
+            }
+
+            debounceTimer = setTimeout(() => {
+              // 模拟搜索
+              debounceResult.value = `搜索 "${debounceVal.value}" 的结果`;
+              debounceExecCount.value++;
+              debounceLoading.value = false;
+              add3('执行', `✅ 搜索完成: ${debounceResult.value}`, 'info');
+            }, 500);
+          });
+          if (!start3) start3 = Date.now();
+        }
+
+        function onDebounceInput() {
+          if (!debounceStop.value) initDebounce();
+        }
+
+        function resetDebounce() {
+          debounceVal.value = 0;
+          debounceTriggerCount.value = 0;
+          debounceExecCount.value = 0;
+          debounceLoading.value = false;
+          debounceResult.value = null;
+          if (debounceTimer) clearTimeout(debounceTimer);
+          logs3.value = [];
+          initDebounce();
+        }
+
+        function clearDebounceLog() { logs3.value = []; }
+
+        return {
+          tab,
+          // Tab 0
+          watchers, logs0, totalTriggers, activeCount,
+          registerAll, triggerAll, cancelAll, resetAll,
+          // Tab 1
+          mapState, mapLogs, logs1,
+          initMap, updateUser, updateSettings, cancelUser, cancelMapAll,
+          // Tab 2
+          logs2, runEffectDemo, clearEffectLog,
+          // Tab 3
+          debounceVal, debounceLoading, debounceResult,
+          debounceTriggerCount, debounceExecCount, logs3,
+          onDebounceInput, resetDebounce, clearDebounceLog
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
