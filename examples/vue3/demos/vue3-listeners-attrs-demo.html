@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 3 $attrs &amp; $listeners 变化演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background: #f5f5f5; }
+    h1 { text-align: center; margin-bottom: 30px; color: #42b883; }
+    
+    .demo-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
+    .demo-section { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+    .demo-section h2 { color: #35495e; margin-bottom: 15px; font-size: 1.2em; border-bottom: 2px solid #42b883; padding-bottom: 8px; }
+    .demo-section h3 { color: #666; margin: 15px 0 10px; font-size: 1em; }
+    
+    .code-block { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 8px; font-family: 'Monaco', 'Menlo', monospace; font-size: 13px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+    .code-block .keyword { color: #ff79c6; }
+    .code-block .string { color: #f1fa8c; }
+    .code-block .comment { color: #6272a4; }
+    .code-block .attr { color: #50fa7b; }
+    .code-block .event { color: #8be9fd; }
+    
+    .demo-box { border: 2px solid #42b883; border-radius: 8px; padding: 15px; margin: 10px 0; }
+    .demo-box.highlight { background: #e8f5e9; border-color: #4caf50; }
+    
+    button { background: #42b883; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 5px; transition: all 0.2s; }
+    button:hover { background: #35495e; transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    
+    input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 200px; }
+    input:focus { outline: none; border-color: #42b883; }
+    
+    .output { background: #f8f8f8; border-radius: 8px; padding: 15px; margin-top: 10px; font-family: monospace; font-size: 13px; max-height: 200px; overflow-y: auto; }
+    .output-item { padding: 5px 0; border-bottom: 1px solid #eee; }
+    .output-item:last-child { border-bottom: none; }
+    .output-item .key { color: #e06c75; font-weight: bold; }
+    .output-item .value { color: #98c379; }
+    
+    .comparison-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+    .comparison-table th, .comparison-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    .comparison-table th { background: #35495e; color: white; }
+    .comparison-table tr:nth-child(even) { background: #f9f9f9; }
+    .comparison-table .highlight { background: #e8f5e9; font-weight: bold; }
+    
+    .tab-container { margin-top: 15px; }
+    .tab-buttons { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+    .tab-btn { padding: 8px 16px; background: #e0e0e0; border: none; border-radius: 6px 6px 0 0; cursor: pointer; transition: all 0.2s; }
+    .tab-btn.active { background: #42b883; color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .quiz-container { background: #fff3cd; border-radius: 8px; padding: 20px; margin-top: 20px; }
+    .quiz-question { font-weight: bold; margin-bottom: 15px; color: #856404; }
+    .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+    .quiz-option { padding: 10px; background: white; border: 2px solid #ffc107; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+    .quiz-option:hover { background: #fff8e1; }
+    .quiz-option.correct { background: #d4edda; border-color: #28a745; }
+    .quiz-option.incorrect { background: #f8d7da; border-color: #dc3545; }
+    
+    .summary-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; padding: 25px; margin-top: 20px; }
+    .summary-box h3 { color: white; margin-bottom: 15px; }
+    .summary-box ul { margin-left: 20px; }
+    .summary-box li { margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <h1>🎯 Vue 3 $attrs 与 $listeners 变化演示</h1>
+  
+  <div class="demo-container">
+    <!-- 概念对比 -->
+    <div class="demo-section">
+      <h2>📋 Vue 2 vs Vue 3 对比</h2>
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>特性</th>
+            <th>Vue 2</th>
+            <th class="highlight">Vue 3</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>$attrs</td>
+            <td>仅包含非 props 属性</td>
+            <td class="highlight">包含属性 + <strong>所有事件监听器</strong></td>
+          </tr>
+          <tr>
+            <td>$listeners</td>
+            <td>包含所有事件监听器</td>
+            <td class="highlight">❌ <strong>已移除</strong></td>
+          </tr>
+          <tr>
+            <td>v-bind</td>
+            <td>需要分别传递</td>
+            <td class="highlight">v-bind="$attrs" 同时传递属性和事件</td>
+          </tr>
+          <tr>
+            <td>事件传递</td>
+            <td>v-on="$listeners"</td>
+            <td class="highlight">不需要，已合并</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- 交互演示 -->
+    <div class="demo-section">
+      <h2>🖱️ 交互演示</h2>
+      
+      <div id="app1">
+        <h3>父组件 → 子组件 → 孙子组件</h3>
+        <p style="color:#666;margin-bottom:10px;">点击按钮观察 $attrs 的变化（事件以 onXxx 格式传递）</p>
+        
+        <div class="demo-box highlight">
+          <strong>父组件</strong>
+          <div style="margin-top:10px;">
+            <input v-model="parentData" placeholder="输入内容" @input="logEvent('父组件 Input', $event)" />
+            <button @click="parentClick">父组件点击</button>
+          </div>
+        </div>
+        
+        <child-component 
+          :message="parentData"
+          :count="parentCount"
+          @parent-click="parentClick"
+          @child-click="childClick"
+          @increment="increment"
+        ></child-component>
+        
+        <div class="output">
+          <div class="output-item">
+            <span class="key">事件日志:</span>
+            <span class="value">{{ eventLog.join(' → ') }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 代码示例 -->
+    <div class="demo-section">
+      <h2>💻 代码对比</h2>
+      
+      <div class="tab-container">
+        <div class="tab-buttons">
+          <button class="tab-btn active" onclick="showTab('tab1', this)">父组件</button>
+          <button class="tab-btn" onclick="showTab('tab2', this)">子组件</button>
+          <button class="tab-btn" onclick="showTab('tab3', this)">孙子组件</button>
+        </div>
+        
+        <div id="tab1" class="tab-content active">
+          <div class="code-block"><span class="comment">// Parent.vue - 传递属性和事件</span>
+<span class="keyword">&lt;ChildComponent</span>
+  <span class="attr">:message</span>=<span class="string">"'Hello'"</span>
+  <span class="attr">:count</span>=<span class="string">"10"</span>
+  <span class="event">@click</span>=<span class="string">"handleClick"</span>
+  <span class="event">@focus</span>=<span class="string">"handleFocus"</span>
+<span class="keyword">/&gt;</span></div>
+        </div>
+        
+        <div id="tab2" class="tab-content">
+          <div class="code-block"><span class="comment">// Child.vue - Vue 3</span>
+<span class="keyword">&lt;script setup&gt;</span>
+<span class="keyword">import</span> { useAttrs } <span class="keyword">from</span> <span class="string">'vue'</span>
+
+<span class="keyword">const</span> attrs = useAttrs()
+<span class="comment">// attrs = { message: 'Hello', count: 10, onClick: fn, onFocus: fn }</span>
+
+<span class="comment">// 传递给孙子组件时，只需：</span>
+<span class="keyword">&lt;GrandChild</span> <span class="attr">v-bind</span>=<span class="string">"$attrs"</span> <span class="comment">/* 自动包含属性和事件 */</span> <span class="keyword">/&gt;</span>
+
+<span class="comment">// 不需要 v-on="$listeners" 了！</span>
+<span class="keyword">&lt;/script&gt;</span></div>
+        </div>
+        
+        <div id="tab3" class="tab-content">
+          <div class="code-block"><span class="comment">// GrandChild.vue - 完整接收</span>
+<span class="keyword">&lt;script setup&gt;</span>
+<span class="keyword">import</span> { useAttrs } <span class="keyword">from</span> <span class="string">'vue'</span>
+
+<span class="keyword">const</span> attrs = useAttrs()
+console.log(attrs)
+<span class="comment">// 输出：</span>
+<span class="comment">// {</span>
+<span class="comment">//   message: 'Hello',</span>
+<span class="comment">//   count: 10,</span>
+<span class="comment">//   onClick: [Function],</span>
+<span class="comment">//   onFocus: [Function]</span>
+<span class="comment">// }</span>
+<span class="keyword">&lt;/script&gt;</span></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- $attrs 结构 -->
+    <div class="demo-section">
+      <h2>📦 $attrs 在 Vue 3 中的结构</h2>
+      
+      <div class="code-block"><span class="comment">// 当父组件传递这些属性和事件时：</span>
+<span class="keyword">&lt;MyComponent</span>
+  <span class="attr">id</span>=<span class="string">"input-field"</span>
+  <span class="attr">placeholder</span>=<span class="string">"Enter text"</span>
+  <span class="attr">:value</span>=<span class="string">"modelValue"</span>
+  <span class="event">@input</span>=<span class="string">"handleInput"</span>
+  <span class="event">@focus</span>=<span class="string">"handleFocus"</span>
+  <span class="event">@blur</span>=<span class="string">"handleBlur"</span>
+<span class="keyword">/&gt;</span>
+
+<span class="comment">// 子组件接收到的 $attrs：</span>
+{
+  <span class="attr">id</span>: <span class="string">'input-field'</span>,
+  <span class="attr">placeholder</span>: <span class="string">'Enter text'</span>,
+  <span class="attr">value</span>: <span class="string">'initial'</span>,
+  <span class="event">onInput</span>: <span class="string">[Function: handleInput]</span>,
+  <span class="event">onFocus</span>: <span class="string">[Function: handleFocus]</span>,
+  <span class="event">onBlur</span>: <span class="string">[Function: handleBlur]</span>
+}
+
+<span class="comment">// 注意：事件监听器以 'on' + 大写事件名 的格式存在</span></div>
+      
+      <h3 style="margin-top:20px;">🔍 事件 vs 属性 区分</h3>
+      <div class="code-block"><span class="keyword">function</span> <span class="attr">analyzeAttrs</span>(attrs) {
+  <span class="keyword">const</span> { 
+    <span class="comment">// 分离普通属性</span>
+    ...props 
+  } = attrs
+  
+  <span class="comment">// 提取事件监听器（以 on 开头的键）</span>
+  <span class="keyword">const</span> events = Object.fromEntries(
+    Object.entries(attrs)
+      .filter(([key]) => key.startsWith(<span class="string">'on'</span>))
+      .map(([key, value]) => [key.slice(2).toLowerCase(), value])
+  )
+  
+  <span class="keyword">return</span> { props, events }
+}</div>
+    </div>
+    
+    <!-- 实际应用 -->
+    <div class="demo-section">
+      <h2>🎨 实际应用场景</h2>
+      
+      <div id="app2">
+        <h3>包装原生 input 组件</h3>
+        
+        <div class="demo-box">
+          <custom-input 
+            v-model="inputValue"
+            placeholder="请输入内容"
+            @custom-input="handleCustomInput"
+          ></custom-input>
+          
+          <div class="output">
+            <div class="output-item">输入值: <strong>{{ inputValue }}</strong></div>
+            <div class="output-item" v-for="(log, i) in logs" :key="i">{{ log }}</div>
+          </div>
+        </div>
+        
+        <div class="code-block" style="margin-top:15px;"><span class="comment">// CustomInput.vue - 自动透传所有属性和事件</span>
+<span class="keyword">&lt;template&gt;</span>
+  <span class="keyword">&lt;div&gt;</span>
+    <span class="keyword">&lt;label&gt;</span>{{ label }}<span class="keyword">&lt;/label&gt;</span>
+    <span class="comment">&lt;!-- 使用 v-bind="$attrs" 自动传递所有属性和事件 --&gt;</span>
+    <span class="keyword">&lt;input</span> <span class="attr">v-bind</span>=<span class="string">"$attrs"</span> @<span class="attr">input</span>=<span class="string">"emit('update:modelValue', $event.target.value)"</span> />
+  <span class="keyword">&lt;/div&gt;</span>
+<span class="keyword">&lt;/template&gt;</span>
+
+<span class="keyword">&lt;script setup&gt;</span>
+<span class="keyword">defineProps</span>({
+  label: { type: String, default: 'Label' }
+})
+<span class="comment">// 无需手动声明所有的 props 和 emits</span>
+<span class="comment">// $attrs 包含了所有传递过来的属性和事件监听器</span>
+<span class="keyword">&lt;/script&gt;</span></div>
+      </div>
+    </div>
+    
+    <!-- inheritAttrs -->
+    <div class="demo-section">
+      <h2>🎛️ inheritAttrs 控制</h2>
+      
+      <div class="demo-box">
+        <p><strong>默认行为：</strong>所有 $attrs 属性会渲染到根元素上</p>
+        <p style="margin-top:10px;"><strong>禁用后：</strong>可以使用 v-bind="$attrs" 手动控制属性分发</p>
+      </div>
+      
+      <div class="code-block" style="margin-top:15px;"><span class="comment">// 禁用 inheritAttrs</span>
+<span class="keyword">&lt;script setup&gt;</span>
+defineOptions({
+  inheritAttrs: <span class="keyword">false</span>  <span class="comment">// 禁用自动继承</span>
+})
+<span class="keyword">&lt;/script&gt;</span>
+
+<span class="keyword">&lt;template&gt;</span>
+  <span class="keyword">&lt;div&gt;</span>
+    <span class="comment">&lt;!-- 只将 class 和 style 传递给根元素 --&gt;</span>
+    <span class="keyword">&lt;input</span> <span class="attr">v-bind</span>=<span class="string">"$attrs"</span> <span class="attr">class</span>=<span class="string">"custom-input"</span> />
+  <span class="keyword">&lt;/div&gt;</span>
+<span class="keyword">&lt;/template&gt;</span></div>
+      
+      <table class="comparison-table" style="margin-top:15px;">
+        <thead>
+          <tr>
+            <th>场景</th>
+            <th>写法</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>根元素继承所有 attrs</td>
+            <td>默认行为，无需额外代码</td>
+          </tr>
+          <tr>
+            <td>禁用继承</td>
+            <td>defineOptions({ inheritAttrs: false })</td>
+          </tr>
+          <tr>
+            <td>手动分发到特定元素</td>
+            <td>v-bind="$attrs" on any element</td>
+          </tr>
+          <tr>
+            <td>排除特定属性</td>
+            <td>解构或过滤后使用</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- 自测题 -->
+  <div class="demo-section" style="max-width:800px;margin:20px auto;">
+    <h2>📝 自测题</h2>
+    
+    <div class="quiz-container">
+      <div class="quiz-question">1. Vue 3 中 $listeners 被合并到哪里？</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="checkAnswer(this, false)">A. $props</div>
+        <div class="quiz-option" onclick="checkAnswer(this, false)">B. $emit</div>
+        <div class="quiz-option" onclick="checkAnswer(this, true)">C. $attrs</div>
+        <div class="quiz-option" onclick="checkAnswer(this, false)">D. $slots</div>
+      </div>
+    </div>
+    
+    <div class="quiz-container">
+      <div class="quiz-question">2. Vue 3 中事件监听器在 $attrs 中的键名格式是什么？</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="checkAnswer(this, false)">A. @click</div>
+        <div class="quiz-option" onclick="checkAnswer(this, true)">B. onClick</div>
+        <div class="quiz-option" onclick="checkAnswer(this, false)">C. click</div>
+        <div class="quiz-option" onclick="checkAnswer(this, false)">D. v-on:click</div>
+      </div>
+    </div>
+    
+    <div class="quiz-container">
+      <div class="quiz-question">3. 如何禁用 Vue 3 组件的自动属性继承？</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="checkAnswer(this, false)">A. props: { inherit: false }</div>
+        <div class="quiz-option" onclick="checkAnswer(this, true)">B. defineOptions({ inheritAttrs: false })</div>
+        <div class="quiz-option" onclick="checkAnswer(this, false)">C. $attrs: false</div>
+        <div class="quiz-option" onclick="checkAnswer(this, false)">D. v-bind:inherit="false"</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 总结 -->
+  <div class="demo-section" style="max-width:800px;margin:0 auto;">
+    <div class="summary-box">
+      <h3>📌 核心要点总结</h3>
+      <ul>
+        <li><strong>$listeners 已移除</strong>：Vue 3 将事件监听器合并到 $attrs 中</li>
+        <li><strong>事件命名变化</strong>：@click → onClick（在 $attrs 中）</li>
+        <li><strong>传递简化</strong>：只需 v-bind="$attrs" 即可同时传递属性和事件</li>
+        <li><strong>不再需要 v-on="$listeners"</strong>：已合并到 v-bind="$attrs"</li>
+        <li><strong>inheritAttrs</strong>：行为不变，仍用于控制根元素继承</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Tab 切换
+    function showTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+    
+    // 自测答案检查
+    function checkAnswer(el, isCorrect) {
+      if (isCorrect) {
+        el.classList.add('correct');
+        setTimeout(() => alert('✅ 回答正确！'), 300);
+      } else {
+        el.classList.add('incorrect');
+        setTimeout(() => alert('❌ 回答错误，请重试'), 300);
+      }
+    }
+    
+    // Vue 3 交互演示
+    const { createApp, ref, useAttrs, toHandlers, defineProps, defineOptions, onMounted } = Vue;
+    
+    // ChildComponent
+    const ChildComponent = {
+      name: 'ChildComponent',
+      setup() {
+        const attrs = useAttrs();
+        const emit = defineEmits(['child-click']);
+        
+        return { attrs };
+      },
+      template: `
+        <div class="demo-box">
+          <strong>子组件</strong>
+          <p style="color:#666;font-size:12px;margin:5px 0;">$attrs内容: {{ JSON.stringify(attrs) }}</p>
+          <button @click="attrs.onClick">调用父组件onClick</button>
+          <button @click="attrs.onIncrement">调用increment</button>
+        </div>
+      `
+    };
+    
+    // CustomInput
+    const CustomInput = {
+      name: 'CustomInput',
+      props: {
+        modelValue: String,
+        placeholder: String
+      },
+      emits: ['update:modelValue', 'custom-input'],
+      setup(props, { attrs, emit }) {
+        const handleInput = (e) => {
+          emit('update:modelValue', e.target.value);
+          emit('custom-input', e.target.value);
+        };
+        return { handleInput, attrs };
+      },
+      template: `
+        <div>
+          <label>自定义输入框：</label>
+          <input v-bind="attrs" @input="handleInput" :value="modelValue" />
+        </div>
+      `
+    };
+    
+    // App1
+    createApp({
+      components: { ChildComponent, CustomInput },
+      setup() {
+        const parentData = ref('');
+        const parentCount = ref(0);
+        const eventLog = ref([]);
+        
+        const logEvent = (source, event) => {
+          eventLog.value.push(source + ': ' + event.type);
+          if (eventLog.value.length > 5) eventLog.value.shift();
+        };
+        
+        const parentClick = () => {
+          logEvent('Parent', { type: 'parent-click' });
+        };
+        
+        const childClick = () => {
+          logEvent('Child', { type: 'child-click' });
+        };
+        
+        const increment = () => {
+          parentCount.value++;
+          logEvent('Parent', { type: 'increment' });
+        };
+        
+        return { parentData, parentCount, eventLog, logEvent, parentClick, childClick, increment };
+      }
+    }).mount('#app1');
+    
+    // App2
+    createApp({
+      components: { CustomInput },
+      setup() {
+        const inputValue = ref('初始值');
+        const logs = ref([]);
+        
+        const handleCustomInput = (val) => {
+          logs.value.push('custom-input 事件触发: ' + val);
+          if (logs.value.length > 3) logs.value.shift();
+        };
+        
+        return { inputValue, logs, handleCustomInput };
+      }
+    }).mount('#app2');
+  </script>
+</body>
+</html>
