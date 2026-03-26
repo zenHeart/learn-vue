@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vue 3 whitespace 处理策略演示</title>
+  <style>
+    :root {
+      --primary: #42b883;
+      --primary-dark: #35495e;
+      --bg: #f9f9f9;
+      --text: #333;
+      --border: #ddd;
+      --tag-bg: #e8f5e9;
+      --tag-border: #42b883;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: var(--primary-dark);
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    /* Tab 导航 */
+    .tabs {
+      display: flex;
+      max-width: 800px;
+      margin: 0 auto 20px;
+      border-bottom: 2px solid var(--border);
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 15px;
+      color: #666;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+    }
+    .tab-btn:hover { color: var(--primary); }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* 内容区 */
+    .tab-content { display: none; max-width: 800px; margin: 0 auto; }
+    .tab-content.active { display: block; }
+
+    /* 卡片 */
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border: 1px solid var(--border);
+    }
+    .card h3 {
+      color: var(--primary-dark);
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    /* 标签 */
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--tag-bg);
+      border: 1px solid var(--tag-border);
+      border-radius: 4px;
+      font-size: 12px;
+      color: #2e7d32;
+      margin-bottom: 10px;
+    }
+
+    /* 按钮组演示 */
+    .demo-buttons {
+      margin: 12px 0;
+    }
+    .demo-buttons button {
+      padding: 6px 16px;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.15s;
+    }
+    .demo-buttons button:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .demo-buttons.flex { display: flex; }
+    .demo-buttons.flex button { margin-right: -1px; border-radius: 0; }
+
+    /* 代码块 */
+    pre {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 14px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 10px 0;
+    }
+    code { font-family: 'Fira Code', 'Consolas', monospace; }
+    .inline-code {
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 13px;
+      color: #c7254e;
+    }
+
+    /* 模式切换器 */
+    .mode-switcher {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .mode-switcher button {
+      padding: 6px 16px;
+      border: 2px solid var(--primary);
+      background: #fff;
+      color: var(--primary);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0 4px;
+      transition: all 0.2s;
+    }
+    .mode-switcher button.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* 信息框 */
+    .info-box {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 13px;
+      margin: 10px 0;
+    }
+    .info-box.danger {
+      background: #f8d7da;
+      border-color: #f5c2c7;
+    }
+    .info-box.success {
+      background: #d1e7dd;
+      border-color: #badbcc;
+    }
+
+    /* 间距指示 */
+    .gap-indicator {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
+    .gap-indicator span { color: #e53935; font-weight: bold; }
+
+    /* highlight row */
+    .highlight-row {
+      background: #fffde7;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      margin: 6px 0;
+      border-left: 3px solid #ffc107;
+    }
+
+    /* two columns */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 12px 0;
+    }
+    @media (max-width: 600px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <h1>Vue 3 whitespace 处理策略</h1>
+  <p class="subtitle">compilerOptions.whitespace: 'condense' vs 'preserve' 可视化演示</p>
+
+  <!-- Tab 导航 -->
+  <div class="tabs">
+    <button class="tab-btn active" @click="activeTab='overview'">概述</button>
+    <button class="tab-btn" @click="activeTab='condense'">condense 模式</button>
+    <button class="tab-btn" @click="activeTab='preserve'">preserve 模式</button>
+    <button class="tab-btn" @click="activeTab='solution'">CSS 解决方案</button>
+  </div>
+
+  <!-- 概述 -->
+  <div class="tab-content" :class="{active: activeTab==='overview'}">
+    <div class="card">
+      <h3>什么是 whitespace 选项？</h3>
+      <p>Vue 3 编译器选项，控制模板中空白字符（空格、换行、制表符）的处理方式。</p>
+      <div class="info-box">
+        <strong>Vue 2 默认：</strong> <span class="inline-code">whitespace: 'preserve'</span> — 保留所有空白符<br>
+        <strong>Vue 3 默认：</strong> <span class="inline-code">whitespace: 'condense'</span> — 压缩连续空白为单个空格
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>三种模式对比</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr style="background:#f5f5f5;">
+            <th style="padding:8px;border:1px solid #ddd;text-align:left;">模式</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:left;">行为</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:left;">场景</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:8px;border:1px solid #ddd;"><span class="inline-code">condense</span></td>
+            <td style="padding:8px;border:1px solid #ddd;">连续空白压缩为 1 个空格</td>
+            <td style="padding:8px;border:1px solid #ddd;">Vue 3 默认，适合大多数项目</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #ddd;"><span class="inline-code">preserve</span></td>
+            <td style="padding:8px;border:1px solid #ddd;">保留原始空白符</td>
+            <td style="padding:8px;border:1px solid #ddd;">Vue 2 迁移、pre 标签、严格空白格式</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>最常见的问题：内联元素换行间距</h3>
+      <p>当 <span class="inline-code">&lt;button&gt;</span> 或 <span class="inline-code">&lt;span&gt;</span> 在模板中换行书写时，<strong>condense 模式会产生可视间距</strong>：</p>
+      <div class="highlight-row">
+        &lt;button&gt;按钮一&lt;/button&gt;<br>
+        &lt;button&gt;按钮二&lt;/button&gt;<br>
+        ↓ 渲染后 ↓<br>
+        按钮一(空格)按钮二  ← 多余的空格被浏览器渲染为间距
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>快速开始</h3>
+      <pre><code>// vite.config.js
+import vue from '@vitejs/plugin-vue'
+
+export default {
+  plugins: [vue({
+    compilerOptions: {
+      whitespace: 'preserve'  // 恢复 Vue 2 行为
+    }
+  })]
+}</code></pre>
+      <p style="font-size:13px;color:#666;margin-top:8px;">
+        或使用下面的演示切换模式，观察 DOM 结构变化。
+      </p>
+    </div>
+  </div>
+
+  <!-- condense 模式 -->
+  <div class="tab-content" :class="{active: activeTab==='condense'}">
+    <div class="card">
+      <div class="tag">当前模式: condense（默认）</div>
+      <h3>内联按钮组 — 问题演示</h3>
+      <p>下面三个按钮在模板中用换行分隔，condense 模式会压缩换行但保留一个空格：</p>
+
+      <div class="demo-buttons">
+        <button>按钮一</button>
+        <button>按钮二</button>
+        <button>按钮三</button>
+      </div>
+      <p class="gap-indicator">
+        按钮之间出现了 <span>3px 左右</span> 的间隙（来自压缩后的空格）
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>DOM 结构分析</h3>
+      <p>打开 DevTools 观察，元素之间存在文本节点：</p>
+      <pre><code>&lt;div class="demo-buttons"&gt;
+  &lt;button&gt;按钮一&lt;/button&gt;
+  #text "\n  "          ← 编译后的空白文本节点
+  &lt;button&gt;按钮二&lt;/button&gt;
+  #text "\n  "
+  &lt;button&gt;按钮三&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+      <div class="info-box danger">
+        内联元素之间的空白文本节点，被浏览器渲染为准留白的间距。
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>span 内联文字间距同样存在</h3>
+      <div style="border:1px solid #ddd;padding:12px;margin:10px 0;border-radius:6px;">
+        <span style="background:#e3f2fd;padding:4px 8px;">文字A</span>
+        <span style="background:#e8f5e9;padding:4px 8px;">文字B</span>
+        <span style="background:#fff3e0;padding:4px 8px;">文字C</span>
+      </div>
+      <p class="gap-indicator">span 之间也有间隙，这是浏览器的<strong>内联格式化上下文</strong>固有行为。</p>
+    </div>
+
+    <div class="card">
+      <h3>源码模板</h3>
+      <pre><code>&lt;div class="demo-buttons"&gt;
+  &lt;button&gt;按钮一&lt;/button&gt;
+  &lt;button&gt;按钮二&lt;/button&gt;
+  &lt;button&gt;按钮三&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+      <p style="font-size:13px;color:#666;margin-top:8px;">
+        在 condense 模式下，换行被压缩但仍产生空格节点。CSS flex/grid 是最干净的解决方案。
+      </p>
+    </div>
+  </div>
+
+  <!-- preserve 模式 -->
+  <div class="tab-content" :class="{active: activeTab==='preserve'}">
+    <div class="card">
+      <div class="tag" style="background:#e3f2fd;border-color:#1976d2;color:#1976d2;">当前模式: preserve</div>
+      <h3>内联按钮组</h3>
+      <p>preserve 模式会保留模板中的原始换行符，浏览器仍会产生间距（这是 HTML/CSS 的默认行为）。</p>
+      <div class="demo-buttons">
+        <button>按钮一</button>
+        <button>按钮二</button>
+        <button>按钮三</button>
+      </div>
+      <p class="gap-indicator">preserve 只影响编译器行为，浏览器内联格式化上下文的间距不受此控制。</p>
+    </div>
+
+    <div class="card">
+      <h3>两种模式的本质区别</h3>
+      <div class="two-col">
+        <div>
+          <h4 style="font-size:14px;margin-bottom:8px;">condense（默认）</h4>
+          <pre style="font-size:12px;"><code>&lt;button&gt;一&lt;/button&gt; &lt;button&gt;二&lt;/button&gt;</code></pre>
+          <p style="font-size:12px;color:#666;">连续空白 → 单个空格</p>
+        </div>
+        <div>
+          <h4 style="font-size:14px;margin-bottom:8px;">preserve</h4>
+          <pre style="font-size:12px;"><code>&lt;button&gt;一&lt;/button&gt;
+&lt;button&gt;二&lt;/button&gt;</code></pre>
+          <p style="font-size:12px;color:#666;">原始换行 + 缩进完全保留</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>真正需要 preserve 的场景</h3>
+      <div class="info-box">
+        <strong>&lt;pre&gt; 标签场景：</strong>代码内容中的前导空格、缩进必须保留。
+      </div>
+      <pre><code>// 如果 code 变量包含前导空格
+&lt;pre&gt;{{code}}&lt;/pre&gt;
+
+// condense 模式：前导空格可能丢失
+// preserve 模式：空格完全保留
+</code></pre>
+      <div class="info-box success" style="margin-top:10px;">
+        <strong>结论：</strong>大多数 UI 布局问题，用 CSS（flex/grid）解决比改 whitespace 更优。preserve 主要用于特殊内容渲染场景。
+      </div>
+    </div>
+  </div>
+
+  <!-- CSS 解决方案 -->
+  <div class="tab-content" :class="{active: activeTab==='solution'}">
+    <div class="card">
+      <h3>方案一：Flexbox（推荐）</h3>
+      <p>最简洁、最健壮的布局方式，彻底消除内联元素间距问题。</p>
+      <pre><code>.btn-group {
+  display: flex;
+}</code></pre>
+      <div class="demo-buttons flex">
+        <button>按钮一</button>
+        <button>按钮二</button>
+        <button>按钮三</button>
+      </div>
+      <p class="gap-indicator">按钮之间 <span>无缝隙</span> — flex 布局消除了内联格式化上下文的间距</p>
+    </div>
+
+    <div class="card">
+      <h3>方案二：Grid 布局</h3>
+      <pre><code>.btn-group {
+  display: grid;
+  grid-auto-flow: column;
+}</code></pre>
+      <div style="display:grid;grid-auto-flow:column;margin:10px 0;">
+        <button style="padding:6px 16px;border:1px solid var(--border);background:#fff;cursor:pointer;">按钮一</button>
+        <button style="padding:6px 16px;border:1px solid var(--border);border-left:none;background:#fff;cursor:pointer;">按钮二</button>
+        <button style="padding:6px 16px;border:1px solid var(--border);border-left:none;background:#fff;cursor:pointer;">按钮三</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>方案三：模板紧密排列</h3>
+      <p>将内联元素写在同一行，避免换行产生空白：</p>
+      <pre><code>&lt;!-- 紧密排列，无换行 --&gt;
+&lt;div&gt;&lt;button&gt;一&lt;/button&gt;&lt;button&gt;二&lt;/button&gt;&lt;/div&gt;
+
+&lt;!-- 或用 Mustache 拼接 --&gt;
+&lt;div&gt;{{ btn1 }}&lt;span&gt;{{ btn2 }}&lt;/span&gt;&lt;/div&gt;</code></pre>
+      <div class="info-box">
+        缺点：代码可读性差，不易维护。
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>方案四：font-size: 0 技巧</h3>
+      <pre><code>.btn-group {
+  font-size: 0;       /* 消除空格 */
+}
+.btn-group button {
+  font-size: 14px;   /* 恢复字体大小 */
+}</code></pre>
+      <div style="font-size:0;margin:10px 0;">
+        <button style="font-size:14px;padding:6px 16px;border:1px solid var(--border);background:#fff;cursor:pointer;">按钮一</button>
+        <button style="font-size:14px;padding:6px 16px;border:1px solid var(--border);border-left:none;background:#fff;cursor:pointer;">按钮二</button>
+        <button style="font-size:14px;padding:6px 16px;border:1px solid var(--border);border-left:none;background:#fff;cursor:pointer;">按钮三</button>
+      </div>
+      <div class="info-box">
+        缺点：需要为子元素重置 font-size，且影响继承属性（letter-spacing 等）。
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>总结：如何选择？</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="background:#f5f5f5;">
+            <th style="padding:8px;border:1px solid #ddd;text-align:left;">方案</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:left;">推荐度</th>
+            <th style="padding:8px;border:1px solid #ddd;text-align:left;">适用场景</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:8px;border:1px solid #ddd;">Flexbox</td>
+            <td style="padding:8px;border:1px solid #ddd;color:#2e7d32;font-weight:bold;">⭐⭐⭐ 强烈推荐</td>
+            <td style="padding:8px;border:1px solid #ddd;">几乎所有场景</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #ddd;">Grid</td>
+            <td style="padding:8px;border:1px solid #ddd;color:#2e7d32;font-weight:bold;">⭐⭐ 推荐</td>
+            <td style="padding:8px;border:1px solid #ddd;">网格化布局</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #ddd;">whitespace: preserve</td>
+            <td style="padding:8px;border:1px solid #ddd;color:#f57c00;font-weight:bold;">⭐ 特定场景</td>
+            <td style="padding:8px;border:1px solid #ddd;">pre 标签、严格空白格式</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #ddd;">模板紧密排列</td>
+            <td style="padding:8px;border:1px solid #ddd;color:#d32f2f;font-weight:bold;">⭐ 仅临时</td>
+            <td style="padding:8px;border:1px solid #ddd;">临时修复，不推荐</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+const { createApp, ref } = Vue
+
+createApp({
+  setup() {
+    const activeTab = ref('overview')
+    return { activeTab }
+  }
+}).mount('#app')
+</script>
+
+</body>
+</html>
