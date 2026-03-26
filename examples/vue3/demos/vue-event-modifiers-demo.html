@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 事件修饰符演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #00d9ff;
+      margin-bottom: 10px;
+      font-size: 1.8rem;
+    }
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 30px;
+      font-size: 0.9rem;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .tab-btn {
+      padding: 10px 18px;
+      background: #16213e;
+      border: 1px solid #0f3460;
+      color: #aaa;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      border-color: #00d9ff;
+      color: #00d9ff;
+    }
+    .tab-btn.active {
+      background: #0f3460;
+      color: #00d9ff;
+      border-color: #00d9ff;
+    }
+    .tab-content {
+      display: none;
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .demo-section {
+      margin-bottom: 30px;
+    }
+    .demo-title {
+      color: #00d9ff;
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .demo-title::before {
+      content: '';
+      width: 4px;
+      height: 16px;
+      background: #00d9ff;
+      border-radius: 2px;
+    }
+    .demo-area {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .event-log {
+      background: #0d0d1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.85rem;
+    }
+    .log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid #222;
+      display: flex;
+      gap: 12px;
+    }
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    .log-phase {
+      color: #ff6b6b;
+      min-width: 70px;
+    }
+    .log-time {
+      color: #666;
+      min-width: 80px;
+    }
+    .log-msg {
+      color: #b8f0b8;
+    }
+    .clear-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 12px;
+      font-size: 0.85rem;
+    }
+    .clear-btn:hover {
+      background: #c82333;
+    }
+    /* Demo specific styles */
+    .parent-box, .child-box {
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .parent-box {
+      background: #2d1f3d;
+      border: 2px solid #9b59b6;
+      margin-bottom: 10px;
+    }
+    .child-box {
+      background: #1e3a5f;
+      border: 2px solid #3498db;
+      margin-left: 30px;
+    }
+    .parent-box:hover, .child-box:hover {
+      transform: scale(1.02);
+    }
+    .parent-box.active {
+      border-color: #00d9ff;
+      box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+    }
+    .child-box.active {
+      border-color: #00ff88;
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+    }
+    .label {
+      font-size: 0.8rem;
+      color: #888;
+      margin-top: 8px;
+    }
+    .desc {
+      color: #aaa;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .highlight {
+      color: #00d9ff;
+    }
+    .tip {
+      background: #0d0d1a;
+      border-left: 3px solid #f39c12;
+      padding: 12px 16px;
+      margin: 16px 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9rem;
+    }
+    .tip-title {
+      color: #f39c12;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #333;
+    }
+    th {
+      color: #00d9ff;
+    }
+    td {
+      color: #ccc;
+    }
+    .comparison-table th {
+      background: #0f3460;
+    }
+    .comparison-table tr:hover {
+      background: #1a1a2e;
+    }
+    code {
+      background: #0d0d1a;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #00d9ff;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.85em;
+    }
+    pre {
+      background: #0d0d1a;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 12px 0;
+      border: 1px solid #333;
+    }
+    .quiz-section {
+      background: #1e3a5f;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 12px 0;
+    }
+    .quiz-question {
+      color: #00d9ff;
+      margin-bottom: 12px;
+      font-weight: bold;
+    }
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .quiz-option {
+      background: #16213e;
+      padding: 10px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .quiz-option:hover {
+      border-color: #00d9ff;
+    }
+    .quiz-option.selected {
+      border-color: #00d9ff;
+      background: #0f3460;
+    }
+    .quiz-option.correct {
+      border-color: #00ff88;
+      background: rgba(0, 255, 136, 0.1);
+    }
+    .quiz-option.incorrect {
+      border-color: #ff6b6b;
+      background: rgba(255, 107, 107, 0.1);
+    }
+    .quiz-result {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 6px;
+      display: none;
+    }
+    .quiz-result.show {
+      display: block;
+    }
+    .quiz-result.correct {
+      background: rgba(0, 255, 136, 0.1);
+      color: #00ff88;
+    }
+    .quiz-result.incorrect {
+      background: rgba(255, 107, 107, 0.1);
+      color: #ff6b6b;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Vue 事件修饰符详解</h1>
+    <p class="subtitle">深入理解 .capture / .stop / .prevent / .native 等修饰符的实现原理</p>
+
+    <div class="tabs">
+      <button 
+        v-for="tab in tabs" 
+        :key="tab.id"
+        :class="['tab-btn', { active: activeTab === tab.id }]"
+        @click="activeTab = tab.id"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+
+    <!-- Tab 1: 事件传播机制 -->
+    <div :class="['tab-content', { active: activeTab === 'propagation' }]">
+      <div class="demo-section">
+        <div class="demo-title">事件传播三阶段</div>
+        <div class="desc">
+          DOM 事件传播分为三个阶段：<span class="highlight">捕获阶段</span> → 
+          <span class="highlight">目标阶段</span> → <span class="highlight">冒泡阶段</span>
+        </div>
+        <pre style="color: #aaa; font-size: 0.85rem; line-height: 1.6;">
+┌─────────────────────────────────────────────────────────────┐
+│                    事件传播三阶段                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   1. 捕获阶段 (Capture Phase)                               │
+│      Window → Document → HTML → Body → ... → Target        │
+│                                                             │
+│   2. 目标阶段 (Target Phase)                                │
+│      事件到达目标元素本身                                     │
+│                                                             │
+│   3. 冒泡阶段 (Bubble Phase)                                │
+│      Target → ... → Body → HTML → Document → Window        │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘</pre>
+        <div class="tip">
+          <div class="tip-title">💡 关键点</div>
+          默认情况下，<code>addEventListener</code> 在 <code>bubble phase</code> 触发。
+          设置 <code>useCapture: true</code> 可在 <code>capture phase</code> 触发。
+        </div>
+      </div>
+
+      <div class="demo-section">
+        <div class="demo-title">JavaScript 事件监听示例</div>
+        <pre style="color: #b8f0b8; font-size: 0.85rem;">
+// 冒泡阶段触发（默认）
+element.addEventListener('click', handler, false);
+
+// 捕获阶段触发
+element.addEventListener('click', handler, true);</pre>
+      </div>
+    </div>
+
+    <!-- Tab 2: 冒泡 vs 捕获对比 -->
+    <div :class="['tab-content', { active: activeTab === 'bubble-capture' }]">
+      <div class="demo-section">
+        <div class="demo-title">对比：未使用 vs 使用 .capture</div>
+        <div class="desc">
+          点击子元素，观察两种模式的执行顺序差异：
+        </div>
+        <table style="margin-bottom: 20px;">
+          <tr>
+            <th>模式</th>
+            <th>执行顺序</th>
+          </tr>
+          <tr>
+            <td>未使用 .capture</td>
+            <td style="color: #ff6b6b;">子元素 → 父元素（冒泡）</td>
+          </tr>
+          <tr>
+            <td>使用 .capture</td>
+            <td style="color: #00ff88;">父元素 → 子元素（捕获）</td>
+          </tr>
+        </table>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- 无 capture -->
+          <div>
+            <div style="color: #ff6b6b; margin-bottom: 10px; font-weight: bold;">❌ 无 .capture</div>
+            <div class="demo-area">
+              <div 
+                class="parent-box"
+                :class="{ active: activeBox === 'parent-no-capture' }"
+                @click="logEvent('parent-no-capture', '冒泡-父元素')"
+              >
+                父元素（无 .capture）
+                <div 
+                  class="child-box"
+                  :class="{ active: activeBox === 'child-no-capture' }"
+                  @click.stop="logEvent('child-no-capture', '冒泡-子元素')"
+                >
+                  子元素（阻止冒泡）
+                </div>
+              </div>
+            </div>
+            <div class="desc" style="font-size: 0.85rem;">
+              点击子元素：只有 <code>子元素</code> 触发<br>
+              （因为使用了 <code>.stop</code>）
+            </div>
+          </div>
+
+          <!-- 有 capture -->
+          <div>
+            <div style="color: #00ff88; margin-bottom: 10px; font-weight: bold;">✅ 有 .capture</div>
+            <div class="demo-area">
+              <div 
+                class="parent-box"
+                :class="{ active: activeBox === 'parent-with-capture' }"
+                @click.capture="logEvent('parent-with-capture', '捕获-父元素')"
+              >
+                父元素（带 .capture）
+                <div 
+                  class="child-box"
+                  :class="{ active: activeBox === 'child-with-capture' }"
+                  @click="logEvent('child-with-capture', '冒泡-子元素')"
+                >
+                  子元素（无修饰符）
+                </div>
+              </div>
+            </div>
+            <div class="desc" style="font-size: 0.85rem;">
+              点击子元素：<code>父元素（捕获）</code> 先触发，<br>
+              然后 <code>子元素</code> 触发
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-section">
+        <div class="demo-title">事件日志</div>
+        <div class="event-log" ref="eventLog1">
+          <div v-if="eventLog1.length === 0" style="color: #666;">
+            点击上方方块查看事件触发顺序...
+          </div>
+          <div v-for="(entry, index) in eventLog1" :key="index" class="log-entry">
+            <span class="log-phase">{{ entry.phase }}</span>
+            <span class="log-time">{{ entry.time }}</span>
+            <span class="log-msg">{{ entry.msg }}</span>
+          </div>
+        </div>
+        <button class="clear-btn" @click="eventLog1 = []">清空日志</button>
+      </div>
+    </div>
+
+    <!-- Tab 3: 修饰符详解 -->
+    <div :class="['tab-content', { active: activeTab === 'modifiers' }]">
+      <div class="demo-section">
+        <div class="demo-title">常用修饰符一览</div>
+        <table>
+          <tr>
+            <th>修饰符</th>
+            <th>等价代码</th>
+            <th>作用</th>
+          </tr>
+          <tr>
+            <td><code>.stop</code></td>
+            <td><code>event.stopPropagation()</code></td>
+            <td>阻止事件冒泡</td>
+          </tr>
+          <tr>
+            <td><code>.prevent</code></td>
+            <td><code>event.preventDefault()</code></td>
+            <td>阻止默认行为</td>
+          </tr>
+          <tr>
+            <td><code>.capture</code></td>
+            <td><code>useCapture: true</code></td>
+            <td>捕获阶段触发</td>
+          </tr>
+          <tr>
+            <td><code>.self</code></td>
+            <td><code>event.target === event.currentTarget</code></td>
+            <td>仅自身为目标时触发</td>
+          </tr>
+          <tr>
+            <td><code>.once</code></td>
+            <td>一次性监听器</td>
+            <td>事件只触发一次</td>
+          </tr>
+          <tr>
+            <td><code>.passive</code></td>
+            <td>滚动优化</td>
+            <td>提升滚动性能</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="demo-section">
+        <div class="demo-title">.stop vs .self 区别</div>
+        <div class="desc">
+          <code>.stop</code> 阻止事件传播到父元素，而 <code>.self</code> 仅在 <code>event.target</code> 是自身时才触发。
+        </div>
+        <table>
+          <tr>
+            <th>场景</th>
+            <th>.stop</th>
+            <th>.self</th>
+          </tr>
+          <tr>
+            <td>点击子元素</td>
+            <td style="color: #ff6b6b;">父元素 handler 不触发</td>
+            <td style="color: #ff6b6b;">父元素 handler 不触发</td>
+          </tr>
+          <tr>
+            <td>点击父元素自身</td>
+            <td style="color: #00ff88;">父元素 handler 触发</td>
+            <td style="color: #00ff88;">父元素 handler 触发</td>
+          </tr>
+          <tr>
+            <td>点击父元素背景</td>
+            <td style="color: #00ff88;">父元素 handler 触发</td>
+            <td style="color: #00ff88;">父元素 handler 触发</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 4: .native 修饰符 -->
+    <div :class="['tab-content', { active: activeTab === 'native' }]">
+      <div class="demo-section">
+        <div class="demo-title">.native 修饰符（Vue 2 特有）</div>
+        <div class="desc">
+          在 Vue 2 中，自定义组件默认不触发原生事件。使用 <code>.native</code> 
+          可以监听组件根元素的原生事件。
+        </div>
+        <div class="tip">
+          <div class="tip-title">⚠️ 注意</div>
+          Vue 3 已移除 <code>.native</code> 修饰符！在 Vue 3 中，非 props 的 attributes 
+          会自动继承到组件根元素，无需使用 <code>.native</code>。
+        </div>
+      </div>
+
+      <div class="demo-section">
+        <div class="demo-title">Vue 2 代码示例</div>
+        <pre style="color: #b8f0b8; font-size: 0.85rem;">
+&lt;!-- MyButton.vue --&gt;
+&lt;template&gt;
+  &lt;button @click="handleClick"&gt;
+    &lt;slot&gt;&lt;/slot&gt;
+  &lt;/button&gt;
+&lt;/template&gt;
+
+&lt;!-- Parent.vue (Vue 2) --&gt;
+&lt;template&gt;
+  &lt;!-- 使用 .native 监听根元素的原生 click --&gt;
+  &lt;MyButton @click.native="handleNativeClick"&gt;
+    点击我
+  &lt;/MyButton&gt;
+&lt;/template&gt;</pre>
+      </div>
+
+      <div class="demo-section">
+        <div class="demo-title">Vue 3 替代方案</div>
+        <pre style="color: #b8f0b8; font-size: 0.85rem;">
+&lt;!-- Vue 3: 直接监听即可，无需 .native --&gt;
+&lt;template&gt;
+  &lt;MyButton @click="handleClick"&gt;
+    点击我
+  &lt;/MyButton&gt;
+&lt;/template&gt;
+
+&lt;!-- 或使用 $attrs 显式传递 --&gt;
+&lt;template&gt;
+  &lt;button v-bind="$attrs"&gt;
+    &lt;slot&gt;&lt;/slot&gt;
+  &lt;/button&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+defineOptions({ inheritAttrs: false })
+&lt;/script&gt;</pre>
+      </div>
+
+      <div class="demo-section">
+        <div class="demo-title">Vue 2 vs Vue 3 对比</div>
+        <table>
+          <tr>
+            <th>特性</th>
+            <th>Vue 2</th>
+            <th>Vue 3</th>
+          </tr>
+          <tr>
+            <td><code>.native</code></td>
+            <td style="color: #00ff88;">支持</td>
+            <td style="color: #ff6b6b;">已移除</td>
+          </tr>
+          <tr>
+            <td>组件事件继承</td>
+            <td>需要 <code>.native</code></td>
+            <td>通过 <code>$attrs</code> 自动</td>
+          </tr>
+          <tr>
+            <td>emits 选项</td>
+            <td style="color: #ff6b6b;">无</td>
+            <td style="color: #00ff88;">支持，推荐使用</td>
+          </tr>
+          <tr>
+            <td>inheritAttrs</td>
+            <td>默认 true</td>
+            <td>可设置为 false</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 5: 自测题 -->
+    <div :class="['tab-content', { active: activeTab === 'quiz' }]">
+      <div class="demo-section">
+        <div class="demo-title">自测题</div>
+        
+        <div class="quiz-section">
+          <div class="quiz-question">1. 点击使用 @click.capture 的父元素内的子元素，执行顺序是？</div>
+          <div class="quiz-options">
+            <div 
+              class="quiz-option"
+              :class="{ selected: quiz1.selected === 'a', correct: quiz1.show && 'a' === 'b', incorrect: quiz1.show && quiz1.selected === 'a' && 'a' !== 'b' }"
+              @click="quiz1.selected = 'a'"
+            >
+              A. 子元素 → 父元素
+            </div>
+            <div 
+              class="quiz-option"
+              :class="{ selected: quiz1.selected === 'b', correct: quiz1.show && 'b' === 'b', incorrect: quiz1.show && quiz1.selected === 'b' && 'b' !== 'b' }"
+              @click="quiz1.selected = 'b'"
+            >
+              B. 父元素 → 子元素
+            </div>
+            <div 
+              class="quiz-option"
+              :class="{ selected: quiz1.selected === 'c', correct: quiz1.show && 'c' === 'b', incorrect: quiz1.show && quiz1.selected === 'c' && 'c' !== 'b' }"
+              @click="quiz1.selected = 'c'"
+            >
+              C. 只有父元素触发
+            </div>
+          </div>
+          <div :class="['quiz-result', 'show', quiz1.selected === 'b' ? 'correct' : 'incorrect']">
+            <span v-if="quiz1.selected === 'b'">✅ 正确！.capture 在捕获阶段触发，所以父元素先于子元素。</span>
+            <span v-else>❌ 错误。正确答案：B。使用 .capture 后，父元素在捕获阶段先触发。</span>
+          </div>
+        </div>
+
+        <div class="quiz-section">
+          <div class="quiz-question">2. Vue 3 中，以下哪种方式可以监听子组件根元素的原生 click？</div>
+          <div class="quiz-options">
+            <div 
+              class="quiz-option"
+              :class="{ selected: quiz2.selected === 'a', correct: quiz2.show && 'a' === 'b', incorrect: quiz2.show && quiz2.selected === 'a' && 'a' !== 'b' }"
+              @click="quiz2.selected = 'a'"
+            >
+              A. <code>&lt;Child @click.native="handler"&gt;</code>
+            </div>
+            <div 
+              class="quiz-option"
+              :class="{ selected: quiz2.selected === 'b', correct: quiz2.show && 'b' === 'b', incorrect: quiz2.show && quiz2.selected === 'b' && 'b' !== 'b' }"
+              @click="quiz2.selected = 'b'"
+            >
+              B. <code>&lt;Child @click="handler"&gt;</code>
+            </div>
+            <div 
+              class="quiz-option"
+              :class="{ selected: quiz2.selected === 'c', correct: quiz2.show && 'c' === 'b', incorrect: quiz2.show && quiz2.selected === 'c' && 'c' !== 'b' }"
+              @click="quiz2.selected = 'c'"
+            >
+              C. 必须使用 <code>v-on</code> 指令
+            </div>
+          </div>
+          <div :class="['quiz-result', 'show', quiz2.selected === 'b' ? 'correct' : 'incorrect']">
+            <span v-if="quiz2.selected === 'b'">✅ 正确！Vue 3 自动将事件传递到根元素，不需要 .native。</span>
+            <span v-else>❌ 错误。正确答案：B。Vue 3 中 .native 已被移除，直接使用 @click 即可。</span>
+          </div>
+        </div>
+
+        <div class="quiz-section">
+          <div class="quiz-question">3. .stop 和 .self 的主要区别是？</div>
+          <div class="quiz-options">
+            <div 
+              class="quiz-option"
+              :class="{ selected: quiz3.selected === 'a', correct: quiz3.show && 'a' === 'c', incorrect: quiz3.show && quiz3.selected === 'a' && 'a' !== 'c' }"
+              @click="quiz3.selected = 'a'"
+            >
+              A. 没有区别
+            </div>
+            <div 
+              class="quiz-option"
+              :class="{ selected: quiz3.selected === 'b', correct: quiz3.show && 'b' === 'c', incorrect: quiz3.show && quiz3.selected === 'b' && 'b' !== 'c' }"
+              @click="quiz3.selected = 'b'"
+            >
+              B. .stop 阻止自身触发，.self 阻止冒泡
+            </div>
+            <div 
+              class="quiz-option"
+              :class="{ selected: quiz3.selected === 'c', correct: quiz3.show && 'c' === 'c', incorrect: quiz3.show && quiz3.selected === 'c' && 'c' !== 'c' }"
+              @click="quiz3.selected = 'c'"
+            >
+              C. .stop 阻止冒泡传播，.self 仅在 target 是自身时触发
+            </div>
+          </div>
+          <div :class="['quiz-result', 'show', quiz3.selected === 'c' ? 'correct' : 'incorrect']">
+            <span v-if="quiz3.selected === 'c'">✅ 正确！.stop 调用 stopPropagation()，.self 检查 event.target。</span>
+            <span v-else>❌ 错误。正确答案：C。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref } = Vue
+
+    createApp({
+      setup() {
+        const tabs = [
+          { id: 'propagation', label: '1. 事件传播机制' },
+          { id: 'bubble-capture', label: '2. 冒泡 vs 捕获' },
+          { id: 'modifiers', label: '3. 修饰符详解' },
+          { id: 'native', label: '4. .native 修饰符' },
+          { id: 'quiz', label: '5. 自测题' },
+        ]
+        
+        const activeTab = ref('propagation')
+        const eventLog1 = ref([])
+        const activeBox = ref(null)
+
+        const getTime = () => {
+          const now = new Date()
+          return now.toLocaleTimeString('zh-CN', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0')
+        }
+
+        const logEvent = (box, msg) => {
+          const phase = msg.includes('捕获') ? 'CAPTURE' : 'BUBBLE'
+          eventLog1.value.push({
+            phase,
+            time: getTime(),
+            msg
+          })
+          activeBox.value = box
+          setTimeout(() => {
+            if (activeBox.value === box) activeBox.value = null
+          }, 500)
+        }
+
+        // Quiz state
+        const quiz1 = ref({ selected: null, show: false })
+        const quiz2 = ref({ selected: null, show: false })
+        const quiz3 = ref({ selected: null, show: false })
+
+        return {
+          tabs,
+          activeTab,
+          eventLog1,
+          activeBox,
+          logEvent,
+          quiz1,
+          quiz2,
+          quiz3,
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
