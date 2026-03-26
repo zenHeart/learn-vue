@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 无缝滚动组件演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    h1 {
+      color: #fff;
+      text-align: center;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.8);
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .demo-section {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 20px 0;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .demo-section h2 {
+      color: #333;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .demo-section h3 {
+      color: #555;
+      margin: 16px 0 8px 0;
+      font-size: 14px;
+    }
+
+    /* 新闻列表滚动样式 */
+    .news-scroll-wrapper {
+      height: 280px;
+      overflow: hidden;
+      background: #fafafa;
+      border-radius: 8px;
+      border: 1px solid #eee;
+    }
+
+    .news-scroll-content {
+      will-change: transform;
+    }
+
+    .news-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .news-item:hover {
+      background: #f0f4ff;
+      padding-left: 20px;
+    }
+
+    .news-item .tag {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      margin-right: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .news-item .tag.hot {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      color: #fff;
+    }
+
+    .news-item .tag.new {
+      background: linear-gradient(135deg, #51cf66, #40c057);
+      color: #fff;
+    }
+
+    .news-item .tag.tech {
+      background: linear-gradient(135deg, #339af0, #228be6);
+      color: #fff;
+    }
+
+    .news-item .tag.finance {
+      background: linear-gradient(135deg, #fcc419, #fab005);
+      color: #333;
+    }
+
+    .news-item .title {
+      flex: 1;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .news-item .time {
+      color: #999;
+      font-size: 12px;
+      margin-left: 12px;
+      flex-shrink: 0;
+    }
+
+    /* 图片轮播样式 */
+    .carousel-wrapper {
+      width: 100%;
+      overflow: hidden;
+      background: #1a1a2e;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .carousel-track {
+      display: flex;
+      gap: 20px;
+      will-change: transform;
+    }
+
+    .carousel-item {
+      width: 220px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: transform 0.3s;
+    }
+
+    .carousel-item:hover {
+      transform: scale(1.05);
+    }
+
+    /* 控制面板 */
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      padding: 16px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .control-group label {
+      font-size: 13px;
+      color: #666;
+      font-weight: 500;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: #6c757d;
+      box-shadow: 0 2px 8px rgba(108, 117, 125, 0.4);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.6);
+    }
+
+    input[type="range"] {
+      width: 120px;
+      accent-color: #667eea;
+    }
+
+    .speed-display {
+      background: #667eea;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    /* 原理说明 */
+    .原理-box {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .原理-box h3 {
+      color: #333;
+      margin-top: 0;
+      font-size: 16px;
+    }
+
+    .原理-box p {
+      color: #555;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    .原理-box code {
+      background: #e9ecef;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      color: #d63384;
+    }
+
+    /* 状态指示器 */
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #51cf66;
+    }
+
+    .status-dot.paused {
+      background: #ff6b6b;
+    }
+
+    /* 图标 */
+    .icon {
+      width: 16px;
+      height: 16px;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      .demo-section {
+        padding: 16px;
+      }
+
+      .carousel-item {
+        width: 160px;
+        height: 100px;
+      }
+
+      .controls {
+        flex-direction: column;
+      }
+
+      .control-group {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Vue 无缝滚动组件演示</h1>
+    <p class="subtitle">基于 requestAnimationFrame + 双倍内容实现平滑无缝滚动</p>
+
+    <!-- 演示 1: 垂直滚动 -->
+    <div class="demo-section">
+      <h2>1. 垂直滚动（新闻列表）</h2>
+      <p style="color: #666; margin-bottom: 16px;">鼠标悬停暂停，滚动到底部自动回到顶部</p>
+
+      <div
+        class="news-scroll-wrapper"
+        @mouseenter="stopNewsScroll"
+        @mouseleave="startNewsScroll"
+      >
+        <div class="news-scroll-content" ref="newsContentRef">
+          <div
+            v-for="(item, index) in displayNews"
+            :key="item.id + '_' + index"
+            class="news-item"
+            @click="handleNewsClick(item)"
+          >
+            <span class="tag" :class="item.tag">{{ item.tagName }}</span>
+            <span class="title">{{ item.title }}</span>
+            <span class="time">{{ item.time }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <label>滚动速度:</label>
+          <input type="range" v-model.number="newsSpeed" min="0.5" max="5" step="0.5">
+          <span class="speed-display">{{ newsSpeed }}</span>
+        </div>
+        <button @click="toggleNewsScroll">
+          {{ isNewsScrolling ? '⏸ 暂停' : '▶ 继续' }}
+        </button>
+        <button class="secondary" @click="resetNewsScroll">⟲ 重置</button>
+        <div class="status-indicator">
+          <span class="status-dot" :class="{ paused: !isNewsScrolling }"></span>
+          {{ isNewsScrolling ? '滚动中' : '已暂停' }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 演示 2: 水平滚动 -->
+    <div class="demo-section">
+      <h2>2. 水平滚动（图片轮播）</h2>
+      <p style="color: #666; margin-bottom: 16px;">图片无缝轮播，支持触摸设备</p>
+
+      <div
+        class="carousel-wrapper"
+        @mouseenter="stopCarouselScroll"
+        @mouseleave="startCarouselScroll"
+      >
+        <div class="carousel-track" ref="carouselRef">
+          <img
+            v-for="(img, index) in displayImages"
+            :key="img.id + '_' + index"
+            :src="img.src"
+            :alt="img.alt"
+            class="carousel-item"
+            @click="handleImageClick(img)"
+          >
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <label>滚动速度:</label>
+          <input type="range" v-model.number="carouselSpeed" min="1" max="10" step="1">
+          <span class="speed-display">{{ carouselSpeed }}</span>
+        </div>
+        <button @click="toggleCarouselScroll">
+          {{ isCarouselScrolling ? '⏸ 暂停' : '▶ 继续' }}
+        </button>
+        <button class="secondary" @click="resetCarouselScroll">⟲ 重置</button>
+        <div class="status-indicator">
+          <span class="status-dot" :class="{ paused: !isCarouselScrolling }"></span>
+          {{ isCarouselScrolling ? '滚动中' : '已暂停' }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 原理说明 -->
+    <div class="demo-section">
+      <div class="原理-box">
+        <h3>🔧 实现原理</h3>
+        <p>
+          无缝滚动的核心是 <code>requestAnimationFrame</code> + <strong>双倍内容</strong> + <strong>边界重置</strong>：
+        </p>
+        <p>
+          1. 将列表内容复制一份，当第一份滚出视野时，第二份刚好接上<br>
+          2. 使用 <code>requestAnimationFrame</code> 实现 60fps 平滑动画<br>
+          3. 当滚动位置达到单份内容长度时，瞬间重置为 0，用户察觉不到跳跃<br>
+          4. 通过 <code>will-change: transform</code> 启用 GPU 硬件加速
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted, onUnmounted } = Vue
+
+    createApp({
+      setup() {
+        // ========== 新闻列表数据 ==========
+        const newsList = ref([
+          { id: 1, tag: 'hot', tagName: '热点', title: '人工智能ChatGPT升级到GPT-5，性能大幅提升', time: '10分钟前' },
+          { id: 2, tag: 'new', tagName: '新品', title: '苹果发布iPhone 17 Pro，支持AI卫星通话', time: '30分钟前' },
+          { id: 3, tag: 'tech', tagName: '科技', title: 'SpaceX星舰完成第20次试飞，成功实现垂直回收', time: '1小时前' },
+          { id: 4, tag: 'finance', tagName: '财经', title: '比特币突破10万美元大关，创历史新高', time: '2小时前' },
+          { id: 5, tag: 'hot', tagName: '热点', title: '全国多地气温突破40度，电网负荷创新高', time: '3小时前' },
+          { id: 6, tag: 'tech', tagName: '科技', title: '华为发布鸿蒙OS 5.0，流畅度超越iOS', time: '4小时前' },
+          { id: 7, tag: 'new', tagName: '新品', title: '小米汽车SU8正式上市，续航1000公里', time: '5小时前' },
+        ])
+
+        // 双倍内容实现无缝
+        const displayNews = computed(() => [...newsList.value, ...newsList.value])
+
+        // ========== 图片轮播数据 ==========
+        const images = ref([
+          { id: 1, src: 'https://picsum.photos/seed/1/400/300', alt: '风景1' },
+          { id: 2, src: 'https://picsum.photos/seed/2/400/300', alt: '风景2' },
+          { id: 3, src: 'https://picsum.photos/seed/3/400/300', alt: '风景3' },
+          { id: 4, src: 'https://picsum.photos/seed/4/400/300', alt: '风景4' },
+          { id: 5, src: 'https://picsum.photos/seed/5/400/300', alt: '风景5' },
+          { id: 6, src: 'https://picsum.photos/seed/6/400/300', alt: '风景6' },
+        ])
+
+        // 双倍内容实现无缝
+        const displayImages = computed(() => [...images.value, ...images.value])
+
+        // ========== 新闻滚动控制 ==========
+        const newsContentRef = ref(null)
+        const newsSpeed = ref(1)
+        const newsOffset = ref(0)
+        let newsAnimationId = null
+        const isNewsScrolling = ref(true)
+
+        const animateNews = () => {
+          if (!newsContentRef.value) return
+
+          newsOffset.value += newsSpeed.value
+          const singleHeight = newsContentRef.value.offsetHeight / 2
+
+          // 边界重置 - 无缝关键
+          if (newsOffset.value >= singleHeight) {
+            newsOffset.value = 0
+            newsContentRef.value.style.transition = 'none'
+            newsContentRef.value.style.transform = 'translateY(0)'
+            // 强制重绘
+            newsContentRef.value.offsetHeight
+            newsContentRef.value.style.transition = ''
+          } else {
+            newsContentRef.value.style.transform = `translateY(-${newsOffset.value}px)`
+          }
+
+          if (isNewsScrolling.value) {
+            newsAnimationId = requestAnimationFrame(animateNews)
+          }
+        }
+
+        const startNewsScroll = () => {
+          if (newsAnimationId) return
+          isNewsScrolling.value = true
+          newsAnimationId = requestAnimationFrame(animateNews)
+        }
+
+        const stopNewsScroll = () => {
+          isNewsScrolling.value = false
+          if (newsAnimationId) {
+            cancelAnimationFrame(newsAnimationId)
+            newsAnimationId = null
+          }
+        }
+
+        const toggleNewsScroll = () => {
+          if (isNewsScrolling.value) {
+            stopNewsScroll()
+          } else {
+            startNewsScroll()
+          }
+        }
+
+        const resetNewsScroll = () => {
+          stopNewsScroll()
+          newsOffset.value = 0
+          if (newsContentRef.value) {
+            newsContentRef.value.style.transition = 'none'
+            newsContentRef.value.style.transform = 'translateY(0)'
+          }
+          setTimeout(startNewsScroll, 100)
+        }
+
+        const handleNewsClick = (item) => {
+          console.log('点击新闻:', item.title)
+        }
+
+        // ========== 轮播滚动控制 ==========
+        const carouselRef = ref(null)
+        const carouselSpeed = ref(2)
+        const carouselOffset = ref(0)
+        let carouselAnimationId = null
+        const isCarouselScrolling = ref(true)
+
+        const animateCarousel = () => {
+          if (!carouselRef.value) return
+
+          carouselOffset.value += carouselSpeed.value
+          const singleWidth = carouselRef.value.offsetWidth / 2
+
+          // 边界重置
+          if (carouselOffset.value >= singleWidth) {
+            carouselOffset.value = 0
+            carouselRef.value.style.transition = 'none'
+            carouselRef.value.style.transform = 'translateX(0)'
+            carouselRef.value.offsetHeight
+            carouselRef.value.style.transition = ''
+          } else {
+            carouselRef.value.style.transform = `translateX(-${carouselOffset.value}px)`
+          }
+
+          if (isCarouselScrolling.value) {
+            carouselAnimationId = requestAnimationFrame(animateCarousel)
+          }
+        }
+
+        const startCarouselScroll = () => {
+          if (carouselAnimationId) return
+          isCarouselScrolling.value = true
+          carouselAnimationId = requestAnimationFrame(animateCarousel)
+        }
+
+        const stopCarouselScroll = () => {
+          isCarouselScrolling.value = false
+          if (carouselAnimationId) {
+            cancelAnimationFrame(carouselAnimationId)
+            carouselAnimationId = null
+          }
+        }
+
+        const toggleCarouselScroll = () => {
+          if (isCarouselScrolling.value) {
+            stopCarouselScroll()
+          } else {
+            startCarouselScroll()
+          }
+        }
+
+        const resetCarouselScroll = () => {
+          stopCarouselScroll()
+          carouselOffset.value = 0
+          if (carouselRef.value) {
+            carouselRef.value.style.transition = 'none'
+            carouselRef.value.style.transform = 'translateX(0)'
+          }
+          setTimeout(startCarouselScroll, 100)
+        }
+
+        const handleImageClick = (img) => {
+          console.log('点击图片:', img.alt)
+        }
+
+        // ========== 生命周期 ==========
+        onMounted(() => {
+          // 启动两个滚动
+          startNewsScroll()
+          startCarouselScroll()
+        })
+
+        onUnmounted(() => {
+          stopNewsScroll()
+          stopCarouselScroll()
+        })
+
+        return {
+          // 新闻
+          newsList,
+          displayNews,
+          newsContentRef,
+          newsSpeed,
+          isNewsScrolling,
+          startNewsScroll,
+          stopNewsScroll,
+          toggleNewsScroll,
+          resetNewsScroll,
+          handleNewsClick,
+          // 轮播
+          images,
+          displayImages,
+          carouselRef,
+          carouselSpeed,
+          isCarouselScrolling,
+          startCarouselScroll,
+          stopCarouselScroll,
+          toggleCarouselScroll,
+          resetCarouselScroll,
+          handleImageClick,
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
