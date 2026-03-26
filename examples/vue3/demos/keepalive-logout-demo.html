@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue Router KeepAlive 退出登录行为演示</title>
+  <script src="https://unpkg.com/vue@next"></script>
+  <script src="https://unpkg.com/vue-router@4"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #42b883 0%, #35495e 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .tabs {
+      display: flex;
+      background: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 15px 20px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #6c757d;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .tab:hover {
+      background: #e9ecef;
+      color: #495057;
+    }
+
+    .tab.active {
+      color: #42b883;
+      background: white;
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #42b883;
+    }
+
+    .tab-content {
+      padding: 30px;
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .demo-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .demo-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e9ecef;
+    }
+
+    .demo-card-header {
+      background: #fff;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .demo-card-title {
+      font-weight: 600;
+      color: #35495e;
+      font-size: 15px;
+    }
+
+    .demo-card-body {
+      padding: 20px;
+    }
+
+    .lifecycle-log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+
+    .lifecycle-log .entry {
+      padding: 4px 8px;
+      border-left: 3px solid transparent;
+      margin: 2px 0;
+    }
+
+    .lifecycle-log .entry.mounted {
+      color: #4ec9b0;
+      border-left-color: #4ec9b0;
+    }
+
+    .lifecycle-log .entry.unmounted {
+      color: #e74c3c;
+      border-left-color: #e74c3c;
+    }
+
+    .lifecycle-log .entry.activated {
+      color: #27ae60;
+      border-left-color: #27ae60;
+    }
+
+    .lifecycle-log .entry.deactivated {
+      color: #f39c12;
+      border-left-color: #f39c12;
+    }
+
+    .component-state {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .state-badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .state-badge.cached {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .state-badge.active {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .state-badge.destroyed {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .state-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .state-badge.cached .state-dot {
+      background: #f39c12;
+    }
+
+    .state-badge.active .state-dot {
+      background: #27ae60;
+    }
+
+    .state-badge.destroyed .state-dot {
+      background: #e74c3c;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: #42b883;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #359268;
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #c0392b;
+    }
+
+    .btn-warning {
+      background: #f39c12;
+      color: white;
+    }
+
+    .btn-warning:hover {
+      background: #d68910;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .btn-info {
+      background: #3498db;
+      color: white;
+    }
+
+    .btn-info:hover {
+      background: #2980b9;
+    }
+
+    .status-bar {
+      background: #e9ecef;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #495057;
+    }
+
+    .status-bar strong {
+      color: #35495e;
+    }
+
+    .code-toggle {
+      background: #2d2d2d;
+      color: #ccc;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+
+    .code-toggle:hover {
+      background: #3d3d3d;
+    }
+
+    .code-block {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      overflow-x: auto;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .code-block.show {
+      display: block;
+    }
+
+    .code-block code {
+      white-space: pre;
+    }
+
+    .highlight {
+      color: #ce9178;
+    }
+
+    .keyword {
+      color: #569cd6;
+    }
+
+    .comment {
+      color: #6a9955;
+    }
+
+    .string {
+      color: #ce9178;
+    }
+
+    .nav-demo {
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .nav-demo-title {
+      font-size: 12px;
+      color: #6c757d;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .route-indicator {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      margin: 4px;
+    }
+
+    .route-indicator.dashboard {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
+    .route-indicator.profile {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+
+    .route-indicator.settings {
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    .route-indicator.login {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .route-indicator.current {
+      box-shadow: 0 0 0 2px #42b883;
+    }
+
+    .scenario-description {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border-left: 4px solid #42b883;
+    }
+
+    .scenario-description h3 {
+      color: #35495e;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+
+    .scenario-description p {
+      color: #6c757d;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .key-point {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #856404;
+    }
+
+    .key-point strong {
+      color: #533f03;
+    }
+
+    .warning-box {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #721c24;
+    }
+
+    .success-box {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #155724;
+    }
+
+    .clear-cache-panel {
+      background: #fff;
+      border: 2px solid #42b883;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .clear-cache-panel h4 {
+      color: #35495e;
+      margin-bottom: 12px;
+      font-size: 15px;
+    }
+
+    .cache-info {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+
+    .cache-item {
+      background: #f8f9fa;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cache-item-name {
+      font-weight: 500;
+      color: #35495e;
+    }
+
+    .cache-item-status {
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .cache-item-status.cached {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .cache-item-status.destroyed {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .intro-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+    }
+
+    .intro-section h2 {
+      margin-bottom: 16px;
+      font-size: 22px;
+    }
+
+    .intro-section p {
+      line-height: 1.8;
+      opacity: 0.95;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #6c757d;
+      font-size: 13px;
+      border-top: 1px solid #e9ecef;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <div class="header">
+        <h1>Vue Router KeepAlive 退出登录行为演示</h1>
+        <p>探索 KeepAlive 组件在退出登录时的行为及正确的缓存清除策略</p>
+      </div>
+
+      <div class="tabs">
+        <button class="tab" :class="{ active: activeTab === 1 }" @click="activeTab = 1">
+          场景1: 正常KeepAlive行为
+        </button>
+        <button class="tab" :class="{ active: activeTab === 2 }" @click="activeTab = 2">
+          场景2: 退出登录不清除缓存
+        </button>
+        <button class="tab" :class="{ active: activeTab === 3 }" @click="activeTab = 3">
+          场景3: 退出登录清除缓存
+        </button>
+        <button class="tab" :class="{ active: activeTab === 4 }" @click="activeTab = 4">
+          场景4: max限制行为
+        </button>
+      </div>
+
+      <!-- Tab 1: Normal KeepAlive Behavior -->
+      <div class="tab-content" :class="{ active: activeTab === 1 }">
+        <div class="scenario-description">
+          <h3>场景 1：正常的 KeepAlive 行为</h3>
+          <p>在正常路由切换时，使用 KeepAlive 缓存的组件不会触发 unmount，只会触发 deactivated。当再次访问时，会触发 activated 而不是 mounted。这展示了 KeepAlive 的核心价值：保持组件状态。</p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="demo-card">
+            <div class="demo-card-header">
+              <span class="demo-card-title">路由导航</span>
+            </div>
+            <div class="demo-card-body">
+              <div class="nav-demo">
+                <div class="nav-demo-title">当前路由</div>
+                <span class="route-indicator dashboard" :class="{ current: currentRoute === 'dashboard' }">Dashboard</span>
+                <span class="route-indicator profile" :class="{ current: currentRoute === 'profile' }">Profile</span>
+                <span class="route-indicator settings" :class="{ current: currentRoute === 'settings' }">Settings</span>
+              </div>
+              <div class="btn-group">
+                <button class="btn btn-primary" @click="navigate('dashboard')">访问 Dashboard</button>
+                <button class="btn btn-secondary" @click="navigate('profile')">访问 Profile</button>
+                <button class="btn btn-secondary" @click="navigate('settings')">访问 Settings</button>
+              </div>
+              <div class="status-bar">
+                <strong>注意：</strong>组件只是被缓存（deactivated），不是销毁（unmounted）
+              </div>
+            </div>
+          </div>
+
+          <div class="demo-card">
+            <div class="demo-card-header">
+              <span class="demo-card-title">生命周期日志</span>
+              <button class="btn btn-warning" @click="clearLog(1)" style="padding: 4px 12px; font-size: 12px;">清除</button>
+            </div>
+            <div class="demo-card-body">
+              <div class="lifecycle-log" ref="log1">
+                <div v-for="(entry, index) in tab1Logs" :key="index" class="entry" :class="entry.type">
+                  [{{ entry.time }}] {{ entry.message }}
+                </div>
+                <div v-if="tab1Logs.length === 0" style="color: #6c757d; padding: 8px;">
+                  点击按钮访问不同路由，观察生命周期变化...
+                </div>
+              </div>
+              <div class="component-state">
+                <span class="state-badge" :class="componentStates.Dashboard">
+                  <span class="state-dot"></span>
+                  Dashboard: {{ componentStates.Dashboard }}
+                </span>
+                <span class="state-badge" :class="componentStates.Profile">
+                  <span class="state-dot"></span>
+                  Profile: {{ componentStates.Profile }}
+                </span>
+                <span class="state-badge" :class="componentStates.Settings">
+                  <span class="state-dot"></span>
+                  Settings: {{ componentStates.Settings }}
+                </span>
+              </div>
+              <button class="code-toggle" onclick="toggleCode('code1')">显示/隐藏代码</button>
+              <div class="code-block" id="code1">
+                <code><span class="comment">// KeepAlive 模板</span>
+<span class="keyword">&lt;KeepAlive&gt;</span>
+  <span class="keyword">&lt;component</span> <span class="highlight">:is</span>=<span class="string">"Component"</span> <span class="keyword">/&gt;</span>
+<span class="keyword">&lt;/KeepAlive&gt;</span>
+
+<span class="comment">// 生命周期钩子触发顺序（路由切换时）</span>
+<span class="comment">// 1. activated - 从缓存激活</span>
+<span class="comment">// 2. deactivated - 停用缓存（不是 unmount）</span></code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Logout Without Clearing Cache -->
+      <div class="tab-content" :class="{ active: activeTab === 2 }">
+        <div class="scenario-description">
+          <h3>场景 2：退出登录时不清除缓存</h3>
+          <p>这是默认行为。当用户退出登录时，如果只是简单地跳转到登录页，KeepAlive 缓存的组件实例仍然保留在内存中。这意味着组件的状态（如表单数据、用户信息等）仍然存在，可能导致安全隐患。</p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="demo-card">
+            <div class="demo-card-header">
+              <span class="demo-card-title">用户操作</span>
+            </div>
+            <div class="demo-card-body">
+              <div class="nav-demo">
+                <div class="nav-demo-title">当前状态</div>
+                <div style="margin-top: 8px;">
+                  <span class="route-indicator" :class="isLoggedIn ? 'dashboard' : 'login'" :class="{ current: true }">
+                    {{ isLoggedIn ? '已登录' : '未登录' }}
+                  </span>
+                </div>
+              </div>
+              <div v-if="isLoggedIn">
+                <p style="margin-bottom: 12px; color: #6c757d; font-size: 14px;">
+                  当前用户: <strong>{{ cachedUserData }}</strong>
+                </p>
+                <div class="btn-group">
+                  <button class="btn btn-primary" @click="navigateLoggedIn('dashboard')">Dashboard</button>
+                  <button class="btn btn-secondary" @click="navigateLoggedIn('profile')">Profile</button>
+                  <button class="btn btn-danger" @click="logoutWithoutClear">退出登录</button>
+                </div>
+              </div>
+              <div v-else>
+                <p style="margin-bottom: 12px; color: #6c757d; font-size: 14px;">
+                  请注意：用户已退出登录，但缓存的组件数据可能仍然存在！
+                </p>
+                <div class="btn-group">
+                  <button class="btn btn-primary" @click="loginAgain">重新登录</button>
+                  <button class="btn btn-info" @click="checkCacheData">检查缓存数据</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="demo-card">
+            <div class="demo-card-header">
+              <span class="demo-card-title">组件状态</span>
+            </div>
+            <div class="demo-card-body">
+              <div class="component-state" style="flex-direction: column; gap: 8px;">
+                <div style="width: 100%; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                  <strong>Dashboard 组件:</strong>
+                  <span class="state-badge" :class="componentStates.Dashboard" style="margin-left: 8px;">
+                    <span class="state-dot"></span>
+                    {{ componentStates.Dashboard }}
+                  </span>
+                </div>
+                <div style="width: 100%; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                  <strong>Profile 组件:</strong>
+                  <span class="state-badge" :class="componentStates.Profile" style="margin-left: 8px;">
+                    <span class="state-dot"></span>
+                    {{ componentStates.Profile }}
+                  </span>
+                </div>
+              </div>
+              <div class="status-bar">
+                <strong>关键问题：</strong>退出登录后，组件实例仍在内存中！
+              </div>
+              <div class="warning-box" v-if="!isLoggedIn && cacheDataLeaked">
+                <strong>安全隐患！</strong>缓存的用户数据 "{{ cachedUserData }}" 仍然可以被访问！
+              </div>
+              <button class="code-toggle" onclick="toggleCode('code2')">显示/隐藏代码</button>
+              <div class="code-block" id="code2">
+                <code><span class="comment">// 默认的退出登录（不安全）</span>
+<span class="keyword">const</span> handleLogout = <span class="keyword">async</span> () => {
+  <span class="keyword">await</span> logoutAPI()
+  router.push(<span class="string">'/login'</span>)
+  <span class="comment">// 问题：KeepAlive 缓存的组件仍然在内存中</span>
+  <span class="comment">// 下一个登录的用户可能看到上一个用户的数据</span>
+}
+
+<span class="comment">// KeepAlive 继续保留缓存的组件实例</span>
+<span class="comment">// Dashboard 和 Profile 组件的 data() 仍然保留</span></code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Logout With Cache Clearing -->
+      <div class="tab-content" :class="{ active: activeTab === 3 }">
+        <div class="scenario-description">
+          <h3>场景 3：退出登录时清除缓存</h3>
+          <p>正确的做法是在退出登录时手动清除 KeepAlive 缓存。本演示展示两种方法：使用 v-if 控制和动态修改 include 数组。通过这些方法可以确保组件被完全销毁，防止数据泄露。</p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="demo-card">
+            <div class="demo-card-header">
+              <span class="demo-card-title">清除缓存的方法</span>
+            </div>
+            <div class="demo-card-body">
+              <div class="clear-cache-panel">
+                <h4>方法1: v-if 控制</h4>
+                <p style="font-size: 13px; color: #6c757d; margin-bottom: 12px;">
+                  通过 v-if 控制 KeepAlive 的存在性，可以销毁所有缓存。
+                </p>
+                <button class="btn btn-primary" @click="demoVifClear">演示 v:if 清除</button>
+              </div>
+
+              <div class="clear-cache-panel" style="margin-top: 16px;">
+                <h4>方法2: include/exclude 数组</h4>
+                <p style="font-size: 13px; color: #6c757d; margin-bottom: 12px;">
+                  动态设置 include 或 exclude 数组为空，可以清除特定缓存。
+                </p>
+                <button class="btn btn-primary" @click="demoIncludeClear">演示 include 清除</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="demo-card">
+            <div class="demo-card-header">
+              <span class="demo-card-title">清除结果</span>
+            </div>
+            <div class="demo-card-body">
+              <div class="cache-info">
+                <div class="cache-item">
+                  <span class="cache-item-name">Dashboard</span>
+                  <span class="cache-item-status" :class="componentStates.Dashboard === 'destroyed' ? 'destroyed' : 'cached'">
+                    {{ componentStates.Dashboard === 'destroyed' ? '已销毁' : '已缓存' }}
+                  </span>
+                </div>
+                <div class="cache-item">
+                  <span class="cache-item-name">Profile</span>
+                  <span class="cache-item-status" :class="componentStates.Profile === 'destroyed' ? 'destroyed' : 'cached'">
+                    {{ componentStates.Profile === 'destroyed' ? '已销毁' : '已缓存' }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="lifecycle-log" ref="log3" style="max-height: 150px;">
+                <div v-for="(entry, index) in tab3Logs" :key="index" class="entry" :class="entry.type">
+                  [{{ entry.time }}] {{ entry.message }}
+                </div>
+                <div v-if="tab3Logs.length === 0" style="color: #6c757d; padding: 8px;">
+                  点击上方按钮查看清除效果...
+                </div>
+              </div>
+
+              <div class="success-box" v-if="cacheProperlyCleared">
+                <strong>清除成功！</strong>组件已完全销毁，退出登录后不会泄露用户数据。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px;">
+          <button class="code-toggle" onclick="toggleCode('code3')">显示/隐藏代码</button>
+          <div class="code-block" id="code3">
+            <code><span class="comment">// 方法1: v-if 控制</span>
+<span class="keyword">&lt;template&gt;</span>
+  <span class="keyword">&lt;KeepAlive</span> <span class="highlight">v-if</span>=<span class="string">"isLoggedIn"</span><span class="keyword">&gt;</span>
+    <span class="keyword">&lt;component</span> <span class="highlight">:is</span>=<span class="string">"Component"</span> <span class="keyword">/&gt;</span>
+  <span class="keyword">&lt;/KeepAlive&gt;</span>
+  <span class="keyword">&lt;component</span> <span class="highlight">v-else</span> <span class="highlight">:is</span>=<span class="string">"Component"</span> <span class="keyword">/&gt;</span>
+<span class="keyword">&lt;/template&gt;</span>
+
+<span class="keyword">const</span> handleLogout = <span class="keyword">async</span> () => {
+  isLoggedIn.value = <span class="keyword">false</span>  <span class="comment">// KeepAlive 被移除，所有缓存销毁</span>
+  <span class="keyword">await</span> logoutAPI()
+  router.push(<span class="string">'/login'</span>)
+}
+
+<span class="comment">// 方法2: 动态修改 include</span>
+<span class="keyword">const</span> cachedComponents = ref([<span class="string">'Dashboard'</span>, <span class="string">'Profile'</span>])
+
+<span class="keyword">const</span> clearCache = () => {
+  cachedComponents.value = []  <span class="comment">// 清除所有缓存</span>
+}</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Max Limit Behavior -->
+      <div class="tab-content" :class="{ active: activeTab === 4 }">
+        <div class="scenario-description">
+          <h3>场景 4：max 属性限制行为</h3>
+          <p>KeepAlive 的 max 属性可以限制缓存组件的最大数量。当缓存数量超过 max 时，Vue 会使用 LRU（最近最少使用）策略销毁最旧的组件。本演示展示 max=2 时的行为。</p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="demo-card">
+            <div class="demo-card-header">
+              <span class="demo-card-title">max=2 的 LRU 淘汰</span>
+              <span style="font-size: 12px; color: #6c757d;">最多缓存2个组件</span>
+            </div>
+            <div class="demo-card-body">
+              <div class="nav-demo">
+                <div class="nav-demo-title">访问顺序演示</div>
+                <p style="font-size: 13px; color: #6c757d; margin: 8px 0;">
+                  按照以下顺序访问: A → B → C → A → D
+                </p>
+              </div>
+              <div class="btn-group">
+                <button class="btn btn-info" @click="visitComponent('A')" :disabled="visitSequence.length >= 5">访问 A</button>
+                <button class="btn btn-info" @click="visitComponent('B')" :disabled="visitSequence.length >= 5">访问 B</button>
+                <button class="btn btn-info" @click="visitComponent('C')" :disabled="visitSequence.length >= 5">访问 C</button>
+                <button class="btn btn-info" @click="visitComponent('D')" :disabled="visitSequence.length >= 5">访问 D</button>
+                <button class="btn btn-warning" @click="resetMaxDemo">重置</button>
+              </div>
+              <div class="status-bar">
+                <strong>当前访问序列:</strong> {{ visitSequence.join(' → ') || '无' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="demo-card">
+            <div class="demo-card-header">
+              <span class="demo-card-title">缓存状态</span>
+            </div>
+            <div class="demo-card-body">
+              <div class="cache-info" style="flex-direction: column; gap: 8px;">
+                <div v-for="comp in ['A', 'B', 'C', 'D']" :key="comp" class="cache-item" style="width: 100%;">
+                  <span class="cache-item-name">组件 {{ comp }}</span>
+                  <span class="cache-item-status" :class="maxCacheState[comp]">
+                    {{ maxCacheState[comp] === 'destroyed' ? '已销毁' : (maxCacheState[comp] === 'cached' ? '已缓存' : '未访问') }}
+                  </span>
+                  <span v-if="maxCacheState[comp] === 'cached'" style="font-size: 11px; color: #6c757d;">
+                    (访问时间: {{ visitTime[comp] || '-' }})
+                  </span>
+                </div>
+              </div>
+              <div class="key-point">
+                <strong>LRU 策略：</strong>当缓存满时，最早访问的组件会被销毁。例如访问 C 时，A 被销毁。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo-card" style="margin-top: 24px;">
+          <div class="demo-card-header">
+            <span class="demo-card-title">生命周期日志</span>
+            <button class="btn btn-warning" @click="clearLog(4)" style="padding: 4px 12px; font-size: 12px;">清除</button>
+          </div>
+          <div class="demo-card-body">
+            <div class="lifecycle-log" ref="log4">
+              <div v-for="(entry, index) in tab4Logs" :key="index" class="entry" :class="entry.type">
+                [{{ entry.time }}] {{ entry.message }}
+              </div>
+              <div v-if="tab4Logs.length === 0" style="color: #6c757d; padding: 8px;">
+                点击按钮开始演示...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="code-toggle" onclick="toggleCode('code4')" style="margin-top: 16px;">显示/隐藏代码</button>
+        <div class="code-block" id="code4">
+          <code><span class="comment">// 使用 max 属性限制缓存数量</span>
+<span class="keyword">&lt;KeepAlive</span> <span class="highlight">:max</span>=<span class="string">"2"</span><span class="keyword">&gt;</span>
+  <span class="keyword">&lt;component</span> <span class="highlight">:is</span>=<span class="string">"Component"</span> <span class="keyword">/&gt;</span>
+<span class="keyword">&lt;/KeepAlive&gt;</span>
+
+<span class="comment">// LRU 淘汰示例（max=2）</span>
+<span class="comment">// 1. 访问 A → 缓存: [A]</span>
+<span class="comment">// 2. 访问 B → 缓存: [A, B]</span>
+<span class="comment">// 3. 访问 C → A 被销毁，缓存: [B, C]</span>
+<span class="comment">// 4. 访问 A → C 被销毁，缓存: [B, A]</span>
+<span class="comment">// 5. 访问 D → B 被销毁，缓存: [A, D]</span></code>
+        </div>
+      </div>
+
+      <div class="footer">
+        Vue Router KeepAlive 退出登录行为演示 | Vue 3 CDN 版本
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick } = Vue
+
+    const app = createApp({
+      setup() {
+        // Active tab
+        const activeTab = ref(1)
+
+        // Component states: 'cached', 'active', 'destroyed'
+        const componentStates = reactive({
+          Dashboard: 'destroyed',
+          Profile: 'destroyed',
+          Settings: 'destroyed'
+        })
+
+        // Logs for each tab
+        const tab1Logs = ref([])
+        const tab3Logs = ref([])
+        const tab4Logs = ref([])
+
+        // Tab 2 specific
+        const isLoggedIn = ref(true)
+        const cachedUserData = ref('张三 | user@example.com')
+        const cacheDataLeaked = ref(false)
+
+        // Tab 3 specific
+        const cacheProperlyCleared = ref(false)
+
+        // Tab 4 specific
+        const visitSequence = ref([])
+        const maxCacheState = reactive({
+          A: 'none',
+          B: 'none',
+          C: 'none',
+          D: 'none'
+        })
+        const visitTime = reactive({
+          A: null,
+          B: null,
+          C: null,
+          D: null
+        })
+
+        // Current route simulation
+        const currentRoute = ref('dashboard')
+
+        // Helper functions
+        const getTimeString = () => {
+          const now = new Date()
+          return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+        }
+
+        const addLog = (logs, message, type) => {
+          logs.push({
+            time: getTimeString(),
+            message,
+            type
+          })
+        }
+
+        // Tab 1: Normal navigation
+        const navigate = (route) => {
+          if (currentRoute.value === route) return
+
+          // Deactivate current
+          addLog(tab1Logs, `${currentRoute.value} deactivated - 组件被缓存`, 'deactivated')
+          componentStates[currentRoute.value.charAt(0).toUpperCase() + currentRoute.value.slice(1)] = 'cached'
+
+          // Activate new
+          currentRoute.value = route
+          addLog(tab1Logs, `${route} activated - 从缓存恢复（或首次创建）`, 'activated')
+          componentStates[route.charAt(0).toUpperCase() + route.slice(1)] = 'active'
+        }
+
+        // Tab 2: Logout without clearing
+        const navigateLoggedIn = (route) => {
+          navigate(route)
+        }
+
+        const logoutWithoutClear = () => {
+          // Simulate logout - just mark as logged out
+          isLoggedIn.value = false
+
+          // Components are still cached!
+          addLog(tab1Logs, '退出登录 - 但组件仍在缓存中', 'deactivated')
+
+          // Check if data is leaked
+          setTimeout(() => {
+            cacheDataLeaked.value = true
+          }, 500)
+        }
+
+        const loginAgain = () => {
+          isLoggedIn.value = true
+          cacheDataLeaked.value = false
+          currentRoute.value = 'dashboard'
+          componentStates.Dashboard = 'active'
+          addLog(tab1Logs, '重新登录 - Dashboard 激活（但 Profile 数据可能残留）', 'activated')
+        }
+
+        const checkCacheData = () => {
+          if (componentStates.Profile === 'cached') {
+            addLog(tab1Logs, '警告: Profile 组件仍被缓存，数据可能泄露!', 'mounted')
+          }
+        }
+
+        // Tab 3: Clear cache demo
+        const demoVifClear = () => {
+          addLog(tab3Logs, 'v-if=false - KeepAlive 移除', 'deactivated')
+
+          // Destroy all cached components
+          const components = ['Dashboard', 'Profile', 'Settings']
+          components.forEach(comp => {
+            if (componentStates[comp] === 'cached') {
+              componentStates[comp] = 'destroyed'
+              addLog(tab3Logs, `${comp} unmounted - 组件销毁`, 'unmounted')
+            }
+          })
+
+          cacheProperlyCleared.value = true
+        }
+
+        const demoIncludeClear = () => {
+          addLog(tab3Logs, 'include=[] - 缓存被清空', 'deactivated')
+
+          const components = ['Dashboard', 'Profile']
+          components.forEach(comp => {
+            componentStates[comp] = 'destroyed'
+            addLog(tab3Logs, `${comp} unmounted - 通过 include=[] 清除`, 'unmounted')
+          })
+
+          cacheProperlyCleared.value = true
+        }
+
+        // Tab 4: Max limit demo
+        const visitComponent = (comp) => {
+          if (visitSequence.value.length >= 5) return
+
+          visitSequence.value.push(comp)
+          const time = getTimeString()
+          visitTime[comp] = time
+
+          // Simulate LRU behavior
+          const cachedCount = Object.values(maxCacheState).filter(s => s === 'cached').length
+
+          if (cachedCount >= 2) {
+            // Need to evict one - find the oldest (first in sequence that's still cached)
+            const sequenceOrder = ['A', 'B', 'C', 'D']
+            for (const c of sequenceOrder) {
+              if (maxCacheState[c] === 'cached' && c !== comp) {
+                maxCacheState[c] = 'destroyed'
+                addLog(tab4Logs, `组件 ${c} unmounted - 被 LRU 策略淘汰`, 'unmounted')
+                break
+              }
+            }
+          }
+
+          maxCacheState[comp] = 'cached'
+          addLog(tab4Logs, `组件 ${comp} activated - 访问时间: ${time}`, 'activated')
+        }
+
+        const resetMaxDemo = () => {
+          visitSequence.value = []
+          Object.keys(maxCacheState).forEach(k => {
+            maxCacheState[k] = 'none'
+            visitTime[k] = null
+          })
+          tab4Logs.value = []
+        }
+
+        // Clear log helper
+        const clearLog = (tab) => {
+          if (tab === 1) tab1Logs.value = []
+          if (tab === 3) tab3Logs.value = []
+          if (tab === 4) tab4Logs.value = []
+        }
+
+        // Initialize with Dashboard active
+        onMounted(() => {
+          componentStates.Dashboard = 'active'
+          addLog(tab1Logs, 'Dashboard mounted/activated - 首次访问', 'mounted')
+        })
+
+        return {
+          activeTab,
+          componentStates,
+          currentRoute,
+          tab1Logs,
+          tab3Logs,
+          tab4Logs,
+          navigate,
+          navigateLoggedIn,
+          logoutWithoutClear,
+          loginAgain,
+          checkCacheData,
+          isLoggedIn,
+          cachedUserData,
+          cacheDataLeaked,
+          cacheProperlyCleared,
+          demoVifClear,
+          demoIncludeClear,
+          visitSequence,
+          maxCacheState,
+          visitTime,
+          visitComponent,
+          resetMaxDemo,
+          clearLog
+        }
+      }
+    })
+
+    app.mount('#app')
+
+    // Global code toggle function
+    function toggleCode(id) {
+      const el = document.getElementById(id)
+      if (el) {
+        el.classList.toggle('show')
+      }
+    }
+  </script>
+</body>
+</html>
