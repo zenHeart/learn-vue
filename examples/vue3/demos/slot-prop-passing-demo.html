@@ -1,0 +1,439 @@
+<!--
+---
+tags: [插槽, 组件]
+desc: Vue 插槽属性传递完整演示
+---
+-->
+<script src="https://unpkg.com/vue@next"></script>
+
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background: #f5f5f5; }
+  .demo-section { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .demo-title { font-size: 18px; font-weight: 600; color: #42b983; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #42b983; }
+  .demo-desc { color: #666; margin-bottom: 15px; font-size: 14px; }
+  .card { border: 1px solid #ddd; border-radius: 6px; margin: 10px 0; overflow: hidden; }
+  .card-header { background: #42b983; color: white; padding: 12px 15px; font-weight: 500; }
+  .card-body { padding: 15px; }
+  .card-footer { background: #f8f8f8; padding: 10px 15px; border-top: 1px solid #ddd; font-size: 13px; color: #666; }
+  .slot-tag { background: #e8f4ef; color: #2c7a55; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; }
+  .slot-content { background: #fffbea; border: 1px solid #ffe58f; padding: 10px; border-radius: 4px; margin: 8px 0; }
+  .scope-tag { background: #e6f7ff; color: #1890ff; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+  button { background: #42b983; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; transition: background 0.2s; }
+  button:hover { background: #3aa876; }
+  button.active { background: #2d8659; }
+  .dynamic-slot { display: flex; gap: 10px; margin-bottom: 10px; }
+  .item-list { display: flex; flex-direction: column; gap: 8px; }
+  .item { background: white; border: 1px solid #e8e8e8; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+  .item-info { display: flex; flex-direction: column; gap: 4px; }
+  .item-name { font-weight: 500; color: #333; }
+  .item-email { font-size: 13px; color: #888; }
+  .demo-output { background: #1a1a2e; color: #a8dadc; padding: 15px; border-radius: 6px; margin-top: 15px; font-family: 'Monaco', 'Menlo', monospace; font-size: 13px; min-height: 60px; }
+  .demo-output-title { color: #ffd166; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .user-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; }
+  .user-avatar { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 24px; }
+  .user-name { font-size: 18px; font-weight: 600; margin-bottom: 5px; }
+  .user-status { font-size: 13px; opacity: 0.9; }
+  .layout-demo { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+  .layout-demo > div { background: #f0f0f0; border-radius: 6px; padding: 15px; text-align: center; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+  .layout-demo .header { background: #ffe4e1; }
+  .layout-demo .main { background: #e1ffe4; }
+  .layout-demo .footer { background: #e1e4ff; }
+</style>
+
+<div id="app">
+  <!-- 1. 默认插槽演示 -->
+  <div class="demo-section">
+    <div class="demo-title">1. 默认插槽</div>
+    <div class="demo-desc">父组件向子组件传递最基本的插槽内容</div>
+
+    <card-basic>
+      <p>这是通过默认插槽传递的内容</p>
+      <p>可以包含多个元素</p>
+    </card-basic>
+  </div>
+
+  <!-- 2. 具名插槽演示 -->
+  <div class="demo-section">
+    <div class="demo-title">2. 具名插槽</div>
+    <div class="demo-desc">使用 v-slot 指令指定插槽名称，向组件不同位置传递内容</div>
+
+    <card-fancy title="用户信息">
+      <template #header>
+        <span class="slot-tag">具名插槽 header</span>
+      </template>
+
+      <template #default>
+        <span class="slot-tag">默认插槽 (content)</span>
+      </template>
+
+      <template #footer>
+        <span class="slot-tag">具名插槽 footer</span>
+      </template>
+    </card-fancy>
+  </div>
+
+  <!-- 3. 动态插槽名 -->
+  <div class="demo-section">
+    <div class="demo-title">3. 动态插槽名 #[slotName]</div>
+    <div class="demo-desc">使用 v-slot:[name] 动态切换插槽内容</div>
+
+    <div class="dynamic-slot">
+      <button :class="{ active: currentSlot === 'header' }" @click="currentSlot = 'header'">Header</button>
+      <button :class="{ active: currentSlot === 'content' }" @click="currentSlot = 'content'">Content</button>
+      <button :class="{ active: currentSlot === 'footer' }" @click="currentSlot = 'footer'">Footer</button>
+    </div>
+
+    <dynamic-slot-card>
+      <template #[currentSlot]>
+        <div class="slot-content">
+          当前激活的插槽: <strong>{{ currentSlot }}</strong>
+        </div>
+      </template>
+    </dynamic-slot-card>
+  </div>
+
+  <!-- 4. 作用域插槽 -->
+  <div class="demo-section">
+    <div class="demo-title">4. 作用域插槽</div>
+    <div class="demo-desc">子组件通过 slot 向父组件传递数据，父组件根据数据渲染内容</div>
+
+    <div class="layout-demo">
+      <div class="header">
+        <template #header="{ user, isLoggedIn }">
+          <span class="scope-tag">{{ isLoggedIn ? '已登录' : '未登录' }}</span>
+        </template>
+      </div>
+      <div class="main">
+        <scoped-user :user="currentUser">
+          <template #default="{ user, isLoggedIn }">
+            <div class="user-card">
+              <div class="user-avatar">{{ user.avatar }}</div>
+              <div class="user-name">{{ user.name }}</div>
+              <div class="user-status">{{ isLoggedIn ? '在线' : '离线' }}</div>
+            </div>
+          </template>
+        </scoped-user>
+      </div>
+      <div class="footer">
+        <template #footer="{ year }">
+          &copy; {{ year }} Vue Slots Demo
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. v-for 生成多个插槽 -->
+  <div class="demo-section">
+    <div class="demo-title">5. v-for 遍历生成多个插槽</div>
+    <div class="demo-desc">使用 #[col.key] 动态插槽名语法，为表格每列传递自定义渲染</div>
+
+    <dynamic-table :columns="columns" :data="tableData">
+      <template v-for="col in columns" :key="col.key" #[col.key]="slotProps">
+        <strong v-if="col.key === 'name'">{{ slotProps.row.name }}</strong>
+        <span v-else-if="col.key === 'email'" style="color: #666">{{ slotProps.row.email }}</span>
+        <span v-else-if="col.key === 'actions'">
+          <button @click="editItem(slotProps.row)">编辑</button>
+        </span>
+      </template>
+    </dynamic-table>
+  </div>
+
+  <!-- 6. render 函数中的插槽 -->
+  <div class="demo-section">
+    <div class="demo-title">6. Render 函数中的插槽</div>
+    <div class="demo-desc">在选项式 API 的 render 函数中使用 this.$slots</div>
+
+    <render-slot-demo :items="renderItems">
+      <template #item="{ item }">
+        <div style="padding: 5px; background: #f0f0f0; margin: 3px; border-radius: 3px;">
+          {{ item }}
+        </div>
+      </template>
+    </render-slot-demo>
+  </div>
+
+  <!-- 7. $slots 对象结构 -->
+  <div class="demo-section">
+    <div class="demo-title">7. $slots 对象结构</div>
+    <div class="demo-desc">查看组件实例中 $slots 的实际结构</div>
+
+    <slot-inspector>
+      <template #header>
+        <h3>我是 header 插槽</h3>
+      </template>
+      <template #default>
+        <p>我是默认插槽内容</p>
+      </template>
+      <template #footer>
+        <small>我是 footer 插槽</small>
+      </template>
+    </slot-inspector>
+  </div>
+
+  <!-- 8. 切换登录状态 -->
+  <div class="demo-section">
+    <div class="demo-title">8. 实践：登录状态切换</div>
+    <div class="demo-desc">综合演示：使用作用域插槽根据登录状态显示不同内容</div>
+
+    <div style="margin-bottom: 15px;">
+      <button @click="isLoggedIn = !isLoggedIn">
+        {{ isLoggedIn ? '退出登录' : '登录' }}
+      </button>
+      <span style="margin-left: 10px; color: #666;">
+        当前状态: <strong>{{ isLoggedIn ? '已登录' : '未登录' }}</strong>
+      </span>
+    </div>
+
+    <login-wrapper :is-logged-in="isLoggedIn">
+      <template #logged-in="{ user }">
+        <div class="user-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+          <div class="user-avatar">{{ user.avatar }}</div>
+          <div class="user-name">{{ user.name }}</div>
+          <div class="user-status">欢迎回来！</div>
+          <button style="margin-top: 10px; background: rgba(255,255,255,0.2);" @click="logout">退出</button>
+        </div>
+      </template>
+
+      <template #logged-out>
+        <div style="padding: 30px; text-align: center; background: #f8f8f8; border-radius: 8px;">
+          <p style="color: #666; margin-bottom: 15px;">请登录以继续</p>
+          <button @click="login">立即登录</button>
+        </div>
+      </template>
+    </login-wrapper>
+  </div>
+</div>
+
+<script>
+const { createApp, h, ref, computed, reactive } = Vue
+
+// =====================
+// 1. 基础卡片组件 - 默认插槽
+// =====================
+const CardBasic = {
+  template: `
+    <div class="card">
+      <div class="card-header">基础卡片</div>
+      <div class="card-body">
+        <slot></slot>
+      </div>
+    </div>
+  `
+}
+
+// =====================
+// 2. 具名插槽卡片
+// =====================
+const CardFancy = {
+  props: ['title'],
+  template: `
+    <div class="card">
+      <div class="card-header">
+        <slot name="header">{{ title }}</slot>
+      </div>
+      <div class="card-body">
+        <slot></slot>
+      </div>
+      <div class="card-footer">
+        <slot name="footer"></slot>
+      </div>
+    </div>
+  `
+}
+
+// =====================
+// 3. 动态插槽组件
+// =====================
+const DynamicSlotCard = {
+  template: `
+    <div class="card">
+      <div class="card-header">动态插槽卡片</div>
+      <div class="card-body">
+        <slot name="header"></slot>
+        <slot name="content"></slot>
+        <slot name="footer"></slot>
+      </div>
+    </div>
+  `
+}
+
+// =====================
+// 4. 作用域插槽组件
+// =====================
+const ScopedUser = {
+  props: ['user'],
+  setup(props, { slots }) {
+    return () => {
+      const slot = slots.default
+      if (!slot) return null
+
+      const isLoggedIn = !!props.user
+      const user = props.user || { avatar: '👤', name: '游客' }
+
+      return h('div', slot({ user, isLoggedIn }))
+    }
+  }
+}
+
+// =====================
+// 5. 动态表格组件
+// =====================
+const DynamicTable = {
+  props: ['columns', 'data'],
+  template: `
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+      <thead>
+        <tr>
+          <th v-for="col in columns" :key="col.key" style="border: 1px solid #ddd; padding: 10px; background: #f5f5f5;">
+            {{ col.title }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(row, idx) in data" :key="idx">
+          <td v-for="col in columns" :key="col.key" style="border: 1px solid #ddd; padding: 10px;">
+            <slot :name="col.key" :row="row"></slot>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  `
+}
+
+// =====================
+// 6. Render 函数中的插槽
+// =====================
+const RenderSlotDemo = {
+  props: ['items'],
+  render() {
+    return h('div', { class: 'card' }, [
+      h('div', { class: 'card-header' }, 'Render 函数插槽示例'),
+      h('div', { class: 'card-body' }, [
+        this.items.map(item =>
+          h('div', { key: item }, [
+            this.$slots.item?.({ item })
+          ])
+        )
+      ])
+    ])
+  }
+}
+
+// =====================
+// 7. 插槽检查器
+// =====================
+const SlotInspector = {
+  mounted() {
+    console.log('$slots:', this.$slots)
+  },
+  render() {
+    const slots = Object.keys(this.$slots)
+    return h('div', { class: 'card' }, [
+      h('div', { class: 'card-header' }, '插槽检查器'),
+      h('div', { class: 'card-body' }, [
+        h('div', { style: 'margin-bottom: 10px; color: #666;' }, `检测到 ${slots.length} 个插槽: ${slots.join(', ')}`),
+        h('div', { style: 'display: "flex", gap: "10px", "flex-wrap": "wrap"' }, [
+          slots.map(name =>
+            h('div', {
+              key: name,
+              style: 'background: #e8f4ef; padding: 8px 12px; border-radius: 4px;'
+            }, [
+              h('strong', {}, `#${name}`),
+              h('span', { style: 'margin-left: 8px; color: #888;' }, '✓')
+            ])
+          )
+        ]),
+        h('div', { style: 'margin-top: 15px;' }, [
+          h('div', { class: 'demo-output-title' }, 'this.$slots 输出'),
+          h('pre', { class: 'demo-output', style: 'white-space: pre-wrap;' },
+            JSON.stringify(slots.reduce((acc, name) => {
+              acc[name] = this.$slots[name] ? 'VNode[]' : undefined
+              return acc
+            }, {}), null, 2)
+          )
+        ])
+      ])
+    ])
+  }
+}
+
+// =====================
+// 8. 登录包装组件
+// =====================
+const LoginWrapper = {
+  props: ['isLoggedIn'],
+  setup(props, { slots }) {
+    const user = { avatar: '👨‍💻', name: '张三' }
+
+    return () => h('div', { class: 'card' }, [
+      h('div', { class: 'card-header' }, '登录状态示例'),
+      h('div', { class: 'card-body' }, [
+        props.isLoggedIn
+          ? slots['logged-in']?.({ user })
+          : slots['logged-out']?.()
+      ])
+    ])
+  }
+}
+
+// =====================
+// App 根组件
+// =====================
+const App = {
+  components: {
+    CardBasic,
+    CardFancy,
+    DynamicSlotCard,
+    ScopedUser,
+    DynamicTable,
+    RenderSlotDemo,
+    SlotInspector,
+    LoginWrapper
+  },
+  setup() {
+    // 动态插槽状态
+    const currentSlot = ref('header')
+
+    // 作用域插槽数据
+    const currentUser = reactive({ avatar: '👤', name: '李四' })
+
+    // 表格配置和数据
+    const columns = [
+      { key: 'name', title: '姓名' },
+      { key: 'email', title: '邮箱' },
+      { key: 'actions', title: '操作' }
+    ]
+    const tableData = [
+      { name: '张三', email: 'zhangsan@example.com' },
+      { name: '李四', email: 'lisi@example.com' },
+      { name: '王五', email: 'wangwu@example.com' }
+    ]
+
+    // Render 插槽数据
+    const renderItems = ref(['项目 A', '项目 B', '项目 C'])
+
+    // 登录状态
+    const isLoggedIn = ref(false)
+    const login = () => { isLoggedIn.value = true }
+    const logout = () => { isLoggedIn.value = false }
+    const editItem = (row) => {
+      console.log('编辑:', row)
+    }
+
+    return {
+      currentSlot,
+      currentUser,
+      columns,
+      tableData,
+      renderItems,
+      isLoggedIn,
+      login,
+      logout,
+      editItem
+    }
+  }
+}
+
+createApp(App).mount('#app')
+</script>
