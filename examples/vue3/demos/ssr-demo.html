@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSR 渲染模式对比 - 交互演示</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-secondary: #8b949e;
+      --accent: #58a6ff;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger: #f85149;
+      --purple: #a371f7;
+      --orange: #f0883e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 8px; color: var(--accent); }
+    .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 24px; }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 8px 16px; background: transparent; border: none;
+      color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;
+      border-bottom: 2px solid transparent; transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+    .card h3 { font-size: 1rem; margin-bottom: 12px; color: var(--purple); }
+    .card p { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px; }
+    pre { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; padding: 12px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5; }
+    code { font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace; }
+    .keyword { color: #ff7b72; }
+    .string { color: #a5d6ff; }
+    .comment { color: var(--text-secondary); }
+    .fn { color: #d2a8ff; }
+    .tag { color: #7ee787; }
+    .attr { color: #79c0ff; }
+    .flow-step {
+      display: flex; align-items: center; gap: 8px; margin: 8px 0;
+      padding: 8px 12px; background: var(--bg-tertiary); border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    .flow-step .num { background: var(--accent); color: var(--bg); width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; flex-shrink: 0; }
+    .flow-step.client .num { background: var(--orange); }
+    .flow-step.server .num { background: var(--success); }
+    .flow-step.hydrate .num { background: var(--purple); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 6px; }
+    .badge-success { background: rgba(63,185,80,0.2); color: var(--success); }
+    .badge-warning { background: rgba(210,153,34,0.2); color: var(--warning); }
+    .badge-danger { background: rgba(248,81,73,0.2); color: var(--danger); }
+    .badge-info { background: rgba(88,166,255,0.2); color: var(--accent); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th, td { padding: 10px 12px; border: 1px solid var(--border); text-align: left; }
+    th { background: var(--bg-tertiary); color: var(--accent); }
+    .mismatch-demo { border: 1px solid var(--danger); border-radius: 6px; padding: 16px; margin: 12px 0; }
+    .mismatch-demo h4 { color: var(--danger); margin-bottom: 12px; }
+    .simulated-page { background: #fff; color: #1a1a1a; padding: 12px; border-radius: 4px; font-size: 0.8rem; }
+    .simulated-page .content { margin-bottom: 8px; }
+    .hydration-log { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-size: 0.75rem; max-height: 200px; overflow-y: auto; font-family: monospace; }
+    .log-entry { padding: 2px 0; }
+    .log-ok { color: var(--success); }
+    .log-error { color: var(--danger); }
+    .log-warn { color: var(--warning); }
+    .btn { padding: 6px 14px; background: var(--accent); color: var(--bg); border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+    .btn:hover { opacity: 0.85; }
+    .nuxt-tree { font-size: 0.85rem; }
+    .nuxt-tree .folder { color: var(--warning); margin: 4px 0; }
+    .nuxt-tree .file { color: var(--text-secondary); padding-left: 16px; }
+    .nuxt-tree .comment { color: var(--text-secondary); font-style: italic; padding-left: 16px; }
+  </style>
+</head>
+<body>
+
+<h1>SSR 渲染模式对比 — 交互演示</h1>
+<p class="subtitle">深入理解 Server-Side Rendering vs Client-Side Rendering vs Static Site Generation</p>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('comparison')">渲染模式对比</button>
+  <button class="tab-btn" onclick="showTab('hydration')">Hydration 过程</button>
+  <button class="tab-btn" onclick="showTab('mismatch')">Mismatch 排查</button>
+  <button class="tab-btn" onclick="showTab('nuxt')">Nuxt.js 结构</button>
+  <button class="tab-btn" onclick="showTab('code-diff')">代码差异处理</button>
+</div>
+
+<!-- 渲染模式对比 -->
+<div id="comparison" class="tab-content active">
+  <div class="card">
+    <h3>三种渲染模式核心差异</h3>
+    <p>选择合适的渲染模式是应用架构的第一步。以下是核心对比：</p>
+    <table>
+      <tr><th>维度</th><th>CSR</th><th>SSR</th><th>SSG</th></tr>
+      <tr><td>首屏渲染</td><td><span class="badge badge-warning">慢</span> 需下载 JS</td><td><span class="badge badge-success">快</span> 直接显示 HTML</td><td><span class="badge badge-success">快</span> 直接显示 HTML</td></tr>
+      <tr><td>SEO</td><td><span class="badge badge-danger">差</span> 无内容</td><td><span class="badge badge-success">好</span> 完整 HTML</td><td><span class="badge badge-success">好</span> 完整 HTML</td></tr>
+      <tr><td>服务器负载</td><td><span class="badge badge-success">低</span> 静态文件</td><td><span class="badge badge-warning">中</span> 实时渲染</td><td><span class="badge badge-success">极低</span> CDN 缓存</td></tr>
+      <tr><td>交互性</td><td>需 hydration</td><td>需 hydration</td><td>需 hydration</td></tr>
+      <tr><td>适用场景</td><td>管理后台、SPA</td><td>内容型、电商、社交</td><td>博客、文档、落地页</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>CSR 渲染流程</h3>
+    <div class="flow-step client">
+      <span class="num">1</span>
+      <span><strong>Browser</strong>: 请求空白 HTML（含 JS 链接）</span>
+    </div>
+    <div class="flow-step client">
+      <span class="num">2</span>
+      <span><strong>Browser</strong>: 下载 JS Bundle（可能 500KB+）</span>
+    </div>
+    <div class="flow-step client">
+      <span class="num">3</span>
+      <span><strong>Browser</strong>: Vue 执行，创建虚拟 DOM</span>
+    </div>
+    <div class="flow-step client">
+      <span class="num">4</span>
+      <span><strong>Browser</strong>: 挂载到 #app，用户看到内容</span>
+    </div>
+    <pre><code><span class="comment">// index.html - 空白容器</span>
+<span class="tag">&lt;div</span> <span class="attr">id</span>=<span class="string">"app"</span><span class="tag">&gt;&lt;/div&gt;</span>
+<span class="tag">&lt;script</span> <span class="attr">type</span>=<span class="string">"module"</span> <span class="attr">src</span>=<span class="string">"/src/main.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
+
+<span class="comment">// main.js - CSR 入口</span>
+<span class="keyword">import</span> { createApp } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">import</span> App <span class="keyword">from</span> <span class="string">'./App.vue'</span>
+createApp(App).mount(<span class="string">'#app'</span>)   <span class="comment">// 白屏 → 有内容</span></code></pre>
+  </div>
+
+  <div class="card">
+    <h3>SSR 渲染流程</h3>
+    <div class="flow-step server">
+      <span class="num">1</span>
+      <span><strong>Server</strong>: 接收请求，运行 Vue 组件 → 输出 HTML 字符串</span>
+    </div>
+    <div class="flow-step server">
+      <span class="num">2</span>
+      <span><strong>Server</strong>: 返回完整 HTML（含预渲染内容）</span>
+    </div>
+    <div class="flow-step hydrate">
+      <span class="num">3</span>
+      <span><strong>Browser</strong>: 显示首屏内容（用户立即看到）</span>
+    </div>
+    <div class="flow-step hydrate">
+      <span class="num">4</span>
+      <span><strong>Browser</strong>: 下载 JS + Hydration（变为可交互）</span>
+    </div>
+    <pre><code><span class="comment">// server.js - SSR 入口</span>
+<span class="keyword">import</span> { createSSRApp } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">import</span> App <span class="keyword">from</span> <span class="string">'./App.vue'</span>
+<span class="keyword">import</span> { renderToString } <span class="keyword">from</span> <span class="string">'vue/server-renderer'</span>
+
+<span class="keyword">async function</span> <span class="fn">handleRequest</span>(req, res) {
+  <span class="keyword">const</span> app = createSSRApp(App, { url: req.url })
+  <span class="keyword">const</span> html = <span class="keyword">await</span> renderToString(app)  <span class="comment">// Vue → HTML 字符串</span>
+  res.send(<span class="string">`&lt;!DOCTYPE html&gt;...<span class="subst">${html}</span>...&lt;/html&gt;`</span>)
+}</code></pre>
+  </div>
+
+  <div class="card">
+    <h3>SSG 渲染流程</h3>
+    <div class="flow-step server">
+      <span class="num">1</span>
+      <span><strong>Build</strong>: 预渲染所有页面为静态 HTML</span>
+    </div>
+    <div class="flow-step server">
+      <span class="num">2</span>
+      <span><strong>CDN</strong>: 上传静态文件到全球 CDN</span>
+    </div>
+    <div class="flow-step hydrate">
+      <span class="num">3</span>
+      <span><strong>Browser</strong>: 直接获取 HTML（毫秒级）</span>
+    </div>
+    <div class="flow-step hydrate">
+      <span class="num">4</span>
+      <span><strong>Browser</strong>: Hydration 后变为可交互</span>
+    </div>
+    <pre><code><span class="comment">// nuxt.config.ts - Nuxt SSG 配置</span>
+<span class="keyword">export default</span> defineNuxtConfig({
+  routeRules: {
+    <span class="string">'/**'</span>: { prerender: <span class="keyword">true</span> }  <span class="comment">// 所有页面预渲染</span>
+  }
+})
+
+<span class="comment"># 构建命令</span>
+$ npx nuxt generate   <span class="comment">// 输出 .output/public/</span></code></pre>
+  </div>
+</div>
+
+<!-- Hydration 过程 -->
+<div id="hydration" class="tab-content">
+  <div class="card">
+    <h3>什么是 Hydration？</h3>
+    <p>Hydration（水合）是 SSR 后的关键步骤：服务端输出的静态 HTML 与客户端 Vue 实例"结合"，让页面从静态展示变为可交互应用。</p>
+    <div class="flow-step server">
+      <span class="num">1</span>
+      <span><strong>Server</strong>: renderToString() → 生成 HTML 字符串</span>
+    </div>
+    <div class="flow-step">
+      <span class="num">2</span>
+      <span><strong>Network</strong>: HTML 传输到浏览器，立即显示内容</span>
+    </div>
+    <div class="flow-step client">
+      <span class="num">3</span>
+      <span><strong>Browser</strong>: 下载 JS bundle</span>
+    </div>
+    <div class="flow-step hydrate">
+      <span class="num">4</span>
+      <span><strong>Hydration</strong>: Vue 遍历现有 DOM，建立响应式绑定</span>
+    </div>
+    <div class="flow-step hydrate">
+      <span class="num">5</span>
+      <span><strong>Done</strong>: 页面完全可交互</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Hydration 代码示例</h3>
+    <pre><code><span class="comment">// client.js - 使用 createSSRApp 而非 createApp</span>
+<span class="keyword">import</span> { createSSRApp } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">import</span> App <span class="keyword">from</span> <span class="string">'./App.vue'</span>
+
+<span class="comment">// 必须使用 createSSRApp，告知 Vue 这是 SSR 后 hydration</span>
+<span class="keyword">const</span> app = createSSRApp(App, { <span class="attr">...</span> })
+
+<span class="comment">// mount 后，Vue 会"接管"已存在的 DOM，而不是创建新的</span>
+app.mount(<span class="string">'#app'</span>, <span class="keyword">true</span>)  <span class="comment">// 第二个参数 = hydrate</span></code></pre>
+  </div>
+
+  <div class="card">
+    <h3>为什么必须用 createSSRApp？</h3>
+    <table>
+      <tr><th>API</th><th>用途</th><th>DOM 行为</th></tr>
+      <tr><td>createApp</td><td>纯 CSR</td><td>清空 #app，创建全新 DOM</td></tr>
+      <tr><td>createSSRApp</td><td>SSR hydration</td><td>复用 #app 中已有 DOM，建立响应式</td></tr>
+    </table>
+    <p style="margin-top:12px;color:var(--danger);font-size:0.85rem;">⚠️ 如果用 createApp 代替 createSSRApp，服务端渲染的 HTML 会被清空重绘，导致闪烁 + hydration mismatch</p>
+  </div>
+
+  <div class="card">
+    <h3>实时 Hydration 日志</h3>
+    <p>点击"模拟 SSR 请求"观察 hydration 各阶段：</p>
+    <button class="btn" onclick="simulateHydration()">模拟 SSR 请求</button>
+    <div id="hydration-log" class="hydration-log" style="margin-top:12px;">
+      <div class="log-entry">点击按钮开始模拟...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Mismatch 排查 -->
+<div id="mismatch" class="tab-content">
+  <div class="card">
+    <h3>什么是 Hydration Mismatch？</h3>
+    <p>服务端渲染的 HTML 与客户端渲染结果不一致时，会发生 hydration mismatch。Vue 会尝试自动修复，但可能导致闪烁或控制台警告。</p>
+    <div class="mismatch-demo">
+      <h4>❌ Mismatch 示例：组件内使用随机数</h4>
+      <div class="simulated-page">
+        <div class="content"><strong>服务端输出：</strong> 用户ID: 842719053</div>
+        <div class="content"><strong>客户端输出：</strong> 用户ID: 391204756 ← 不一致！</div>
+      </div>
+      <pre><code><span class="comment">// ❌ 错误：每次渲染产生不同结果</span>
+<span class="keyword">const</span> userId = Math.random()   <span class="comment">// 服务端、客户端值不同 → Mismatch</span>
+
+<span class="comment">// ✅ 正确：在客户端 only 执行</span>
+<span class="keyword">import</span> { ref, onMounted } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">const</span> userId = ref(<span class="keyword">null</span>)
+onMounted(() => { userId.value = Math.random() })  <span class="comment">// 仅客户端执行</span></code></pre>
+    </div>
+
+    <div class="mismatch-demo">
+      <h4>❌ Mismatch 示例：访问 window/document</h4>
+      <pre><code><span class="comment">// ❌ 错误：在 setup 顶层访问 window</span>
+<span class="keyword">const</span> width = window.innerWidth   <span class="comment">// 服务端没有 window → Error</span>
+
+<span class="comment">// ✅ 正确：使用 useWindowSize 或 onMounted</span>
+<span class="keyword">const</span> width = ref(window.innerWidth)   <span class="comment">// 仅客户端执行</span></code></pre>
+    </div>
+
+    <div class="mismatch-demo">
+      <h4>❌ Mismatch 示例：日期格式化</h4>
+      <div class="simulated-page">
+        <div class="content"><strong>服务端（UTC）：</strong> 2026-03-27 00:00:00</div>
+        <div class="content"><strong>客户端（+8）：</strong> 2026-03-27 08:00:00 ← 时区差异</div>
+      </div>
+      <pre><code><span class="comment">// ❌ 错误：依赖本地时区</span>
+<span class="keyword">const</span> dateStr = <span class="keyword">new</span> Date().toLocaleString()  <span class="comment">// 时区不同 → Mismatch</span>
+
+<span class="comment">// ✅ 正确：统一使用 UTC 或让用户设置时区</span>
+<span class="keyword">const</span> dateStr = <span class="keyword">new</span> Date().toUTCString()</code></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>常见 Mismatch 原因</h3>
+    <table>
+      <tr><th>原因</th><th>解决方案</th></tr>
+      <tr><td>随机值（Math.random, Date.now）</td><td>仅在 onMounted/客户端执行</td></tr>
+      <tr><td>window/document/globalThis</td><td>用 process.client 判断或 onMounted</td></tr>
+      <tr><td>浏览器特有 API（localStorage 等）</td><td>条件保护，SSR 时返回默认值</td></tr>
+      <tr><td>时区/语言差异</td><td>统一 UTC，格式化放客户端</td></tr>
+      <tr><td>v-if 条件不一致</td><td>确保服务端/客户端渲染条件相同</td></tr>
+      <tr><td>Pinia/Vuex store 初始化不一致</td><td>使用 snapshotTheron 序列化</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Mismatch 调试技巧</h3>
+    <pre><code><span class="comment">// 1. Vue DevTools - 开启 hydration 插件</span>
+<span class="comment">// 2. console 警告会显示具体不一致的组件</span>
+<span class="comment">// 3. 使用 &lt;ClientOnly&gt; 包裹浏览器专属组件（Nuxt）</span>
+
+<span class="tag">&lt;template&gt;</span>
+  <span class="tag">&lt;ClientOnly&gt;</span>
+    <span class="tag">&lt;BrowserOnlyComponent</span> <span class="tag">/&gt;</span>  <span class="comment">&lt;!-- 服务端跳过 --&gt;</span>
+  <span class="tag">&lt;/ClientOnly&gt;</span>
+<span class="tag">&lt;/template&gt;</span>
+
+<span class="comment">// 4. 禁用 hydration（最后手段）</span>
+<span class="tag">&lt;div</span> <span class="attr">:data-allow-mismatch</span>=<span class="string">"true"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;Suspense</span> <span class="tag">/&gt;</span>
+<span class="tag">&lt;/div&gt;</span></code></pre>
+  </div>
+</div>
+
+<!-- Nuxt.js 结构 -->
+<div id="nuxt" class="tab-content">
+  <div class="card">
+    <h3>Nuxt.js 项目结构</h3>
+    <p>Nuxt 是 Vue SSR 最流行的框架，自动处理代码差异、路由、状态序列化等复杂问题：</p>
+    <div class="nuxt-tree">
+      <div class="folder">📁 my-nuxt-app/</div>
+      <div class="file">├── nuxt.config.ts      # 框架配置</div>
+      <div class="file">├── app.vue             # 应用根组件</div>
+      <div class="file">├── pages/              # 路由页面（基于文件）</div>
+      <div class="file">│   ├── index.vue       # → /</div>
+      <div class="file">│   └── blog/[id].vue   # → /blog/:id</div>
+      <div class="file">├── components/         # 自动导入组件</div>
+      <div class="file">├── composables/        # 可复用逻辑</div>
+      <div class="file">├── server/             # 服务端 API</div>
+      <div class="file">│   └── api/hello.ts    # → /api/hello</div>
+      <div class="file">├── public/             # 静态资源</div>
+      <div class="file">└── .output/            # 构建输出</div>
+      <div class="comment"># pages 目录自动生成路由，无需手动配置</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Nuxt 渲染模式配置</h3>
+    <pre><code><span class="comment">// nuxt.config.ts</span>
+<span class="keyword">export default</span> defineNuxtConfig({
+  <span class="comment">// 混合渲染策略</span>
+  routeRules: {
+    <span class="comment">// 静态生成，构建时渲染</span>
+    <span class="string">'/'</span>:               { prerender: <span class="keyword">true</span> },
+
+    <span class="comment">// ISR，CDN 缓存后后台更新</span>
+    <span class="string">'/blog/**'</span>:         { swr: 3600 },
+
+    <span class="comment">// 服务端渲染，实时数据</span>
+    <span class="string">'/product/**'</span>:     { ssr: <span class="keyword">true</span> },
+
+    <span class="comment">// 客户端渲染，SPA</span>
+    <span class="string">'/dashboard/**'</span>:   { ssr: <span class="keyword">false</span> }
+  }
+})</code></pre>
+  </div>
+
+  <div class="card">
+    <h3>Nuxt 数据获取</h3>
+    <pre><code><span class="comment">// pages/blog/[id].vue</span>
+<span class="tag">&lt;script</span> <span class="attr">setup</span>=<span class="string">""</span><span class="tag">&gt;</span>
+  <span class="comment">// useAsyncData - 服务端执行，客户端复用（避免重复请求）</span>
+  <span class="keyword">const</span> { data, pending, error } = <span class="keyword">await</span> useAsyncData(
+    <span class="string">'post'</span>,
+    () => $fetch(<span class="string">`/api/posts/<span class="subst">${route.params.id}</span>`</span>)
+  )
+
+  <span class="comment">// useFetch - useAsyncData 的简化版</span>
+  <span class="keyword">const</span> { data } = <span class="keyword">await</span> useFetch(<span class="string">'/api/posts'</span>)
+
+  <span class="comment">// 仅客户端执行（如点赞数、浏览量）</span>
+  <span class="keyword">const</span> likes = ref(0)
+  onMounted(<span class="keyword">async</span> () => {
+    likes.value = <span class="keyword">await</span> $fetch(<span class="string">'/api/likes'</span>)
+  })
+<span class="tag">&lt;/script&gt;</span></code></pre>
+  </div>
+
+  <div class="card">
+    <h3>Nuxt 环境判断</h3>
+    <pre><code><span class="comment">// 服务端专属（只在 server/ 目录或 setup 顶部执行）</span>
+process.server   <span class="comment">// true when SSR</span>
+
+<span class="comment">// 客户端专属（只在浏览器执行）</span>
+process.client   <span class="comment">// true when browser</span>
+
+<span class="comment">// 示例：条件执行</span>
+<span class="keyword">if</span> (process.server) {
+  <span class="comment">// 仅服务端：访问数据库、读取文件等</span>
+  data = <span class="keyword">await</span> db.query(<span class="string">'SELECT * FROM posts'</span>)
+}
+
+<span class="comment">// 示例：组件内判断</span>
+<span class="tag">&lt;script</span> <span class="attr">setup</span>=<span class="string">""</span><span class="tag">&gt;</span>
+  <span class="keyword">const</span> showModal = ref(false)
+  <span class="keyword">if</span> (process.client) {
+    <span class="comment">// 客户端：读取 localStorage</span>
+    showModal.value = localStorage.getItem(<span class="string">'showModal'</span>) === <span class="string">'true'</span>
+  }
+<span class="tag">&lt;/script&gt;</span></code></pre>
+  </div>
+</div>
+
+<!-- 代码差异处理 -->
+<div id="code-diff" class="tab-content">
+  <div class="card">
+    <h3>process.client vs process.server</h3>
+    <p>Nuxt 自动注入这两个全局变量，用于区分代码执行环境：</p>
+    <table>
+      <tr><th>变量</th><th>服务端</th><th>客户端</th><th>典型用途</th></tr>
+      <tr><td>process.server</td><td>true</td><td>false</td><td>数据库访问、文件读取</td></tr>
+      <tr><td>process.client</td><td>false</td><td>true</td><td>localStorage、DOM 操作</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>onMounted — 客户端独占</h3>
+    <pre><code><span class="tag">&lt;script</span> <span class="attr">setup</span>=<span class="string">""</span><span class="tag">&gt;</span>
+  <span class="keyword">import</span> { ref, onMounted } <span class="keyword">from</span> <span class="string">'vue'</span>
+
+  <span class="comment">// ✅ 正确：onMounted 仅在客户端执行</span>
+  <span class="keyword">const</span> screenWidth = ref(0)
+  onMounted(() => {
+    screenWidth.value = window.innerWidth
+  })
+
+  <span class="comment">// ✅ 正确：process.client 条件判断</span>
+  <span class="keyword">const</span> isMobile = ref(false)
+  <span class="keyword">if</span> (process.client) {
+    isMobile.value = window.matchMedia(<span class="string">'(max-width: 768px)'</span>).matches
+  }
+<span class="tag">&lt;/script&gt;</span></code></pre>
+  </div>
+
+  <div class="card">
+    <h3>Pinia 状态序列化</h3>
+    <p>服务端渲染时 Pinia store 会被序列化（devalue）传到客户端，防止状态丢失：</p>
+    <pre><code><span class="comment">// stores/user.ts</span>
+<span class="keyword">import</span> { defineStore } <span class="keyword">from</span> <span class="string">'pinia'</span>
+
+<span class="keyword">export const</span> useUserStore = defineStore(<span class="string">'user'</span>, {
+  state: () => ({
+    name: <span class="string">'Guest'</span>,
+    preferences: { theme: <span class="string">'dark'</span> }
+  }),
+  <span class="comment">// ⚠️ 不要在 state 中放无法序列化的对象</span>
+  <span class="comment">// ❌ error: Date 对象、window、DOM 引用</span>
+  <span class="comment">// ✅ 正确：只放纯数据</span>
+})</code></pre>
+    <p style="margin-top:12px;color:var(--warning);font-size:0.85rem;">⚠️ Pinia 状态必须可序列化。Map、Set、Date、class 实例等无法通过 devalue 序列化，会导致运行时错误。</p>
+  </div>
+
+  <div class="card">
+    <h3>Vite SSR 开发提示</h3>
+    <pre><code><span class="comment">// vite.config.ts - SSR 插件</span>
+<span class="keyword">import</span> { defineConfig } <span class="keyword">from</span> <span class="string">'vite'</span>
+<span class="keyword">import</span> vue from <span class="string">'@vitejs/plugin-vue'</span>
+
+<span class="keyword">export default</span> defineConfig({
+  plugins: [vue()],
+  <span class="comment">// 标记服务端依赖，防止打包到客户端</span>
+  ssr: {
+    noExternal: [<span class="string">'vue'</span>, <span class="string">'vue-router'</span>]
+  }
+})
+
+<span class="comment">// 构建 SSR bundle</span>
+$ vite build --ssr src/entry-server.js
+$ vite build --ssr src/entry-client.js</code></pre>
+  </div>
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function simulateHydration() {
+  const log = document.getElementById('hydration-log');
+  const steps = [
+    { text: '→ [Server] 收到请求，开始渲染...', type: 'ok', delay: 0 },
+    { text: '→ [Server] renderToString() 完成，生成 HTML', type: 'ok', delay: 300 },
+    { text: '→ [Network] HTML 传输完成 (28KB)', type: 'ok', delay: 600 },
+    { text: '→ [Browser] 解析 HTML，用户看到首屏内容 ✓', type: 'ok', delay: 900 },
+    { text: '→ [Browser] 下载 JS bundle (312KB)', type: 'warn', delay: 1200 },
+    { text: '→ [Browser] Vue 初始化响应式系统', type: 'ok', delay: 1600 },
+    { text: '→ [Hydration] 遍历现有 DOM，建立响应式绑定...', type: 'ok', delay: 2000 },
+    { text: '→ [Hydration] 组件 #1: AppHeader ✓', type: 'ok', delay: 2400 },
+    { text: '→ [Hydration] 组件 #2: ArticleList ✓', type: 'ok', delay: 2800 },
+    { text: '→ [Hydration] 组件 #3: CommentSection ✓', type: 'ok', delay: 3200 },
+    { text: '→ [Done] ✓ hydration 完成，页面完全可交互', type: 'ok', delay: 3600 }
+  ];
+
+  log.innerHTML = '<div class="log-entry">开始模拟 SSR + Hydration...</div>';
+  let i = 0;
+
+  const interval = setInterval(() => {
+    if (i >= steps.length) { clearInterval(interval); return; }
+    const step = steps[i];
+    const cls = step.type === 'ok' ? 'log-ok' : step.type === 'warn' ? 'log-warn' : 'log-error';
+    log.innerHTML += `<div class="log-entry ${cls}">${step.text}</div>`;
+    log.scrollTop = log.scrollHeight;
+    i++;
+  }, 200);
+}
+</script>
+</body>
+</html>
