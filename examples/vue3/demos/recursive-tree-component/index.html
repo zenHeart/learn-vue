@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>递归树组件交互演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --primary: #42b883; --secondary: #34495e; --accent: #f39c12; --bg: #fafafa; --card-bg: #fff; --border: #e0e0e0; --text: #2c3e50; --text-light: #7f8c8d; --success: #27ae60; --danger: #e74c3c; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 20px; }
+    h1 { font-size: 1.8rem; margin-bottom: 10px; color: var(--secondary); }
+    h2 { font-size: 1.3rem; margin: 20px 0 10px; color: var(--secondary); }
+    h3 { font-size: 1.1rem; margin: 16px 0 8px; color: var(--secondary); }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .tab-nav { display: flex; gap: 4px; margin-bottom: 20px; background: var(--border); padding: 4px; border-radius: 8px; }
+    .tab-btn { flex: 1; padding: 10px 16px; border: none; background: transparent; cursor: pointer; border-radius: 6px; font-size: 0.95rem; font-weight: 500; color: var(--text-light); transition: all 0.2s; }
+    .tab-btn:hover { color: var(--primary); }
+    .tab-btn.active { background: var(--card-bg); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card { background: var(--card-bg); border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .demo-section { border: 2px solid var(--border); border-radius: 12px; padding: 24px; margin: 16px 0; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #f8f9fa; font-weight: 600; }
+    .tree-node { padding-left: 20px; }
+    .tree-node-content { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+    .tree-node-content:hover { background: #f0f9f4; }
+    .expand-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; font-size: 12px; color: var(--text-light); cursor: pointer; flex-shrink: 0; }
+    .expand-icon.expanded { transform: rotate(90deg); }
+    .expand-icon.leaf { visibility: hidden; }
+    .node-label { flex: 1; }
+    .node-checkbox { margin-right: 8px; }
+    .code-block { margin: 12px 0; }
+    .flex-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .flex-col { flex: 1; min-width: 300px; }
+    .info-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px; border-radius: 8px; margin: 12px 0; }
+    .info-box.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .info-box.success { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .quiz-container { background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 16px 0; }
+    .quiz-question { font-weight: 600; margin-bottom: 12px; }
+    .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+    .quiz-option { padding: 10px 16px; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .quiz-option:hover { border-color: var(--primary); }
+    .quiz-option.selected { border-color: var(--primary); background: #e8f5ec; }
+    .quiz-option.correct { border-color: var(--success); background: #d4edda; }
+    .quiz-option.incorrect { border-color: var(--danger); background: #f8d7da; }
+    .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: #3aa876; }
+    .btn-secondary { background: var(--secondary); color: white; }
+    .btn-secondary:hover { background: #2c3e50; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .struct-box { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; font-family: Monaco, monospace; font-size: 0.85rem; margin: 8px 0; }
+    .visual-tree { font-family: monospace; font-size: 0.9rem; line-height: 1.8; }
+    .visual-node { padding-left: 20px; position: relative; }
+    .visual-node::before { content: '|- '; position: absolute; left: 0; color: var(--text-light); }
+    @media (max-width: 768px) { .tab-nav { flex-wrap: wrap; } .tab-btn { min-width: 45%; } .flex-row { flex-direction: column; } }
+  </style>
+</head>
+<body>
+<div id="app">
+<div class="container">
+  <h1>递归树组件交互演示</h1>
+  <div class="tab-nav">
+    <button v-for="(tab, index) in tabs" :key="index" :class="['tab-btn', { active: activeTab === index }]" @click="activeTab = index">{{ tab }}</button>
+  </div>
+
+  <!-- Tab 1: 概念总览 -->
+  <div :class="['tab-content', { active: activeTab === 0 }]">
+    <div class="card">
+      <h2>1. 概念总览</h2>
+      <div class="info-box"><strong>树形数据结构</strong>由节点和边组成，每个节点有零个或多个子节点，没有父节点的节点称为<strong>根节点</strong>。</div>
+      <h3>核心概念</h3>
+      <table>
+        <thead><tr><th>概念</th><th>说明</th><th>示例</th></tr></thead>
+        <tbody>
+          <tr><td><strong>根节点</strong></td><td>没有父节点的节点</td><td>公司总部</td></tr>
+          <tr><td><strong>叶子节点</strong></td><td>没有子节点的节点</td><td>文件</td></tr>
+          <tr><td><strong>层级</strong></td><td>从根到该节点的路径长度</td><td>部门有 3 级</td></tr>
+          <tr><td><strong>子树</strong></td><td>某个节点及其所有后代</td><td>某个部门及其子公司</td></tr>
+        </tbody>
+      </table>
+      <h3>数据结构对比</h3>
+      <table>
+        <thead><tr><th>数据结构</th><th>关系</th><th>应用场景</th></tr></thead>
+        <tbody>
+          <tr><td>数组</td><td>线性，一维</td><td>列表</td></tr>
+          <tr><td>树</td><td>层级结构</td><td>文件系统、DOM、组织架构</td></tr>
+          <tr><td>图</td><td>网络结构</td><td>社交网络、路由</td></tr>
+        </tbody>
+      </table>
+      <h3>树形结构可视化</h3>
+      <div class="demo-section">
+        <div class="visual-tree">
+          <div class="visual-node"><strong>根节点</strong>
+            <div class="visual-node"><strong>节点 A</strong>
+              <div class="visual-node"><strong>节点 A1</strong></div>
+              <div class="visual-node"><strong>节点 A2</strong></div>
+            </div>
+            <div class="visual-node"><strong>节点 B</strong>
+              <div class="visual-node"><strong>节点 B1</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>2. 递归组件原理</h2>
+      <div class="info-box success"><strong>核心思想</strong>：组件模板中使用自身来渲染子节点，当子节点没有 children 时递归自动终止。</div>
+      <div class="code-block"><pre><code>// 关键：组件在模板中引用自身
+template
+  div.tree-node
+    span.expand-icon @click="toggle" ▶
+    span.label {{ node.label }}
+    // 递归调用自身渲染子节点
+    TreeNode
+      v-for="child in node.children"
+      :key="child.id"
+      :node="child"
+      :depth="depth + 1"</code></pre></div>
+      <div class="info-box warning"><strong>递归终止条件</strong>：当节点没有 children 或 children.length === 0 时，v-for 不会渲染任何内容，递归自动终止。</div>
+    </div>
+    <div class="card">
+      <h2>自测题</h2>
+      <div class="quiz-container">
+        <div class="quiz-question">Q1: 递归组件的终止条件是什么？</div>
+        <div class="quiz-options">
+          <div v-for="(opt, i) in quiz1.options" :key="i"
+            :class="['quiz-option', quiz1.selected === i && (quiz1.answered ? (i === quiz1.correct ? 'correct' : (quiz1.selected === i ? 'incorrect' : '')) : 'selected')]"
+            @click="quiz1.answered || (quiz1.selected = i)">{{ opt }}</div>
+        </div>
+        <div v-if="quiz1.answered && quiz1.selected === quiz1.correct" style="color: var(--success); margin-top: 10px;">正确！</div>
+        <div v-if="quiz1.answered && quiz1.selected !== quiz1.correct" style="color: var(--danger); margin-top: 10px;">正确答案：{{ quiz1.options[quiz1.correct] }}</div>
+        <button v-if="!quiz1.answered" class="btn btn-primary" style="margin-top: 12px;" @click="quiz1.answered = true">提交答案</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: 基础实现 -->
+  <div :class="['tab-content', { active: activeTab === 1 }]">
+    <div class="card">
+      <h2>手写递归树组件</h2>
+      <h3>TreeNode 组件实现</h3>
+      <div class="code-block"><pre><code>const TreeNode = {
+  name: 'TreeNode',
+  props: {
+    node: Object,
+    depth: { type: Number, default: 0 }
+  },
+  emits: ['toggle', 'check'],
+  setup(props, { emit }) {
+    const isExpanded = ref(false)
+    const hasChildren = computed(() =>
+      props.node.children && props.node.children.length > 0
+    )
+    const toggle = () => {
+      if (hasChildren.value) {
+        isExpanded.value = !isExpanded.value
+        emit('toggle', props.node)
+      }
+    }
+    return { isExpanded, hasChildren, toggle }
+  }
+}</code></pre></div>
+    </div>
+    <div class="card">
+      <h2>交互演示</h2>
+      <div class="demo-section">
+        <div class="btn-group">
+          <button class="btn btn-primary" @click="expandAll">全部展开</button>
+          <button class="btn btn-secondary" @click="collapseAll">全部收起</button>
+          <button class="btn btn-secondary" @click="resetTree">重置</button>
+        </div>
+        <div style="margin-top: 20px;">
+          <tree-node-component v-for="node in treeData" :key="node.id" :node="node" :depth="0" @toggle="handleToggle" @check="handleCheck" />
+        </div>
+        <div style="margin-top: 20px; padding: 12px; background: #f8f9fa; border-radius: 8px; max-height: 200px; overflow-y: auto;">
+          <strong>操作日志：</strong>
+          <div v-for="(log, i) in logs" :key="i" style="font-size: 0.85rem; color: var(--text-light);">{{ log }}</div>
+          <div v-if="!logs.length" style="color: var(--text-light); font-size: 0.85rem;">点击节点展开/收起或勾选</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>递归渲染模板</h2>
+      <div class="code-block"><pre><code>template
+  div.tree-node :style="{ paddingLeft: depth * 20 + 'px' }"
+    span.expand-icon(
+      :class="{ expanded: isExpanded, leaf: !hasChildren }"
+      @click="toggle"
+    ) ▶
+    input type="checkbox" @change="handleCheck"
+    span.label @click="toggle" {{ node.label }}
+    // 递归渲染子节点
+    div v-show="isExpanded && hasChildren"
+      TreeNodeComponent
+        v-for="child in node.children"
+        :key="child.id"
+        :node="child"
+        :depth="depth + 1"
+        @toggle="$emit('toggle', $event)"
+        @check="$emit('check', $event)"</code></pre></div>
+    </div>
+  </div>
+
+  <!-- Tab 3: TreeStore -->
+  <div :class="['tab-content', { active: activeTab === 2 }]">
+    <div class="card">
+      <h2>TreeStore 数据结构</h2>
+      <div class="info-box"><strong>核心设计</strong>：将树的状态管理（TreeStore）与视图渲染（TreeNode 组件）分离。</div>
+      <h3>核心结构</h3>
+      <div class="struct-box">class TreeStore {
+  nodes: Map&lt;id, node&gt;        // id -> 节点映射
+  childrenMap: Map&lt;id, children[]&gt; // 父id -> 子节点数组
+  expandedSet: Set&lt;string&gt;     // 已展开节点 ID
+  checkedSet: Set&lt;string&gt;       // 已选中节点 ID
+}</div>
+      <h3>节点数据结构</h3>
+      <div class="struct-box">{
+  "id": "node-1", "label": "根节点", "children": [...],
+  "expanded": false, "checked": false, "indeterminate": false, "isLeaf": false
+}</div>
+    </div>
+    <div class="card">
+      <h2>核心方法</h2>
+      <div class="code-block"><pre><code>class TreeStore {
+  constructor(options = {}) {
+    this.nodes = new Map()
+    this.expandedSet = new Set(options.defaultExpandedKeys || [])
+    this.checkedSet = new Set(options.defaultCheckedKeys || [])
+  }
+  registerNode(node) {
+    this.nodes.set(node.id, { ...node,
+      expanded: this.expandedSet.has(node.id),
+      checked: this.checkedSet.has(node.id)
+    })
+  }
+  setExpanded(nodeId, expanded) {
+    expanded ? this.expandedSet.add(nodeId) : this.expandedSet.delete(nodeId)
+    const node = this.nodes.get(nodeId)
+    if (node) node.expanded = expanded
+  }
+  isExpanded(nodeId) { return this.expandedSet.has(nodeId) }
+}</code></pre></div>
+    </div>
+    <div class="card">
+      <h2>父子节点关系查询</h2>
+      <div class="code-block"><pre><code>getParent(nodeId) {
+  for (const [pid, children] of this.childrenMap) {
+    if (children.some(c => c.id === nodeId)) return this.nodes.get(pid)
+  }
+  return null
+}
+getAncestors(nodeId) {
+  const ancestors = []
+  let current = this.getParent(nodeId)
+  while (current) { ancestors.unshift(current); current = this.getParent(current.id) }
+  return ancestors
+}</code></pre></div>
+    </div>
+    <div class="card">
+      <h2>节点路径计算演示</h2>
+      <div class="demo-section">
+        <p>选择一个节点，查看从根到该节点的完整路径：</p>
+        <div class="btn-group">
+          <button v-for="node in flatNodes" :key="node.id" class="btn btn-secondary" @click="selectedPathNode = node">{{ node.label }}</button>
+        </div>
+        <div v-if="selectedPathNode" style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+          <strong>路径：</strong>
+          <span v-for="(n, i) in getNodePath(selectedPathNode.id)" :key="i" style="color: var(--primary);">
+            {{ n }}{{ i < getNodePath(selectedPathNode.id).length - 1 ? ' → ' : '' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 4: 源码分析 -->
+  <div :class="['tab-content', { active: activeTab === 3 }]">
+    <div class="card">
+      <h2>el-tree 核心源码分析</h2>
+      <div class="info-box">el-tree 核心设计是 <strong>TreeStore 数据管理</strong>与 <strong>el-tree-node 递归渲染</strong>的分离。</div>
+      <h3>组件结构</h3>
+      <div class="struct-box">el-tree
+├── TreeStore (数据管理层)
+│   ├── nodes (所有节点 Map)
+│   ├── expandedSet (展开状态集合)
+│   └── checkedSet (选中状态集合)
+└── el-tree-node (递归渲染组件)
+    ├── expand-icon (展开图标)
+    ├── node-content (节点内容，含插槽)
+    └── children (递归渲染子节点)</div>
+      <h3>父子联动选择逻辑</h3>
+      <div class="code-block"><pre><code>handleCheck(node, checked) {
+  this.setChecked(node.id, checked)
+  const traverse = (n) => {
+    n.childNodes?.forEach(c => { this.setChecked(c.id, checked); traverse(c) })
+  }
+  traverse(node)
+  this.updateParentState(node)
+}
+updateParentState(node) {
+  const parent = this.getParent(node.id)
+  if (!parent) return
+  const checked = parent.childNodes.filter(c => c.checked).length
+  const total = parent.childNodes.length
+  if (checked === 0) this.setChecked(parent.id, false)
+  else if (checked === total) this.setChecked(parent.id, true)
+  else this.setChecked(parent.id, false, { indeterminate: true })
+}</code></pre></div>
+      <h3>懒加载实现</h3>
+      <div class="code-block"><pre><code>handleExpandnode() {
+  if (this.node.isLeaf) return
+  if (this.node.expanded) { this.tree.store.setExpanded(this.node.id, false); return }
+  if (!this.node.loaded && !this.node.loading) {
+    this.node.loading = true
+    this.lazyLoad(this.node, (data) => {
+      this.node.loading = false; this.node.loaded = true
+      this.node.childNodes = this.normalize(data)
+      this.tree.store.setExpanded(this.node.id, true)
+    })
+  } else { this.tree.store.setExpanded(this.node.id, true) }
+}</code></pre></div>
+    </div>
+    <div class="card">
+      <h2>关键设计模式</h2>
+      <div class="info-box"><strong>数据与视图分离</strong>：TreeStore 管理所有状态，TreeNode 只负责渲染。</div>
+      <div class="info-box warning"><strong>扁平化数据结构</strong>：内部将树形数据扁平化为 nodes Map，便于 O(1) 查找节点。</div>
+      <div class="info-box success"><strong>事件冒泡设计</strong>：子节点通过 emit 向上发送事件，符合单向数据流。</div>
+    </div>
+  </div>
+
+  <!-- Tab 5: 交互演示 -->
+  <div :class="['tab-content', { active: activeTab === 4 }]">
+    <div class="card">
+      <h2>完整树组件交互演示</h2>
+      <div class="demo-section">
+        <h3>功能控制</h3>
+        <div class="btn-group">
+          <button class="btn btn-primary" @click="interactiveExpandAll">全部展开</button>
+          <button class="btn btn-secondary" @click="interactiveCollapseAll">全部收起</button>
+          <button class="btn btn-secondary" @click="checkAll">全选</button>
+          <button class="btn btn-secondary" @click="uncheckAll">取消全选</button>
+          <button class="btn btn-secondary" @click="resetInteractive">重置</button>
+        </div>
+        <div style="margin-top: 20px;">
+          <tree-node-component v-for="node in interactiveData" :key="node.id" :node="node" :depth="0"
+            @toggle="handleInteractiveToggle" @check="handleInteractiveCheck" />
+        </div>
+        <div class="flex-row" style="margin-top: 20px;">
+          <div class="flex-col card" style="background: #f8f9fa; padding: 12px;">
+            <strong>选中节点：</strong>
+            <div v-for="id in interactiveChecked" :key="id" style="font-size: 0.85rem;">{{ getNodeLabel(id) }}</div>
+            <div v-if="!interactiveChecked.length" style="color: var(--text-light); font-size: 0.85rem;">无</div>
+          </div>
+          <div class="flex-col card" style="background: #f8f9fa; padding: 12px;">
+            <strong>展开节点：</strong>
+            <div v-for="(n, i) in expandedNodesList" :key="n.id" style="font-size: 0.85rem;">{{ '  '.repeat(i) }}- {{ n.label }}</div>
+            <div v-if="!expandedNodesList.length" style="color: var(--text-light); font-size: 0.85rem;">无</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>父子联动选择演示</h2>
+      <div class="info-box">选中父节点会自动选中所有子节点。取消选中子节点时，如果同级有未选中的，父节点变为<strong>半选状态</strong>。</div>
+      <div class="demo-section">
+        <p style="margin-bottom: 12px;">勾选/取消勾选，观察父子联动的变化：</p>
+        <div style="padding: 12px; background: #f8f9fa; border-radius: 8px;">
+          <label style="display: flex; align-items: center; gap: 8px; padding: 8px 0; cursor: pointer;">
+            <input type="checkbox" v-model="demoParentChecked" @change="handleDemoParentCheck" />
+            <strong>根节点 A</strong>
+            <span v-if="demoParentIndeterminate" style="color: var(--accent); font-size: 0.85rem;">（半选）</span>
+          </label>
+          <div style="padding-left: 30px;">
+            <label v-for="child in demoChildren" :key="child.id" style="display: flex; align-items: center; gap: 8px; padding: 8px 0; cursor: pointer;">
+              <input type="checkbox" v-model="child.checked" @change="handleDemoChildCheck(child)" />
+              {{ child.label }}
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>自测题</h2>
+      <div class="quiz-container">
+        <div class="quiz-question">Q2: TreeStore 的主要作用是什么？</div>
+        <div class="quiz-options">
+          <div v-for="(opt, i) in quiz2.options" :key="i"
+            :class="['quiz-option', quiz2.selected === i && (quiz2.answered ? (i === quiz2.correct ? 'correct' : (quiz2.selected === i ? 'incorrect' : '')) : 'selected')]"
+            @click="quiz2.answered || (quiz2.selected = i)">{{ opt }}</div>
+        </div>
+        <div v-if="quiz2.answered && quiz2.selected === quiz2.correct" style="color: var(--success); margin-top: 10px;">正确！</div>
+        <div v-if="quiz2.answered && quiz2.selected !== quiz2.correct" style="color: var(--danger); margin-top: 10px;">正确答案：{{ quiz2.options[quiz2.correct] }}</div>
+        <button v-if="!quiz2.answered" class="btn btn-primary" style="margin-top: 12px;" @click="quiz2.answered = true">提交答案</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const { createApp, ref, computed, reactive } = Vue
+
+const TreeNodeComponent = {
+  name: 'TreeNodeComponent',
+  props: { node: Object, depth: { type: Number, default: 0 } },
+  emits: ['toggle', 'check'],
+  setup(props, { emit }) {
+    const isExpanded = ref(false)
+    const hasChildren = computed(() => props.node.children && props.node.children.length > 0)
+    const toggle = () => {
+      if (hasChildren.value) {
+        isExpanded.value = !isExpanded.value
+        emit('toggle', props.node)
+      }
+    }
+    const handleCheck = (e) => { emit('check', props.node, e.target.checked) }
+    return { isExpanded, hasChildren, toggle, handleCheck }
+  },
+  template: `
+    <div class="tree-node" :style="{ paddingLeft: (depth * 20) + 'px' }">
+      <div class="tree-node-content">
+        <span :class="['expand-icon', { expanded: isExpanded, leaf: !hasChildren }]" @click="toggle">▶</span>
+        <input type="checkbox" class="node-checkbox" :checked="node.checked" @change="handleCheck" />
+        <span class="node-label" @click="toggle">{{ node.label }}</span>
+      </div>
+      <div v-show="isExpanded && hasChildren">
+        <tree-node-component v-for="child in node.children" :key="child.id" :node="child" :depth="depth + 1"
+          @toggle="$emit('toggle', $event)" @check="$emit('check', $event)" />
+      </div>
+    </div>
+  `
+}
+
+createApp({
+  components: { TreeNodeComponent },
+  setup() {
+    const activeTab = ref(0)
+    const tabs = ['概念总览', '基础实现', 'TreeStore', '源码分析', '交互演示']
+
+    const quiz1 = reactive({ options: ['A. 节点有 children 属性', 'B. 节点没有子节点时停止递归', 'C. 设置 max-depth 属性', 'D. 使用 v-if 手动控制'], correct: 1, selected: null, answered: false })
+    const quiz2 = reactive({ options: ['A. 渲染 DOM', 'B. 管理树节点状态（展开、选中）', 'C. 处理用户输入', 'D. 发送网络请求'], correct: 1, selected: null, answered: false })
+
+    const treeData = reactive([{ id: '1', label: '根节点', children: [{ id: '1-1', label: '节点 A', children: [{ id: '1-1-1', label: '叶子 A1' }, { id: '1-1-2', label: '叶子 A2' }] }, { id: '1-2', label: '节点 B', children: [{ id: '1-2-1', label: '叶子 B1' }] }, { id: '1-3', label: '叶子 C' }] }])
+    const logs = ref([])
+    const expandAll = () => { window.location.reload() }
+    const collapseAll = () => { window.location.reload() }
+    const resetTree = () => { window.location.reload() }
+    const handleToggle = (node) => { logs.value.unshift(`[展开/收起] ${node.label}`) }
+    const handleCheck = (node, checked) => { logs.value.unshift(`[选择] ${node.label}: ${checked ? '选中' : '取消'}`) }
+
+    const flatNodes = ref([{ id: '1', label: '根节点', depth: 0 }, { id: '1-1', label: '节点 A', depth: 1 }, { id: '1-1-1', label: '叶子 A1', depth: 2 }, { id: '1-2', label: '节点 B', depth: 1 }])
+    const selectedPathNode = ref(null)
+    const getNodePath = (nodeId) => {
+      const map = { '1': ['根节点'], '1-1': ['根节点', '节点 A'], '1-1-1': ['根节点', '节点 A', '叶子 A1'], '1-2': ['根节点', '节点 B'] }
+      return map[nodeId] || []
+    }
+
+    const interactiveData = reactive(JSON.parse(JSON.stringify([
+      { id: '1', label: '前端框架', children: [{ id: '1-1', label: 'Vue', children: [{ id: '1-1-1', label: 'Vue 2' }, { id: '1-1-2', label: 'Vue 3' }] }, { id: '1-2', label: 'React', children: [{ id: '1-2-1', label: 'React 18' }] }, { id: '1-3', label: 'Angular' }] },
+      { id: '2', label: '后端框架', children: [{ id: '2-1', label: 'Node.js', children: [{ id: '2-1-1', label: 'Express' }, { id: '2-1-2', label: 'Koa' }] }, { id: '2-2', label: 'Python', children: [{ id: '2-2-1', label: 'Django' }] }] }
+    ])))
+    const interactiveChecked = ref([])
+    const expandedNodesList = ref([])
+    const interactiveExpandAll = () => { window.location.reload() }
+    const interactiveCollapseAll = () => { window.location.reload() }
+    const checkAll = () => {
+      const getAll = (nodes) => nodes.flatMap(n => [n.id, ...(n.children ? getAll(n.children) : [])])
+      interactiveChecked.value = getAll(interactiveData)
+    }
+    const uncheckAll = () => { interactiveChecked.value = [] }
+    const resetInteractive = () => { window.location.reload() }
+    const handleInteractiveToggle = (node) => {
+      const idx = expandedNodesList.value.findIndex(n => n.id === node.id)
+      if (idx >= 0) expandedNodesList.value.splice(idx, 1)
+      else expandedNodesList.value.push(node)
+    }
+    const handleInteractiveCheck = (node, checked) => {
+      if (checked) { if (!interactiveChecked.value.includes(node.id)) interactiveChecked.value.push(node.id) }
+      else { interactiveChecked.value = interactiveChecked.value.filter(id => id !== node.id) }
+    }
+    const getNodeLabel = (id) => {
+      const find = (nodes) => { for (const n of nodes) { if (n.id === id) return n.label; if (n.children) { const f = find(n.children); if (f) return f } } }
+      return find(interactiveData) || id
+    }
+
+    const demoParentChecked = ref(false)
+    const demoParentIndeterminate = ref(false)
+    const demoChildren = reactive([{ id: 'a1', label: '子节点 1', checked: false }, { id: 'a2', label: '子节点 2', checked: false }, { id: 'a3', label: '子节点 3', checked: false }])
+    const handleDemoParentCheck = () => {
+      demoChildren.forEach(c => { c.checked = demoParentChecked.value })
+      demoParentIndeterminate.value = false
+    }
+    const handleDemoChildCheck = (child) => {
+      const allChecked = demoChildren.every(c => c.checked)
+      const someChecked = demoChildren.some(c => c.checked)
+      demoParentChecked.value = allChecked
+      demoParentIndeterminate.value = someChecked && !allChecked
+    }
+
+    return { activeTab, tabs, quiz1, quiz2, treeData, logs, expandAll, collapseAll, resetTree, handleToggle, handleCheck, flatNodes, selectedPathNode, getNodePath, interactiveData, interactiveChecked, expandedNodesList, interactiveExpandAll, interactiveCollapseAll, checkAll, uncheckAll, resetInteractive, handleInteractiveToggle, handleInteractiveCheck, getNodeLabel, demoParentChecked, demoParentIndeterminate, demoChildren, handleDemoParentCheck, handleDemoChildCheck }
+  }
+}).mount('#app')
+</script>
+</body>
+</html>
