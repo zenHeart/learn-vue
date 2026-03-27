@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>setup 中获取组件实例 - Vue 3 Composition API</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background: #f5f5f5; }
+    h1 { color: #42b883; margin-bottom: 20px; }
+    h2 { color: #35495e; margin: 20px 0 10px; font-size: 1.2em; }
+    .demo-container { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .demo-box { background: #f8f8f8; padding: 15px; border-radius: 4px; margin: 10px 0; }
+    .output { background: #1a1a2e; color: #a8dadc; padding: 15px; border-radius: 4px; font-family: 'Monaco', 'Menlo', monospace; font-size: 13px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; }
+    .output .info { color: #42b883; }
+    .output .warn { color: #f4a261; }
+    .output .error { color: #e76f51; }
+    button { background: #42b883; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px 5px 5px 0; font-size: 14px; }
+    button:hover { background: #3aa876; }
+    button:active { transform: scale(0.98); }
+    button.secondary { background: #35495e; }
+    button.secondary:hover { background: #2d3e50; }
+    .tab-container { margin-top: 20px; }
+    .tabs { display: flex; border-bottom: 2px solid #e0e0e0; }
+    .tab { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+    .tab:hover { color: #42b883; }
+    .tab.active { color: #42b883; border-bottom-color: #42b883; }
+    .tab-content { display: none; padding: 20px 0; }
+    .tab-content.active { display: block; }
+    .code-block { background: #2d2d2d; color: #ccc; padding: 15px; border-radius: 4px; overflow-x: auto; font-family: 'Monaco', 'Menlo', monospace; font-size: 13px; line-height: 1.5; }
+    .code-block .keyword { color: #c792ea; }
+    .code-block .string { color: #c3e88d; }
+    .code-block .function { color: #82aaff; }
+    .code-block .comment { color: #676e95; }
+    .code-block .number { color: #f78c6c; }
+    .code-block .property { color: #ffcb6b; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    th { background: #f8f8f8; color: #35495e; }
+    .warning { background: #fff3cd; border: 1px solid #ffc107; padding: 10px; border-radius: 4px; margin: 10px 0; }
+    .parent-box { background: #e8f5e9; padding: 15px; border-radius: 4px; border: 2px solid #42b883; margin: 10px 0; }
+    .child-box { background: #e3f2fd; padding: 15px; border-radius: 4px; border: 2px solid #1976d2; margin-left: 20px; margin-top: 10px; }
+    .tip { background: #e8f5e9; border-left: 4px solid #42b883; padding: 10px 15px; margin: 10px 0; border-radius: 0 4px 4px 0; }
+  </style>
+</head>
+<body>
+  <h1>Vue 3 Composition API - setup 中获取组件实例</h1>
+
+  <div class="demo-container">
+    <h2>概念总览</h2>
+    <div class="tip">
+      <strong>核心问题：</strong>在 Vue 3 的 <code>setup()</code> 函数中没有 <code>this</code>，如何访问组件实例？
+    </div>
+    <table>
+      <tr>
+        <th>方式</th>
+        <th>说明</th>
+        <th>使用场景</th>
+      </tr>
+      <tr>
+        <td><code>setup(props, context)</code></td>
+        <td>第二个参数包含组件相关属性</td>
+        <td>最常用方式</td>
+      </tr>
+      <tr>
+        <td><code>getCurrentInstance()</code></td>
+        <td>获取当前组件实例对象</td>
+        <td>需要访问实例内部时</td>
+      </tr>
+      <tr>
+        <td><code>defineExpose()</code></td>
+        <td>暴露公共属性供父组件访问</td>
+        <td>模板 ref 访问子组件</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="tab-container">
+    <div class="tabs">
+      <div class="tab active" data-tab="demo1">context.root/parent</div>
+      <div class="tab" data-tab="demo2">getCurrentInstance</div>
+      <div class="tab" data-tab="demo3">defineExpose</div>
+      <div class="tab" data-tab="demo4">父子通信</div>
+      <div class="tab" data-tab="code">代码示例</div>
+    </div>
+
+    <!-- Demo 1: context.root/parent -->
+    <div class="tab-content active" id="demo1">
+      <div class="demo-container">
+        <h2>方式一：使用 context.root 和 context.parent</h2>
+        <p>在 setup() 中通过 context 参数访问父组件和根组件：</p>
+        
+        <div id="app1">
+          <div class="parent-box">
+            <strong>根组件 (App)</strong>
+            <button @click="updateRoot">更新根组件数据</button>
+            <span>根计数: {{ rootCount }}</span>
+            
+            <div class="child-box">
+              <strong>子组件 (Child)</strong>
+              <button @click="callParent">调用父组件方法</button>
+              <button @click="callRoot">调用根组件方法</button>
+              <div class="output" id="output1">控制台输出...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo 2: getCurrentInstance -->
+    <div class="tab-content" id="demo2">
+      <div class="demo-container">
+        <h2>方式二：getCurrentInstance() API</h2>
+        <p>获取当前组件实例，仅在 setup() 或生命周期钩子中可用：</p>
+        
+        <div id="app2">
+          <div class="demo-box">
+            <p>组件 UID: <strong>{{ uid }}</strong></p>
+            <p>组件名称: <strong>{{ componentName }}</strong></p>
+            <p>父组件存在: <strong>{{ hasParent }}</strong></p>
+            <p>根组件存在: <strong>{{ hasRoot }}</strong></p>
+            <button @click="logInstance">打印实例信息</button>
+          </div>
+          <div class="output" id="output2">点击按钮查看实例信息...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo 3: defineExpose -->
+    <div class="tab-content" id="demo3">
+      <div class="demo-container">
+        <h2>方式三：defineExpose() 暴露方法</h2>
+        <p>子组件使用 defineExpose() 暴露属性，父组件通过 ref 访问：</p>
+        
+        <div id="app3">
+          <div class="demo-box">
+            <strong>父组件</strong>
+            <button @click="childRef?.increment()">调用子组件 increment()</button>
+            <button @click="childRef?.decrement()">调用子组件 decrement()</button>
+            <button @click="logChildState">打印子组件状态</button>
+            <p>子组件 count: <strong>{{ childCount }}</strong></p>
+            <p>子组件 double: <strong>{{ childDouble }}</strong></p>
+          </div>
+          
+          <!-- 子组件 -->
+          <child-component ref="childRef" @count-change="onChildCountChange"></child-component>
+          
+          <div class="output" id="output3">点击按钮查看子组件状态...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo 4: 父子通信实战 -->
+    <div class="tab-content" id="demo4">
+      <div class="demo-container">
+        <h2>实战：父子组件通信</h2>
+        <p>综合使用 context.emit 和 getCurrentInstance() 实现父子通信：</p>
+        
+        <div id="app4">
+          <div class="parent-box">
+            <strong>父组件接收事件</strong>
+            <p>收到子组件消息: <strong>{{ childMessage || '无' }}</strong></p>
+            <p>事件计数: <strong>{{ eventCount }}</strong></p>
+            
+            <div class="child-box">
+              <strong>子组件触发事件</strong>
+              <button @click="sendMessage('Hello from child!')">发送消息</button>
+              <button @click="sendMessage('Button clicked!')">按钮点击</button>
+              <button @click="sendMessage('')">发送空消息</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code Examples -->
+    <div class="tab-content" id="code">
+      <div class="demo-container">
+        <h2>核心代码示例</h2>
+        
+        <h3>1. context 参数使用</h3>
+        <div class="code-block"><span class="keyword">import</span> { defineComponent } <span class="keyword">from</span> <span class="string">'vue'</span>;
+
+<span class="keyword">export default</span> defineComponent({
+  <span class="function">setup</span>(props, context) {
+    <span class="comment">// 访问属性</span>
+    context.<span class="property">attrs</span>;      <span class="comment">// 非 prop 属性</span>
+    context.<span class="property">slots</span>;       <span class="comment">// 插槽</span>
+    context.<span class="property">emit</span>;        <span class="comment">// 触发事件</span>
+    context.<span class="property">root</span>;        <span class="comment">// 根组件</span>
+    context.<span class="property">parent</span>;      <span class="comment">// 父组件</span>
+    
+    <span class="comment">// 触发事件</span>
+    context.<span class="function">emit</span>(<span class="string">'update'</span>, <span class="string">'new value'</span>);
+  }
+});</div>
+
+        <h3>2. getCurrentInstance 使用</h3>
+        <div class="code-block"><span class="keyword">import</span> { defineComponent, getCurrentInstance } <span class="keyword">from</span> <span class="string">'vue'</span>;
+
+<span class="keyword">export default</span> defineComponent({
+  <span class="function">setup</span>() {
+    <span class="keyword">const</span> instance = <span class="function">getCurrentInstance</span>();
+    console.<span class="function">log</span>(instance.<span class="property">uid</span>);       <span class="comment">// 组件唯一 ID</span>
+    console.<span class="function">log</span>(instance.<span class="property">parent</span>);     <span class="comment">// 父组件</span>
+    console.<span class="function">log</span>(instance.<span class="property">root</span>);       <span class="comment">// 根组件</span>
+    console.<span class="function">log</span>(instance.<span class="property">proxy</span>);     <span class="comment">// 公开代理</span>
+  }
+});</div>
+
+        <h3>3. defineExpose 使用</h3>
+        <div class="code-block"><span class="comment">// 子组件</span>
+<span class="keyword">import</span> { defineComponent, ref } <span class="keyword">from</span> <span class="string">'vue'</span>;
+
+<span class="keyword">export default</span> defineComponent({
+  <span class="function">setup</span>() {
+    <span class="keyword">const</span> count = <span class="function">ref</span>(<span class="number">0</span>);
+    <span class="keyword">const</span> <span class="function">increment</span> = () => count.value++;
+    
+    <span class="comment">// 暴露给父组件</span>
+    <span class="function">defineExpose</span>({ count, <span class="property">increment</span> });
+  }
+});
+
+<span class="comment">// 父组件</span>
+<span class="keyword">const</span> childRef = <span class="function">ref</span>(<span class="keyword">null</span>);
+childRef.value.<span class="function">increment</span>();</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue@next"></script>
+  <script>
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Demo 1: context.root and context.parent
+    const { createApp, ref, getCurrentInstance } = Vue;
+
+    const ChildComponent1 = {
+      name: 'ChildComponent1',
+      template: `<div class="child-box">
+        <strong>子组件 (Child)</strong>
+        <button @click="callParent">调用父组件方法</button>
+        <button @click="callRoot">调用根组件方法</button>
+        <div class="output" id="output1">控制台输出...</div>
+      </div>`,
+      setup(props, context) {
+        const outputEl = document.getElementById('output1');
+        const log = (msg, type = 'info') => {
+          const prefix = type === 'warn' ? '⚠️ ' : type === 'error' ? '❌ ' : '✅ ';
+          outputEl.innerHTML += `<span class="${type}">${prefix}${msg}</span>\n`;
+          outputEl.scrollTop = outputEl.scrollHeight;
+        };
+
+        const callParent = () => {
+          if (context.parent) {
+            log('调用父组件方法: parent.handleFromChild()');
+            context.parent.handleFromChild?.('来自子组件的调用');
+          } else {
+            log('没有父组件', 'warn');
+          }
+        };
+
+        const callRoot = () => {
+          log('调用根组件方法: root.updateRootCount()');
+          context.root.updateRootCount?.();
+        };
+
+        return { callParent, callRoot };
+      }
+    };
+
+    const App1 = {
+      components: { ChildComponent1 },
+      template: `
+        <div class="parent-box">
+          <strong>根组件 (App)</strong>
+          <button @click="updateRoot">更新根组件数据</button>
+          <span>根计数: {{ rootCount }}</span>
+          <child-component1></child-component1>
+        </div>
+      `,
+      setup() {
+        const rootCount = ref(0);
+        
+        const updateRoot = () => {
+          rootCount.value++;
+          console.log('Root count updated:', rootCount.value);
+        };
+
+        const handleFromChild = (msg) => {
+          console.log('Received from child:', msg);
+        };
+
+        // 暴露给子组件访问
+        return { rootCount, updateRoot, handleFromChild };
+      }
+    };
+
+    // 为子组件访问，需要通过 root 访问
+    App1.setup._r = null; // 临时方案：通过闭包访问
+
+    createApp({
+      components: { ChildComponent1 },
+      setup() {
+        const rootCount = ref(0);
+        
+        const updateRoot = () => {
+          rootCount.value++;
+          log1('根组件 count 更新: ' + rootCount.value, 'info');
+        };
+
+        return { rootCount, updateRoot };
+      },
+      methods: {
+        handleFromChild(msg) {
+          log1('收到子组件消息: ' + msg, 'info');
+        },
+        updateRootCount() {
+          this.rootCount++;
+          log1('根组件 count 更新: ' + this.rootCount, 'info');
+        }
+      },
+      mounted() {
+        // 将方法暴露给子组件通过 context.root 访问
+        this.$options.handleFromChild = this.handleFromChild;
+        this.$options.updateRootCount = this.updateRootCount;
+      }
+    }).mount('#app1');
+
+    const log1 = (msg, type = 'info') => {
+      const outputEl = document.getElementById('output1');
+      if (outputEl) {
+        const prefix = type === 'warn' ? '⚠️ ' : type === 'error' ? '❌ ' : '✅ ';
+        outputEl.innerHTML += `<span class="${type}">${prefix}${msg}</span>\n`;
+        outputEl.scrollTop = outputEl.scrollHeight;
+      }
+    };
+
+    // Demo 2: getCurrentInstance
+    const App2 = {
+      template: `
+        <div class="demo-box">
+          <p>组件 UID: <strong>{{ uid }}</strong></p>
+          <p>组件名称: <strong>{{ componentName }}</strong></p>
+          <p>父组件存在: <strong>{{ hasParent }}</strong></p>
+          <p>根组件存在: <strong>{{ hasRoot }}</strong></p>
+          <button @click="logInstance">打印实例信息</button>
+        </div>
+        <div class="output" id="output2">点击按钮查看实例信息...</div>
+      `,
+      setup() {
+        const instance = getCurrentInstance();
+        const uid = instance.uid;
+        const componentName = instance.type.name || 'Anonymous';
+        const hasParent = !!instance.parent;
+        const hasRoot = !!instance.root;
+
+        const logInstance = () => {
+          const output = document.getElementById('output2');
+          const info = {
+            'instance.uid': instance.uid,
+            'instance.type.name': instance.type.name,
+            'instance.parent': instance.parent ? `存在 (uid: ${instance.parent.uid})` : 'null',
+            'instance.root': instance.root ? `存在 (uid: ${instance.root.uid})` : 'null',
+            'instance.proxy': '组件代理对象',
+            'instance.emit': 'emit 函数',
+            'instance.attrs': '非 prop 属性'
+          };
+          output.innerHTML = '<span class="info">=== getCurrentInstance() 返回值 ===</span>\n\n';
+          Object.entries(info).forEach(([key, val]) => {
+            output.innerHTML += `<span class="info">${key}:</span> ${val}\n`;
+          });
+          output.innerHTML += '\n<span class="warn">注意: getCurrentInstance() 仅在 setup() 内可用</span>';
+        };
+
+        return { uid, componentName, hasParent, hasRoot, logInstance };
+      }
+    };
+
+    createApp(App2).mount('#app2');
+
+    // Demo 3: defineExpose
+    const ChildComponent3 = {
+      name: 'ChildComponent3',
+      emits: ['countChange'],
+      template: `
+        <div class="child-box">
+          <strong>子组件 (ChildComponent)</strong>
+          <p>内部 count: <strong>{{ count }}</strong></p>
+          <p>computed double: <strong>{{ double }}</strong></p>
+          <button @click="increment">increment()</button>
+          <button @click="decrement">decrement()</button>
+          <button @click="reset">reset()</button>
+        </div>
+      `,
+      setup(props, { emit }) {
+        const count = ref(0);
+        
+        const double = Vue.computed(() => count.value * 2);
+        
+        const increment = () => {
+          count.value++;
+          emit('countChange', count.value);
+        };
+        
+        const decrement = () => {
+          count.value--;
+          emit('countChange', count.value);
+        };
+        
+        const reset = () => {
+          count.value = 0;
+          emit('countChange', count.value);
+        };
+
+        // 暴露给父组件通过 ref 访问
+        Vue.defineExpose({ count, double, increment, decrement, reset });
+        
+        return { count, double, increment, decrement, reset };
+      }
+    };
+
+    const App3 = {
+      components: { ChildComponent3 },
+      template: `
+        <div class="demo-box">
+          <strong>父组件</strong>
+          <button @click="childRef?.increment()">调用子组件 increment()</button>
+          <button @click="childRef?.decrement()">调用子组件 decrement()</button>
+          <button @click="logChildState">打印子组件状态</button>
+          <p>子组件 count: <strong>{{ childCount }}</strong></p>
+          <p>子组件 double: <strong>{{ childDouble }}</strong></p>
+        </div>
+        
+        <child-component ref="childRef" @count-change="onChildCountChange"></child-component>
+        
+        <div class="output" id="output3">点击按钮查看子组件状态...</div>
+      `,
+      setup() {
+        const childRef = Vue.ref(null);
+        const childCount = Vue.ref(0);
+        const childDouble = Vue.ref(0);
+
+        const onChildCountChange = (count) => {
+          childCount.value = count;
+          childDouble.value = count * 2;
+        };
+
+        const logChildState = () => {
+          const output = document.getElementById('output3');
+          if (childRef.value) {
+            output.innerHTML = `<span class="info">=== 子组件状态 ===</span>
+<span class="info">count:</span> ${childRef.value.count}
+<span class="info">double:</span> ${childRef.value.double}
+<span class="warn">通过 defineExpose 暴露的属性可被父组件访问</span>`;
+          } else {
+            output.innerHTML = '<span class="error">子组件 ref 未挂载</span>';
+          }
+        };
+
+        return { childRef, childCount, childDouble, onChildCountChange, logChildState };
+      }
+    };
+
+    createApp(App3).mount('#app3');
+
+    // Demo 4: 父子通信实战
+    const ChildComponent4 = {
+      name: 'ChildComponent4',
+      emits: ['message', 'action'],
+      template: `
+        <div class="child-box">
+          <strong>子组件</strong>
+          <button @click="sendMessage('Hello from child!')">发送消息</button>
+          <button @click="sendMessage('Button clicked!')">按钮点击</button>
+          <button @click="sendMessage('')">发送空消息</button>
+        </div>
+      `,
+      setup(props, { emit }) {
+        const sendMessage = (msg) => {
+          emit('message', msg);
+          if (msg) {
+            emit('action', { type: 'click', message: msg });
+          }
+        };
+        return { sendMessage };
+      }
+    };
+
+    const App4 = {
+      components: { ChildComponent4 },
+      template: `
+        <div class="parent-box">
+          <strong>父组件接收事件</strong>
+          <p>收到子组件消息: <strong>{{ childMessage || '无' }}</strong></p>
+          <p>事件计数: <strong>{{ eventCount }}</strong></p>
+          
+          <child-component @message="onMessage" @action="onAction"></child-component>
+        </div>
+      `,
+      setup() {
+        const childMessage = Vue.ref('');
+        const eventCount = Vue.ref(0);
+
+        const onMessage = (msg) => {
+          childMessage.value = msg;
+        };
+
+        const onAction = (payload) => {
+          eventCount.value++;
+          console.log('Action received:', payload);
+        };
+
+        return { childMessage, eventCount, onMessage, onAction };
+      }
+    };
+
+    createApp(App4).mount('#app4');
+  </script>
+</body>
+</html>
