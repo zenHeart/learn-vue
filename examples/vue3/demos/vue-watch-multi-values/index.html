@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue Watch 多值监听交互演示</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --primary: #42b883; --secondary: #34495e; --accent: #f39c12; --bg: #fafafa; --card-bg: #fff; --border: #e0e0e0; --text: #2c3e50; --text-light: #7f8c8d; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 20px; }
+    h1 { font-size: 1.8rem; margin-bottom: 10px; color: var(--secondary); }
+    h2 { font-size: 1.3rem; margin: 20px 0 10px; color: var(--secondary); }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .tab-nav { display: flex; gap: 4px; margin-bottom: 20px; background: var(--border); padding: 4px; border-radius: 8px; }
+    .tab-btn { flex: 1; padding: 10px 16px; border: none; background: transparent; cursor: pointer; border-radius: 6px; font-size: 0.95rem; font-weight: 500; color: var(--text-light); transition: all 0.2s; }
+    .tab-btn:hover { color: var(--primary); }
+    .tab-btn.active { background: var(--card-bg); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card { background: var(--card-bg); border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .demo-section { border: 2px solid var(--border); border-radius: 12px; padding: 24px; margin: 16px 0; }
+    .input-group { margin: 12px 0; }
+    .input-group label { display: block; margin-bottom: 4px; font-weight: 500; }
+    .input-group input { width: 100%; max-width: 300px; padding: 8px 12px; border: 2px solid var(--border); border-radius: 6px; font-size: 1rem; }
+    .input-group input:focus { border-color: var(--primary); outline: none; }
+    .input-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .input-row .input-group { flex: 1; min-width: 200px; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: #3aa876; }
+    .btn-secondary { background: var(--secondary); color: white; }
+    .btn-secondary:hover { background: #2c3e50; }
+    .log-container { background: #1e1e1e; border-radius: 8px; padding: 16px; max-height: 250px; overflow-y: auto; font-family: 'Monaco', monospace; font-size: 0.85rem; }
+    .log-entry { padding: 6px 12px; margin: 4px 0; border-radius: 4px; display: flex; justify-content: space-between; color: white; }
+    .log-entry.change { background: #27ae60; }
+    .log-entry.batch { background: #3498db; }
+    .log-entry.info { background: #95a5a6; }
+    .log-time { color: #888; font-size: 0.8rem; }
+    .value-display { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
+    .value-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px; border-radius: 8px; text-align: center; }
+    .value-card .label { font-size: 0.9rem; opacity: 0.9; }
+    .value-card .value { font-size: 1.5rem; font-weight: 700; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #f8f9fa; font-weight: 600; }
+    @media (max-width: 768px) { .tab-nav { flex-wrap: wrap; } .tab-btn { min-width: 45%; } .input-row { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Vue Watch 多值监听交互演示</h1>
+    <p style="color: var(--text-light); margin-bottom: 20px;">学习 Vue 3 中 watch 监听多个值的各种方式和最佳实践</p>
+    
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="array">数组监听</button>
+      <button class="tab-btn" data-tab="computed">计算属性监听</button>
+      <button class="tab-btn" data-tab="deep">深度监听</button>
+      <button class="tab-btn" data-tab="qa">常见问题</button>
+    </div>
+    
+    <!-- 数组监听 -->
+    <div class="tab-content active" id="array">
+      <div class="card">
+        <h2>使用数组同时监听多个值</h2>
+        <div class="demo-section">
+          <h3>输入控件</h3>
+          <div class="input-row">
+            <div class="input-group"><label>名字</label><input type="text" id="firstName" value="John"></div>
+            <div class="input-group"><label>姓氏</label><input type="text" id="lastName" value="Doe"></div>
+            <div class="input-group"><label>年龄</label><input type="number" id="age" value="25"></div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="randomAll()">随机修改所有值</button>
+            <button class="btn btn-secondary" onclick="resetAll()">重置</button>
+          </div>
+        </div>
+        <div class="demo-section">
+          <h3>当前值</h3>
+          <div class="value-display">
+            <div class="value-card"><div class="label">名字</div><div class="value" id="displayFirst">John</div></div>
+            <div class="value-card"><div class="label">姓氏</div><div class="value" id="displayLast">Doe</div></div>
+            <div class="value-card"><div class="label">年龄</div><div class="value" id="displayAge">25</div></div>
+          </div>
+        </div>
+        <div class="demo-section">
+          <h3>监听日志</h3>
+          <div class="log-container" id="arrayLog"><div style="color: #888; text-align: center; padding: 20px;">修改上方输入框，观察日志...</div></div>
+          <button class="btn btn-secondary" onclick="clearLog('arrayLog')" style="margin-top: 10px;">清空日志</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 计算属性监听 -->
+    <div class="tab-content" id="computed">
+      <div class="card">
+        <h2>监听计算属性</h2>
+        <div class="demo-section">
+          <div class="input-row">
+            <div class="input-group"><label>价格</label><input type="number" id="price" value="100"></div>
+            <div class="input-group"><label>数量</label><input type="number" id="quantity" value="2"></div>
+            <div class="input-group"><label>折扣 (%)</label><input type="number" id="discount" value="10"></div>
+          </div>
+          <div style="background: linear-gradient(135deg, #11998e, #38ef7d); color: white; padding: 20px; border-radius: 8px; text-align: center; margin-top: 16px;">
+            <div style="font-size: 1rem; opacity: 0.9;">总价</div>
+            <div style="font-size: 2rem; font-weight: 700;" id="totalPrice">180</div>
+          </div>
+        </div>
+        <div class="demo-section">
+          <h3>监听日志</h3>
+          <div class="log-container" id="computedLog"><div style="color: #888; text-align: center; padding: 20px;">修改价格/数量/折扣...</div></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 深度监听 -->
+    <div class="tab-content" id="deep">
+      <div class="card">
+        <h2>深度监听嵌套对象</h2>
+        <div class="demo-section">
+          <div class="input-row">
+            <div class="input-group"><label>姓名</label><input type="text" id="userName" value="John Doe" onchange="updateUser()"></div>
+            <div class="input-group"><label>年龄</label><input type="number" id="userAge" value="25" onchange="updateUser()"></div>
+            <div class="input-group"><label>城市</label><input type="text" id="userCity" value="Beijing" onchange="updateUser()"></div>
+          </div>
+          <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-top: 16px; font-family: monospace;">
+            <pre id="userDisplay">{ "name": "John Doe", "profile": { "age": 25, "city": "Beijing" } }</pre>
+          </div>
+        </div>
+        <div class="demo-section">
+          <h3>深度监听日志</h3>
+          <div class="log-container" id="deepLog"><div style="color: #888; text-align: center; padding: 20px;">修改对象属性...</div></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 常见问题 -->
+    <div class="tab-content" id="qa">
+      <div class="card">
+        <h2>常见问题解答</h2>
+        <div style="margin: 16px 0; padding: 16px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
+          <h3>Q: watch 回调函数中如何区分哪个值变了？</h3>
+          <pre><code>watch([a, b, c], ([newA, newB, newC], [oldA, oldB, oldC]) => {
+  if (newA !== oldA) console.log('a changed')
+  if (newB !== oldB) console.log('b changed')
+})</code></pre>
+        </div>
+        <div style="margin: 16px 0; padding: 16px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--secondary);">
+          <h3>Q: watch 和 watchEffect 有什么区别？</h3>
+          <table>
+            <thead><tr><th>特性</th><th>watch</th><th>watchEffect</th></tr></thead>
+            <tbody>
+              <tr><td>依赖追踪</td><td>手动指定</td><td>自动追踪</td></tr>
+              <tr><td>立即执行</td><td>需要 immediate</td><td>默认立即执行</td></tr>
+              <tr><td>获取旧值</td><td>支持</td><td>不支持</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin: 16px 0; padding: 16px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #27ae60;">
+          <h3>Q: 如何取消 watch 监听？</h3>
+          <pre><code>const stop = watch(data, (newVal) => {
+  if (newVal === 'complete') stop() // 取消监听
+})</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 状态
+    const state = { firstName: 'John', lastName: 'Doe', age: 25, price: 100, quantity: 2, discount: 10 };
+    const user = { name: 'John Doe', profile: { age: 25, city: 'Beijing' } };
+    
+    // Tab 切换
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+    
+    // 数组监听演示
+    function updateArrayDisplay() {
+      document.getElementById('displayFirst').textContent = state.firstName;
+      document.getElementById('displayLast').textContent = state.lastName;
+      document.getElementById('displayAge').textContent = state.age;
+    }
+    
+    function addArrayLog(msg, type = 'change') {
+      const log = document.getElementById('arrayLog');
+      if (log.querySelector('div')) log.innerHTML = '';
+      const entry = document.createElement('div');
+      entry.className = 'log-entry ' + type;
+      entry.innerHTML = '<span>' + msg + '</span><span class="log-time">' + new Date().toLocaleTimeString() + '</span>';
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+    
+    document.getElementById('firstName').addEventListener('input', (e) => {
+      state.firstName = e.target.value;
+      updateArrayDisplay();
+      addArrayLog('firstName: ' + e.target.value);
+    });
+    
+    document.getElementById('lastName').addEventListener('input', (e) => {
+      state.lastName = e.target.value;
+      updateArrayDisplay();
+      addArrayLog('lastName: ' + e.target.value);
+    });
+    
+    document.getElementById('age').addEventListener('input', (e) => {
+      state.age = parseInt(e.target.value) || 0;
+      updateArrayDisplay();
+      addArrayLog('age: ' + state.age);
+    });
+    
+    function randomAll() {
+      const names = ['John', 'Jane', 'Bob', 'Alice', 'Charlie'];
+      const surnames = ['Smith', 'Doe', 'Johnson', 'Williams', 'Brown'];
+      state.firstName = names[Math.floor(Math.random() * 5)];
+      state.lastName = surnames[Math.floor(Math.random() * 5)];
+      state.age = Math.floor(Math.random() * 50) + 18;
+      document.getElementById('firstName').value = state.firstName;
+      document.getElementById('lastName').value = state.lastName;
+      document.getElementById('age').value = state.age;
+      updateArrayDisplay();
+      addArrayLog('批量修改: ' + state.firstName + ' ' + state.lastName + ', ' + state.age, 'batch');
+    }
+    
+    function resetAll() {
+      state.firstName = 'John'; state.lastName = 'Doe'; state.age = 25;
+      document.getElementById('firstName').value = state.firstName;
+      document.getElementById('lastName').value = state.lastName;
+      document.getElementById('age').value = state.age;
+      updateArrayDisplay();
+      addArrayLog('重置所有值', 'info');
+    }
+    
+    // 计算属性演示
+    function updateTotal() {
+      const total = (state.price * state.quantity * (100 - state.discount)) / 100;
+      document.getElementById('totalPrice').textContent = total;
+    }
+    
+    function addComputedLog(msg) {
+      const log = document.getElementById('computedLog');
+      if (log.querySelector('div')) log.innerHTML = '';
+      const entry = document.createElement('div');
+      entry.className = 'log-entry change';
+      entry.innerHTML = '<span>' + msg + '</span><span class="log-time">' + new Date().toLocaleTimeString() + '</span>';
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+    
+    ['price', 'quantity', 'discount'].forEach(id => {
+      document.getElementById(id).addEventListener('input', (e) => {
+        state[id] = parseInt(e.target.value) || 0;
+        updateTotal();
+        addComputedLog('total: ' + ((state.price * state.quantity * (100 - state.discount)) / 100));
+      });
+    });
+    
+    // 深度监听演示
+    function updateUser() {
+      user.name = document.getElementById('userName').value;
+      user.profile.age = parseInt(document.getElementById('userAge').value) || 0;
+      user.profile.city = document.getElementById('userCity').value;
+      document.getElementById('userDisplay').textContent = JSON.stringify(user, null, 2);
+      addDeepLog('user changed: ' + user.name + ', ' + user.profile.age + ', ' + user.profile.city);
+    }
+    
+    function addDeepLog(msg) {
+      const log = document.getElementById('deepLog');
+      if (log.querySelector('div')) log.innerHTML = '';
+      const entry = document.createElement('div');
+      entry.className = 'log-entry change';
+      entry.innerHTML = '<span>' + msg + '</span><span class="log-time">' + new Date().toLocaleTimeString() + '</span>';
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+    
+    // 清空日志
+    function clearLog(id) {
+      document.getElementById(id).innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">日志已清空...</div>';
+    }
+  </script>
+</body>
+</html>
