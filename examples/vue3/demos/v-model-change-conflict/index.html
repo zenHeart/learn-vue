@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>v-model 与 change 事件冲突演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background: #f5f5f5; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    h1 { color: #42b883; margin-bottom: 20px; font-size: 24px; }
+    h2 { color: #34495e; margin: 20px 0 10px; font-size: 18px; }
+    
+    .demo-section { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .demo-section h3 { color: #42b883; margin-bottom: 15px; font-size: 16px; }
+    
+    .code-block { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-family: 'Monaco', 'Menlo', monospace; font-size: 13px; overflow-x: auto; margin: 10px 0; white-space: pre; }
+    .code-block .keyword { color: #ff79c6; }
+    .code-block .string { color: #f1fa8c; }
+    .code-block .comment { color: #6272a4; }
+    .code-block .tag { color: #ff79c6; }
+    .code-block .attr { color: #50fa7b; }
+    
+    .tabs { display: flex; gap: 4px; margin-bottom: 15px; }
+    .tab { padding: 8px 16px; background: #e0e0e0; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 14px; }
+    .tab.active { background: #42b883; color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
+    th { background: #f5f5f5; font-weight: 600; }
+    
+    .form-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; min-width: 200px; }
+    .result-box { background: #f8f8f8; padding: 15px; border-radius: 4px; margin-top: 15px; font-family: monospace; font-size: 13px; }
+    .result-item { margin: 5px 0; padding: 5px 0; border-bottom: 1px solid #eee; }
+    .result-item:last-child { border-bottom: none; }
+    .label { color: #888; font-size: 12px; }
+    .value { color: #42b883; font-weight: 600; }
+    .error { color: #e74c3c; }
+    
+    .warning-box { background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 4px; margin: 10px 0; }
+    .success-box { background: #d4edda; border: 1px solid #28a745; padding: 15px; border-radius: 4px; margin: 10px 0; }
+    
+    .event-log { max-height: 200px; overflow-y: auto; background: #fafafa; padding: 10px; border-radius: 4px; margin-top: 10px; }
+    .event-item { padding: 4px 8px; margin: 2px 0; background: #e8f5e9; border-radius: 2px; font-size: 12px; font-family: monospace; }
+    .event-item.error { background: #ffebee; color: #c62828; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>🎯 v-model 与 change 事件冲突演示</h1>
+      
+      <!-- 标签切换 -->
+      <div class="tabs">
+        <button class="tab" :class="{active: activeTab === 'problem'}" @click="activeTab = 'problem'">问题场景</button>
+        <button class="tab" :class="{active: activeTab === 'solution'}" @click="activeTab = 'solution'">正确方案</button>
+        <button class="tab" :class="{active: activeTab === 'demo'}" @click="activeTab = 'demo'">交互演示</button>
+        <button class="tab" :class="{active: activeTab === 'summary'}" @click="activeTab = 'summary'">总结</button>
+      </div>
+      
+      <!-- 问题场景 -->
+      <div class="tab-content" :class="{active: activeTab === 'problem'}">
+        <div class="demo-section">
+          <h3>❌ 错误示例：组件内部只触发 change</h3>
+          <div class="code-block"><code>&lt;!-- BadChild.vue --&gt;
+&lt;template&gt;
+  &lt;select @change="handleChange"&gt;
+    &lt;option value="a"&gt;A&lt;/option&gt;
+    &lt;option value="b"&gt;B&lt;/option&gt;
+  &lt;/select&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  methods: {
+    handleChange(e) {
+      // 错误：只触发 change
+      this.$emit('change', e.target.value);
+    }
+  }
+}
+&lt;/script&gt;</code></div>
+          
+          <div class="warning-box">
+            <strong>⚠️ 问题分析：</strong>
+            <ul style="margin: 10px 0 0 20px;">
+              <li>v-model 期望接收 <code>update:modelValue</code> 事件，但组件只触发 <code>change</code></li>
+              <li>外部绑定 <code>@change</code> 可能被 v-model 机制覆盖</li>
+              <li>导致双向绑定失效或事件冲突</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="demo-section">
+          <h3>📋 事件名称对照表</h3>
+          <table>
+            <thead>
+              <tr><th>框架</th><th>v-model 绑定的事件</th><th>常用表单事件</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Vue 2</td><td><code>input</code></td><td><code>change</code>, <code>input</code></td></tr>
+              <tr><td>Vue 3</td><td><code>update:modelValue</code></td><td><code>change</code>, <code>input</code></td></tr>
+              <tr><td>冲突场景</td><td colspan="2">同时绑定 <code>@update:modelValue</code> 和 <code>@change</code> 时可能冲突</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- 正确方案 -->
+      <div class="tab-content" :class="{active: activeTab === 'solution'}">
+        <div class="demo-section">
+          <h3>✅ 方案一：同时触发两个事件（Vue 3）</h3>
+          <div class="code-block"><code>&lt;script setup&gt;
+const emit = defineEmits(['update:modelValue', 'change']);
+
+const handleChange = (e) => {
+  const value = e.target.value;
+  // 同时触发 v-model 和 change
+  emit('update:modelValue', value);
+  emit('change', value);
+};
+&lt;/script&gt;</code></div>
+        </div>
+        
+        <div class="demo-section">
+          <h3>✅ 方案二：使用 .sync 修饰符（Vue 2）</h3>
+          <div class="code-block"><code>&lt;!-- Parent.vue --&gt;
+&lt;ChildComponent :value.sync="value" /&gt;
+
+&lt;!-- Child.vue --&gt;
+this.$emit('update:value', newValue);</code></div>
+        </div>
+        
+        <div class="demo-section">
+          <h3>✅ 方案三：完全解耦手动绑定</h3>
+          <div class="code-block"><code>&lt;!-- 不使用 v-model，手动绑定两个事件 --&gt;
+&lt;ChildComponent 
+  :model-value="value" 
+  @update:model-value="value = $event"
+  @change="onChange"
+/&gt;</code></div>
+        </div>
+        
+        <div class="demo-section">
+          <h3>🎯 最佳实践清单</h3>
+          <ul style="margin-left: 20px; line-height: 2;">
+            <li>使用 <code>emits</code> 选项声明所有事件</li>
+            <li>遵循 v-model 的 <code>update:modelValue</code> 语义</li>
+            <li>避免在 <code>update:modelValue</code> 中重复触发 <code>change</code></li>
+            <li>Vue 3 推荐使用 <code>defineEmits</code> 获得类型支持</li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- 交互演示 -->
+      <div class="tab-content" :class="{active: activeTab === 'demo'}">
+        <div class="demo-section">
+          <h3>🎮 交互演示</h3>
+          
+          <p style="margin-bottom: 15px;">选择一项，下方将显示触发的事件：</p>
+          
+          <!-- 错误演示 -->
+          <div style="margin-bottom: 30px;">
+            <h4 style="color: #e74c3c; margin-bottom: 10px;">❌ 错误组件（只触发 change）</h4>
+            <select class="form-select" @change="badHandleChange">
+              <option value="">-- 选择 --</option>
+              <option value="a">选项 A</option>
+              <option value="b">选项 B</option>
+              <option value="c">选项 C</option>
+            </select>
+            <div class="result-box">
+              <div class="label">触发的事件：</div>
+              <div v-if="badEvents.length === 0" class="error">无事件触发</div>
+              <div v-for="(event, idx) in badEvents" :key="idx" class="result-item">
+                <span class="value">{{ event.name }}</span>: {{ event.value }} 
+                <span class="error" v-if="!event.correct">⚠️ v-model 收不到更新</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 正确演示 -->
+          <div>
+            <h4 style="color: #27ae60; margin-bottom: 10px;">✅ 正确组件（同时触发 update:modelValue 和 change）</h4>
+            <select class="form-select" v-model="correctValue" @change="correctHandleChange">
+              <option value="">-- 选择 --</option>
+              <option value="a">选项 A</option>
+              <option value="b">选项 B</option>
+              <option value="c">选项 C</option>
+            </select>
+            <div class="result-box">
+              <div class="label">v-model 绑定的值：</div>
+              <div class="result-item">
+                <span class="label">modelValue:</span> 
+                <span class="value">{{ correctValue || '(空)' }}</span>
+              </div>
+              <div class="label" style="margin-top: 10px;">触发的事件：</div>
+              <div v-if="correctEvents.length === 0" style="color: #888;">无事件触发</div>
+              <div v-for="(event, idx) in correctEvents" :key="idx" class="result-item">
+                <span class="value">{{ event.name }}</span>: {{ event.value }}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="demo-section">
+          <h3>📊 事件日志</h3>
+          <div class="event-log">
+            <div v-for="(log, idx) in eventLogs" :key="idx" class="event-item" :class="{error: log.type === 'error'}">
+              [{{ log.time }}] {{ log.message }}
+            </div>
+            <div v-if="eventLogs.length === 0" style="color: #888; padding: 10px;">选择上方选项查看事件日志</div>
+          </div>
+          <button @click="eventLogs = []" style="margin-top: 10px; padding: 5px 15px; cursor: pointer;">清空日志</button>
+        </div>
+      </div>
+      
+      <!-- 总结 -->
+      <div class="tab-content" :class="{active: activeTab === 'summary'}">
+        <div class="demo-section">
+          <h3>📚 核心要点</h3>
+          <div class="success-box">
+            <h4 style="margin-bottom: 10px;">1. v-model 本质</h4>
+            <p>Vue 3: <code>v-model</code> = <code>:model-value</code> + <code>@update:model-value</code></p>
+            <p>Vue 2: <code>v-model</code> = <code>:value</code> + <code>@input</code></p>
+          </div>
+          
+          <div class="success-box">
+            <h4 style="margin-bottom: 10px;">2. 冲突原因</h4>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+              <li>组件触发 <code>change</code>，但 v-model 期望 <code>update:modelValue</code></li>
+              <li>外部 <code>@change</code> 可能被 v-model 机制覆盖</li>
+              <li>双向绑定失效或事件不触发</li>
+            </ul>
+          </div>
+          
+          <div class="success-box">
+            <h4 style="margin-bottom: 10px;">3. 解决方案</h4>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+              <li><strong>推荐：</strong>同时触发 <code>update:modelValue</code> 和 <code>change</code></li>
+              <li>或完全解耦，使用手动绑定而非 v-model</li>
+              <li>使用 <code>emits</code> 选项声明所有事件</li>
+            </ul>
+          </div>
+          
+          <div class="demo-section" style="margin-top: 15px; background: #f8f8f8;">
+            <h4>🔑 决策树：选择哪种方案？</h4>
+            <table style="margin-top: 10px;">
+              <tr><td>需要双向绑定 + 事件</td><td>→ 同时触发两个事件</td></tr>
+              <tr><td>只需要双向绑定</td><td>→ 只触发 update:modelValue</td></tr>
+              <tr><td>只需要事件处理</td><td>→ 使用手动绑定，拆分 :model-value 和 @change</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref } = Vue;
+    
+    createApp({
+      setup() {
+        const activeTab = ref('demo');
+        
+        // 错误组件
+        const badEvents = ref([]);
+        const badHandleChange = (e) => {
+          badEvents.value = [];
+          const value = e.target.value;
+          // 错误：只触发 change
+          badEvents.value.push({ name: 'change', value, correct: false });
+          logEvent(`❌ 错误组件触发: change = ${value} (v-model 收不到!)`);
+        };
+        
+        // 正确组件
+        const correctValue = ref('');
+        const correctEvents = ref([]);
+        const correctHandleChange = (e) => {
+          correctEvents.value = [];
+          const value = e.target.value;
+          correctValue.value = value;
+          // 正确：同时触发两个事件
+          correctEvents.value.push({ name: 'update:modelValue', value });
+          correctEvents.value.push({ name: 'change', value });
+          logEvent(`✅ 正确组件触发: update:modelValue = ${value}, change = ${value}`);
+        };
+        
+        // 事件日志
+        const eventLogs = ref([]);
+        const logEvent = (message) => {
+          const now = new Date();
+          const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+          eventLogs.value.unshift({ time, message, type: message.includes('❌') ? 'error' : 'info' });
+        };
+        
+        return {
+          activeTab,
+          badEvents,
+          badHandleChange,
+          correctValue,
+          correctEvents,
+          correctHandleChange,
+          eventLogs
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
