@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 3 v-model 在 Render 函数中的使用</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background: #f5f5f5; }
+    h1 { text-align: center; margin-bottom: 30px; color: #42b883; }
+    
+    .demo-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; max-width: 1400px; margin: 0 auto; }
+    .demo-section { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+    .demo-section h2 { color: #35495e; margin-bottom: 15px; font-size: 1.2em; border-bottom: 2px solid #42b883; padding-bottom: 8px; }
+    .demo-section h3 { color: #666; margin: 15px 0 10px; font-size: 1em; }
+    
+    .code-block { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 8px; font-family: 'Monaco', 'Menlo', monospace; font-size: 13px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+    .code-block .keyword { color: #ff79c6; }
+    .code-block .string { color: #f1fa8c; }
+    .code-block .comment { color: #6272a4; }
+    .code-block .attr { color: #50fa7b; }
+    .code-block .event { color: #8be9fd; }
+    .code-block .function { color: #50fa7b; }
+    .code-block .props { color: #bd93f9; }
+    
+    .demo-box { border: 2px solid #42b883; border-radius: 8px; padding: 15px; margin: 10px 0; }
+    .demo-box.highlight { background: #e8f5e9; border-color: #4caf50; }
+    
+    button { background: #42b883; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 5px; transition: all 0.2s; }
+    button:hover { background: #35495e; transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    
+    input, select, textarea { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #42b883; }
+    textarea { width: 100%; min-height: 80px; resize: vertical; }
+    
+    .output { background: #f8f8f8; border-radius: 8px; padding: 15px; margin-top: 10px; font-family: monospace; font-size: 13px; max-height: 300px; overflow-y: auto; }
+    .output-item { padding: 5px 0; border-bottom: 1px solid #eee; }
+    .output-item:last-child { border-bottom: none; }
+    .output-item .key { color: #e06c75; font-weight: bold; }
+    .output-item .value { color: #98c379; }
+    
+    .comparison-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+    .comparison-table th, .comparison-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    .comparison-table th { background: #35495e; color: white; }
+    .comparison-table tr:nth-child(even) { background: #f9f9f9; }
+    
+    .tab-container { margin-top: 15px; }
+    .tab-buttons { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+    .tab-btn { padding: 8px 16px; background: #e0e0e0; border: none; border-radius: 6px 6px 0 0; cursor: pointer; transition: all 0.2s; }
+    .tab-btn.active { background: #42b883; color: white; }
+    .tab-content { display: none; background: white; padding: 15px; border-radius: 0 8px 8px 8px; }
+    .tab-content.active { display: block; }
+    
+    .form-group { margin: 15px 0; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #35495e; }
+    .form-group input, .form-group select { width: 100%; }
+    
+    .result-display { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin-top: 15px; }
+    .result-display .label { font-weight: bold; color: #856404; margin-bottom: 8px; }
+    .result-display .value { font-size: 1.2em; color: #333; }
+    
+    .checkbox-group, .radio-group { display: flex; gap: 15px; flex-wrap: wrap; margin: 10px 0; }
+    .checkbox-item, .radio-item { display: flex; align-items: center; gap: 8px; }
+    
+    .flow-diagram { background: #f8f8f8; border-radius: 8px; padding: 20px; margin: 15px 0; }
+    .flow-step { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+    .flow-box { background: #42b883; color: white; padding: 10px 20px; border-radius: 8px; text-align: center; }
+    .flow-arrow { color: #42b883; font-size: 1.5em; }
+    .flow-note { background: #e8f5e9; padding: 10px; border-radius: 8px; margin: 10px 0; font-size: 0.9em; }
+    
+    .exercise { background: #fff9e6; border: 2px dashed #ffc107; border-radius: 8px; padding: 15px; margin: 15px 0; }
+    .exercise h4 { color: #856404; margin-bottom: 10px; }
+    .exercise input { width: 100%; margin-bottom: 10px; }
+    
+    .nav-tabs { display: flex; gap: 10px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
+    .nav-tab { padding: 12px 24px; background: white; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-weight: bold; }
+    .nav-tab:hover { border-color: #42b883; color: #42b883; }
+    .nav-tab.active { background: #42b883; color: white; border-color: #42b883; }
+    
+    .content-section { display: none; }
+    .content-section.active { display: block; }
+    
+    .model-value-display { background: #2d2d2d; color: #f8f8f2; padding: 20px; border-radius: 8px; margin: 15px 0; }
+    .model-value-display .label { color: #6272a4; }
+    .model-value-display .value { color: #50fa7b; font-size: 1.3em; font-weight: bold; }
+    
+    .full-width { grid-column: 1 / -1; }
+    
+    .inline-input-group { display: flex; align-items: center; gap: 10px; }
+    .inline-input-group input { flex: 1; }
+  </style>
+</head>
+<body>
+  <h1>Vue 3 v-model 在 Render 函数中的使用</h1>
+  
+  <div id="app">
+    <!-- 导航标签 -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showSection('concept')">概念总览</button>
+      <button class="nav-tab" onclick="showSection('basic')">基础 Input</button>
+      <button class="nav-tab" onclick="showSection('modifiers')">修饰符</button>
+      <button class="nav-tab" onclick="showSection('multiple')">多个 v-model</button>
+      <button class="nav-tab" onclick="showSection('checkbox')">复选框/单选框</button>
+      <button class="nav-tab" onclick="showSection('exercise')">练习题</button>
+    </div>
+
+    <!-- 概念总览 -->
+    <div id="concept" class="content-section active">
+      <div class="demo-container">
+        <!-- v-model 原理 -->
+        <div class="demo-section">
+          <h2>v-model 工作原理</h2>
+          <div class="flow-diagram">
+            <div class="flow-step">
+              <div class="flow-box">v-model="value"</div>
+              <span class="flow-arrow">=</span>
+              <div class="flow-box">:modelValue + @update:modelValue</div>
+            </div>
+          </div>
+          
+          <h3>Template vs Render 函数对比</h3>
+          <div class="tab-container">
+            <div class="tab-buttons">
+              <button class="tab-btn active" onclick="showTab(this, 'tab-template')">Template</button>
+              <button class="tab-btn" onclick="showTab(this, 'tab-render')">Render 函数</button>
+              <button class="tab-btn" onclick="showTab(this, 'tab-jsx')">JSX</button>
+            </div>
+            
+            <div id="tab-template" class="tab-content active">
+              <div class="code-block"><span class="comment">// Template 中使用 v-model</span>
+<span class="keyword">&lt;input</span> <span class="attr">v-model</span>=<span class="string">"inputValue"</span> <span class="keyword">/&gt;</span>
+
+<span class="comment">// 编译器自动转换为：</span>
+<span class="keyword">&lt;input</span> 
+  <span class="attr">:modelValue</span>=<span class="string">"inputValue"</span>
+  <span class="attr">@update:modelValue</span>=<span class="string">"inputValue = $event"</span>
+<span class="keyword">/&gt;</span></div>
+            </div>
+            
+            <div id="tab-render" class="tab-content">
+              <div class="code-block"><span class="keyword">import</span> { h } <span class="keyword">from</span> <span class="string">'vue'</span>;
+
+<span class="function">render</span>() {
+  <span class="keyword">return</span> h(<span class="string">'input'</span>, {
+    <span class="props">value</span>: <span class="keyword">this</span>.modelValue,
+    <span class="event">onInput</span>: (e) => <span class="keyword">this</span>.$<span class="function">emit</span>(<span class="string">'update:modelValue'</span>, e.target.value)
+  });
+}</div>
+            </div>
+            
+            <div id="tab-jsx" class="tab-content">
+              <div class="code-block"><span class="comment">// JSX 中使用 v-model</span>
+&lt;input
+  <span class="props">value</span>={<span class="keyword">this</span>.modelValue}
+  <span class="event">onInput</span>={(e) => <span class="keyword">this</span>.$<span class="function">emit</span>(<span class="string">'update:modelValue'</span>, e.target.value)}
+/&gt;</div>
+            </div>
+          </div>
+          
+          <div class="flow-note">
+            <strong>关键点：</strong>
+            <ul style="margin-left: 20px; margin-top: 8px;">
+              <li><code>modelValue</code> - v-model 绑定的属性名（Vue 3）</li>
+              <li><code>update:modelValue</code> - 更新值的事件名</li>
+              <li><code>value</code> + <code>onInput</code> - 实际 DOM 元素的绑定</li>
+            </ul>
+          </div>
+        </div>
+        
+        <!-- Vue 2 vs Vue 3 -->
+        <div class="demo-section">
+          <h2>Vue 2 vs Vue 3 对比</h2>
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>特性</th>
+                <th>Vue 2</th>
+                <th>Vue 3</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>v-model 属性</td>
+                <td><code>value</code></td>
+                <td><code>modelValue</code></td>
+              </tr>
+              <tr>
+                <td>v-model 事件</td>
+                <td><code>input</code></td>
+                <td><code>update:modelValue</code></td>
+              </tr>
+              <tr>
+                <td>Render 函数</td>
+                <td><code>createElement()</code></td>
+                <td><code>h()</code></td>
+              </tr>
+              <tr>
+                <td>多个 v-model</td>
+                <td>需要插件</td>
+                <td>原生支持 <code>v-model:xxx</code></td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <h3>Vue 2 示例</h3>
+          <div class="code-block"><span class="keyword">export default</span> {
+  <span class="props">props</span>: [<span class="string">'value'</span>],
+  <span class="function">render</span>(createElement) {
+    <span class="keyword">return</span> createElement(<span class="string">'input'</span>, {
+      <span class="props">domProps</span>: { <span class="attr">value</span>: <span class="keyword">this</span>.value },
+      <span class="event">on</span>: { <span class="attr">input</span>: (e) => <span class="keyword">this</span>.$<span class="function">emit</span>(<span class="string">'input'</span>, e.target.value) }
+    });
+  }
+};</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 基础 Input -->
+    <div id="basic" class="content-section">
+      <div class="demo-container">
+        <div class="demo-section">
+          <h2>基础 Input 实现</h2>
+          
+          <div class="model-value-display">
+            <div class="label">当前 modelValue 值：</div>
+            <div class="value">{{ JSON.stringify(inputValue) }}</div>
+          </div>
+          
+          <div class="demo-box">
+            <h3>Render 函数实现的 Input（模拟）</h3>
+            <div class="inline-input-group">
+              <input type="text" v-model="inputValue" placeholder="输入内容...">
+              <button @click="inputValue = ''">清空</button>
+            </div>
+            <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
+              这里使用 Vue 的响应式系统模拟 render 函数的行为。真实 render 函数中，
+              需要通过 props 接收 modelValue，通过 emit 发送 update:modelValue 事件。
+            </p>
+          </div>
+        </div>
+        
+        <div class="demo-section">
+          <h3>代码实现</h3>
+          <div class="tab-container">
+            <div class="tab-buttons">
+              <button class="tab-btn active" onclick="showTab(this, 'basic-script-setup')">&lt;script setup&gt;</button>
+              <button class="tab-btn" onclick="showTab(this, 'basic-options')">Options API</button>
+              <button class="tab-btn" onclick="showTab(this, 'basic-render')">Render 函数</button>
+            </div>
+            
+            <div id="basic-script-setup" class="tab-content active">
+              <div class="code-block"><span class="comment">// RenderInput.vue - script setup</span>
+<span class="keyword">&lt;script setup&gt;</span>
+<span class="keyword">import</span> { <span class="props">h</span> } <span class="keyword">from</span> <span class="string">'vue'</span>
+
+<span class="keyword">const props</span> = <span class="function">defineProps</span>({
+  <span class="props">modelValue</span>: { type: String, default: <span class="string">''</span> }
+})
+
+<span class="keyword">const emit</span> = <span class="function">defineEmits</span>([<span class="string">'update:modelValue'</span>])
+
+<span class="comment">// 直接 return render 函数</span>
+<span class="keyword">return</span> () => <span class="function">h</span>(<span class="string">'input'</span>, {
+  <span class="props">value</span>: props.modelValue,
+  <span class="event">onInput</span>: (e) => <span class="function">emit</span>(<span class="string">'update:modelValue'</span>, e.target.value)
+})
+<span class="keyword">&lt;/script&gt;</span></div>
+            </div>
+            
+            <div id="basic-options" class="tab-content">
+              <div class="code-block"><span class="comment">// RenderInput.vue - Options API</span>
+<span class="keyword">export default</span> {
+  <span class="props">props</span>: {
+    modelValue: { type: String, default: <span class="string">''</span> }
+  },
+  <span class="props">emits</span>: [<span class="string">'update:modelValue'</span>],
+  <span class="function">render</span>() {
+    <span class="keyword">return</span> <span class="function">h</span>(<span class="string">'input'</span>, {
+      <span class="props">value</span>: <span class="keyword">this</span>.modelValue,
+      <span class="event">onInput</span>: (e) => <span class="keyword">this</span>.$<span class="function">emit</span>(<span class="string">'update:modelValue'</span>, e.target.value)
+    })
+  }
+}</div>
+            </div>
+            
+            <div id="basic-render" class="tab-content">
+              <div class="code-block"><span class="comment">// render 函数核心逻辑</span>
+<span class="function">render</span>() {
+  <span class="keyword">return</span> <span class="function">h</span>(<span class="string">'input'</span>, {
+    <span class="comment">// 1. 绑定 value 为 modelValue</span>
+    <span class="props">value</span>: <span class="keyword">this</span>.modelValue,
+    
+    <span class="comment">// 2. 监听 input 事件</span>
+    <span class="event">onInput</span>: (e) => {
+      <span class="comment">// 3. 发射 update:modelValue 事件</span>
+      <span class="keyword">this</span>.$<span class="function">emit</span>(<span class="string">'update:modelValue'</span>, e.target.value)
+    }
+  })
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 修饰符 -->
+    <div id="modifiers" class="content-section">
+      <div class="demo-container">
+        <div class="demo-section">
+          <h2>v-model 修饰符处理</h2>
+          
+          <div class="demo-box">
+            <h3>.lazy 修饰符</h3>
+            <p style="color: #666; margin-bottom: 10px;">使用 onChange 替代 onInput，失焦后才更新</p>
+            <div class="code-block"><span class="comment">// onChange: 失焦时才触发（相当于 .lazy）</span>
+<span class="event">onChange</span>: (e) => <span class="function">emit</span>(<span class="string">'update:modelValue'</span>, e.target.value)</div>
+          </div>
+          
+          <div class="demo-box">
+            <h3>.trim 修饰符</h3>
+            <p style="color: #666; margin-bottom: 10px;">自动去除首尾空格</p>
+            <div class="code-block"><span class="event">onInput</span>: (e) => {
+  <span class="keyword">const</span> value = e.target.value.<span class="function">trim</span>()
+  <span class="function">emit</span>(<span class="string">'update:modelValue'</span>, value)
+}</div>
+          </div>
+          
+          <div class="demo-box">
+            <h3>.number 修饰符</h3>
+            <p style="color: #666; margin-bottom: 10px;">自动转换为你 number 类型</p>
+            <div class="code-block"><span class="event">onInput</span>: (e) => {
+  <span class="keyword">const</span> parsed = <span class="function">parseFloat</span>(e.target.value)
+  <span class="keyword">const</span> value = <span class="function">isNaN</span>(parsed) ? e.target.value : parsed
+  <span class="function">emit</span>(<span class="string">'update:modelValue'</span>, value)
+}</div>
+          </div>
+        </div>
+        
+        <div class="demo-section">
+          <h2>交互演示</h2>
+          
+          <div class="form-group">
+            <label>普通 Input（实时更新）:</label>
+            <input type="text" v-model="normalValue" placeholder="输入内容...">
+            <div class="result-display">
+              <div class="label">值（长度）：</div>
+              <div class="value">"{{ normalValue }}" ({{ normalValue.length }} 字符)</div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Lazy Input（失焦后更新）:</label>
+            <input type="text" v-model="lazyValue" @change="lazyFinal = lazyValue" placeholder="失焦后更新...">
+            <div class="result-display">
+              <div class="label">值（失焦才更新）：</div>
+              <div class="value">"{{ lazyFinal || '(未更新)' }}"</div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Trim Input（自动去空格）:</label>
+            <input type="text" v-model="trimValue" @input="trimValue = $event.target.value.trim()" placeholder="会自动 trim...">
+            <div class="result-display">
+              <div class="label">值（已 trim）：</div>
+              <div class="value">"{{ trimValue }}"</div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Number Input（自动转数字）:</label>
+            <input type="text" v-model.number="numberValue" placeholder="输入数字...">
+            <div class="result-display">
+              <div class="label">值（类型）：</div>
+              <div class="value">"{{ numberValue }}" (typeof: {{ typeof numberValue }})</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 多个 v-model -->
+    <div id="multiple" class="content-section">
+      <div class="demo-container">
+        <div class="demo-section full-width">
+          <h2>多个 v-model</h2>
+        </div>
+        
+        <div class="demo-section">
+          <h3>Render 函数实现</h3>
+          <div class="code-block"><span class="function">render</span>() {
+  <span class="keyword">return</span> [
+    <span class="comment">// 第一个 v-model: username</span>
+    <span class="function">h</span>(<span class="string">'input'</span>, {
+      <span class="props">value</span>: <span class="keyword">this</span>.username,
+      <span class="event">onInput</span>: (e) => <span class="keyword">this</span>.$<span class="function">emit</span>(<span class="string">'update:username'</span>, e.target.value)
+    }),
+    
+    <span class="comment">// 第二个 v-model: email</span>
+    <span class="function">h</span>(<span class="string">'input'</span>, {
+      <span class="props">value</span>: <span class="keyword">this</span>.email,
+      <span class="event">onInput</span>: (e) => <span class="keyword">this</span>.$<span class="function">emit</span>(<span class="string">'update:email'</span>, e.target.value)
+    })
+  ]
+}</div>
+        </div>
+        
+        <div class="demo-section">
+          <h3>父组件使用</h3>
+          <div class="code-block"><span class="comment">// 父组件中同时绑定两个 v-model</span>
+&lt;FormInput 
+  <span class="attr">v-model:username</span>=<span class="string">"form.username"</span>
+  <span class="attr">v-model:email</span>=<span class="string">"form.email"</span>
+/&gt;</div>
+        </div>
+        
+        <div class="demo-section full-width">
+          <h3>交互演示</h3>
+          
+          <div class="form-group">
+            <label>用户名:</label>
+            <input type="text" v-model="form.username" placeholder="请输入用户名">
+          </div>
+          
+          <div class="form-group">
+            <label>邮箱:</label>
+            <input type="email" v-model="form.email" placeholder="请输入邮箱">
+          </div>
+          
+          <div class="form-group">
+            <label>昵称 (v-model: nickname):</label>
+            <input type="text" v-model="form.nickname" placeholder="请输入昵称">
+          </div>
+          
+          <div class="result-display">
+            <div class="label">表单数据：</div>
+            <pre class="value">{{ JSON.stringify(form, null, 2) }}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 复选框/单选框 -->
+    <div id="checkbox" class="content-section">
+      <div class="demo-container">
+        <div class="demo-section">
+          <h2>复选框实现</h2>
+          
+          <div class="code-block"><span class="function">render</span>() {
+  <span class="keyword">return</span> <span class="function">h</span>(<span class="string">'input'</span>, {
+    <span class="props">type</span>: <span class="string">'checkbox'</span>,
+    <span class="props">checked</span>: <span class="keyword">this</span>.modelValue,
+    <span class="event">onChange</span>: (e) => <span class="keyword">this</span>.$<span class="function">emit</span>(<span class="string">'update:modelValue'</span>, e.target.checked)
+  })
+}</div>
+        </div>
+        
+        <div class="demo-section">
+          <h2>单选框实现</h2>
+          
+          <div class="code-block"><span class="comment">// 单选框组</span>
+<span class="function">render</span>() {
+  <span class="keyword">return</span> [
+    <span class="function">h</span>(<span class="string">'input'</span>, {
+      <span class="props">type</span>: <span class="string">'radio'</span>,
+      <span class="props">value</span>: <span class="string">'option1'</span>,
+      <span class="props">checked</span>: <span class="keyword">this</span>.modelValue === <span class="string">'option1'</span>,
+      <span class="event">onChange</span>: () => <span class="keyword">this</span>.$<span class="function">emit</span>(<span class="string">'update:modelValue'</span>, <span class="string">'option1'</span>)
+    }),
+    <span class="function">h</span>(<span class="string">'input'</span>, {
+      <span class="props">type</span>: <span class="string">'radio'</span>,
+      <span class="props">value</span>: <span class="string">'option2'</span>,
+      <span class="props">checked</span>: <span class="keyword">this</span>.modelValue === <span class="string">'option2'</span>,
+      <span class="event">onChange</span>: () => <span class="keyword">this</span>.$<span class="function">emit</span>(<span class="string">'update:modelValue'</span>, <span class="string">'option2'</span>)
+    })
+  ]
+}</div>
+        </div>
+        
+        <div class="demo-section">
+          <h2>交互演示</h2>
+          
+          <div class="form-group">
+            <label>同意条款:</label>
+            <div class="checkbox-item">
+              <input type="checkbox" v-model="agreed">
+              <span>我已阅读并同意服务条款</span>
+            </div>
+            <div class="result-display">
+              <div class="label">已同意：</div>
+              <div class="value">{{ agreed ? '是 ✓' : '否 ✗' }}</div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>选择颜色:</label>
+            <div class="radio-group">
+              <div class="radio-item" v-for="c in colors" :key="c.value">
+                <input type="radio" v-model="color" :value="c.value">
+                <span>{{ c.label }}</span>
+              </div>
+            </div>
+            <div class="result-display">
+              <div class="label">选中颜色：</div>
+              <div class="value">{{ color }}</div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>选择技能（多选）:</label>
+            <div class="checkbox-group">
+              <div class="checkbox-item" v-for="s in skills" :key="s">
+                <input type="checkbox" v-model="selectedSkills" :value="s">
+                <span>{{ s }}</span>
+              </div>
+            </div>
+            <div class="result-display">
+              <div class="label">已选技能：</div>
+              <div class="value">{{ selectedSkills.join(', ') || '无' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 练习题 -->
+    <div id="exercise" class="content-section">
+      <div class="demo-container">
+        <div class="demo-section">
+          <h2>练习 1: Render 函数实现 Counter</h2>
+          
+          <div class="exercise">
+            <h4>任务：</h4>
+            <p>在 render 函数中实现一个 Counter 组件，接收 <code>modelValue</code> 作为计数初始值，emit <code>update:modelValue</code> 事件更新值。</p>
+            <p>点击 +1 按钮，计数加 1；点击 -1 按钮，计数减 1。</p>
+            
+            <div style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 8px; margin: 15px 0; font-family: monospace;">
+              <div style="color: #6272a4;">// 补全以下代码</div>
+render() {
+  return [
+    h('span', {}, '计数: ' + this.modelValue),
+    h('button', { onClick: () => {
+      <span style="color: #ff79c6;">// 发射 update:modelValue 事件，加 1</span>
+    }}, '+1'),
+    h('button', { onClick: () => {
+      <span style="color: #ff79c6;">// 发射 update:modelValue 事件，减 1</span>
+    }}, '-1')
+  ]
+}</div>
+            
+            <div style="background: #e8f5e9; padding: 15px; border-radius: 8px;">
+              <strong>答案：</strong>
+              <pre style="font-family: monospace; margin-top: 10px; color: #333;">
+render() {
+  return [
+    h('span', {}, '计数: ' + this.modelValue),
+    h('button', { onClick: () => this.$emit('update:modelValue', this.modelValue + 1) }, '+1'),
+    h('button', { onClick: () => this.$emit('update:modelValue', this.modelValue - 1) }, '-1')
+  ]
+}</pre>
+            </div>
+          </div>
+        </div>
+        
+        <div class="demo-section">
+          <h2>练习 2: 实现 debounced v-model:search</h2>
+          
+          <div class="exercise">
+            <h4>任务：</h4>
+            <p>实现一个搜索组件，支持 <code>v-model:search</code> 绑定，使用 debounce 延迟 300ms 发送更新。</p>
+            
+            <div style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 8px; margin: 15px 0; font-family: monospace;">
+<span class="keyword">let</span> timer = <span class="keyword">null</span>
+
+<span class="event">onInput</span>: (e) => {
+  <span class="keyword">clearTimeout</span>(timer)
+  timer = <span class="function">setTimeout</span>(() => {
+    <span class="keyword">this</span>.$<span class="function">emit</span>(<span class="string">'update:search'</span>, e.target.value)
+  }, <span class="string">300</span>)
+}</div>
+          </div>
+          
+          <div class="exercise">
+            <h4>练习 3: 选择题</h4>
+            <p><strong>在 Vue 3 的 render 函数中，v-model 的值应该绑定到哪个属性？</strong></p>
+            <div class="checkbox-group">
+              <div class="checkbox-item">
+                <input type="radio" name="q1" value="a" v-model="q1Answer">
+                <span>A. value</span>
+              </div>
+              <div class="checkbox-item">
+                <input type="radio" name="q1" value="b" v-model="q1Answer">
+                <span>B. modelValue</span>
+              </div>
+              <div class="checkbox-item">
+                <input type="radio" name="q1" value="c" v-model="q1Answer">
+                <span>C. v-model</span>
+              </div>
+            </div>
+            <div class="result-display" style="margin-top: 10px;">
+              <div class="label">答案：</div>
+              <div class="value">{{ q1Answer === 'b' ? '✓ 正确！modelValue 是 Vue 3 中 v-model 的 prop 名称' : q1Answer ? '✗ 错误，请选择 B' : '(请选择答案)' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive } = Vue;
+    
+    createApp({
+      setup() {
+        // 基础 Input
+        const inputValue = ref('Hello Render Function');
+        
+        // 修饰符
+        const normalValue = ref('');
+        const lazyValue = ref('');
+        const lazyFinal = ref('');
+        const trimValue = ref('');
+        const numberValue = ref(123);
+        
+        // 多个 v-model
+        const form = reactive({
+          username: '',
+          email: '',
+          nickname: ''
+        });
+        
+        // 复选框/单选框
+        const agreed = ref(false);
+        const color = ref('red');
+        const colors = [
+          { value: 'red', label: '红色' },
+          { value: 'green', label: '绿色' },
+          { value: 'blue', label: '蓝色' }
+        ];
+        const skills = ['JavaScript', 'Vue', 'React', 'TypeScript'];
+        const selectedSkills = ref(['Vue']);
+        
+        // 练习题
+        const q1Answer = ref('');
+        
+        return {
+          // 基础
+          inputValue,
+          // 修饰符
+          normalValue,
+          lazyValue,
+          lazyFinal,
+          trimValue,
+          numberValue,
+          // 多 v-model
+          form,
+          // 复选框
+          agreed,
+          color,
+          colors,
+          skills,
+          selectedSkills,
+          // 练习
+          q1Answer
+        };
+      }
+    }).mount('#app');
+    
+    // 导航功能
+    function showSection(id) {
+      document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      event.target.classList.add('active');
+    }
+    
+    function showTab(btn, id) {
+      const container = btn.closest('.tab-container');
+      container.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      container.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      container.querySelector('#' + id).classList.add('active');
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>
