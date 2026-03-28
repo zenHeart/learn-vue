@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue2 组件在 Vue3 中使用 - @vue/compat 示例</title>
+  <script src="https://unpkg.com/vue@3.1.0/dist/vue.global.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    h1 {
+      color: #42b983;
+      border-bottom: 2px solid #42b983;
+      padding-bottom: 10px;
+    }
+    
+    h2 {
+      color: #2c3e50;
+      margin-top: 30px;
+    }
+    
+    .demo-section {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* Vue2 风格按钮组件 */
+    .my-button {
+      padding: 8px 16px;
+      border-radius: 4px;
+      background: #409eff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    
+    .my-button:hover {
+      background: #66b1ff;
+    }
+    
+    .my-button.secondary {
+      background: #909399;
+    }
+    
+    .my-button.success {
+      background: #67c23a;
+    }
+    
+    .my-button.danger {
+      background: #f56c6c;
+    }
+    
+    /* Vue2 风格卡片组件 */
+    .card {
+      border: 1px solid #ebeef5;
+      border-radius: 4px;
+      padding: 20px;
+      margin: 10px 0;
+      background: #fafafa;
+    }
+    
+    .card-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #303133;
+      margin-bottom: 10px;
+    }
+    
+    .card-content {
+      color: #606266;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    /* Vue2 风格输入框 */
+    .input-wrapper {
+      margin: 15px 0;
+    }
+    
+    .input-label {
+      display: block;
+      margin-bottom: 5px;
+      color: #606266;
+      font-size: 14px;
+    }
+    
+    .my-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    
+    .my-input:focus {
+      outline: none;
+      border-color: #409eff;
+    }
+    
+    /* Vue2 风格过滤器效果 */
+    .filter-demo {
+      padding: 15px;
+      background: #f0f9ff;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    
+    /* Info box */
+    .info-box {
+      background: #ecf5ff;
+      border-left: 4px solid #409eff;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    
+    .info-box code {
+      background: #d9ecff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: Consolas, monospace;
+    }
+    
+    /* Counter demo */
+    .counter {
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .counter-value {
+      font-size: 48px;
+      font-weight: bold;
+      color: #42b983;
+      margin: 10px 0;
+    }
+    
+    .counter-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Vue2 组件在 Vue3 中使用</h1>
+    
+    <div class="info-box">
+      <strong>说明：</strong>本示例展示如何在 Vue3 应用中使用 Vue2 风格的组件。
+      实际生产环境需要使用 <code>@vue/compat</code> 构建版本。
+      这里使用纯 Vue3 模拟 Vue2 组件的行为。
+    </div>
+    
+    <!-- 示例1: 按钮组件 -->
+    <div class="demo-section">
+      <h2>示例 1: 按钮组件 (Options API)</h2>
+      
+      <my-button @click="handleClick">主要按钮</my-button>
+      <my-button type="secondary" @click="handleClick">次要按钮</my-button>
+      <my-button type="success" @click="handleClick">成功按钮</my-button>
+      <my-button type="danger" @click="handleClick">危险按钮</my-button>
+      
+      <p style="margin-top: 15px; color: #67c23a;">
+        点击次数: {{ clickCount }}
+      </p>
+    </div>
+    
+    <!-- 示例2: 卡片组件 -->
+    <div class="demo-section">
+      <h2>示例 2: 卡片组件 (带 Slot)</h2>
+      
+      <card title="Vue2 组件特性">
+        <p>这是一个使用 Options API 编写的 Vue2 风格组件。</p>
+        <p>支持 <strong>slot</strong> 内容分发。</p>
+      </card>
+      
+      <card title="组件 Props">
+        <p>通过 <code>props</code> 传递数据：</p>
+        <ul>
+          <li>title: 卡片标题</li>
+          <li>内容通过 slot 传入</li>
+        </ul>
+      </card>
+    </div>
+    
+    <!-- 示例3: 输入框组件 -->
+    <div class="demo-section">
+      <h2>示例 3: 输入框组件 (v-model 双向绑定)</h2>
+      
+      <my-input 
+        label="用户名"
+        v-model="username"
+        placeholder="请输入用户名"
+      ></my-input>
+      
+      <my-input 
+        label="邮箱"
+        v-model="email"
+        placeholder="请输入邮箱"
+      ></my-input>
+      
+      <div class="filter-demo">
+        <strong>输入的数据：</strong>
+        <p>用户名: {{ username || '(未输入)' }}</p>
+        <p>邮箱: {{ email || '(未输入)' }}</p>
+      </div>
+    </div>
+    
+    <!-- 示例4: 计数器组件 -->
+    <div class="demo-section">
+      <h2>示例 4: 计数器组件 (父子通信)</h2>
+      
+      <counter 
+        :initial-value="count"
+        @change="onCountChange"
+      ></counter>
+      
+      <p style="text-align: center; color: #909399;">
+        当前计数: {{ displayCount }}
+      </p>
+    </div>
+    
+    <!-- 示例5: Vue2 风格过滤器 -->
+    <div class="demo-section">
+      <h2>示例 5: 过滤器模拟 (Vue3 推荐用 methods 替代)</h2>
+      
+      <div class="filter-demo">
+        <p>原始文本: {{ rawText }}</p>
+        <p>大写: {{ toUpper(rawText) }}</p>
+        <p>首字母大写: {{ capitalize(rawText) }}</p>
+        <p>反转: {{ reverse(rawText) }}</p>
+      </div>
+      
+      <div class="info-box">
+        <strong>Vue3 变化：</strong>Filters 语法已被移除。
+        在 Vue3 中应使用 <code>methods</code> 或 <code>computed</code> 替代。
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // ============================================
+    // Vue2 风格组件定义 (使用 Options API)
+    // ============================================
+    
+    const MyButton = {
+      name: 'MyButton',
+      props: {
+        type: {
+          type: String,
+          default: 'primary'
+        }
+      },
+      emits: ['click'],
+      template: `
+        <button 
+          class="my-button"
+          :class="type"
+          @click="$emit('click')"
+        >
+          <slot></slot>
+        </button>
+      `
+    }
+    
+    const Card = {
+      name: 'Card',
+      props: {
+        title: {
+          type: String,
+          required: true
+        }
+      },
+      template: `
+        <div class="card">
+          <div class="card-title">{{ title }}</div>
+          <div class="card-content">
+            <slot></slot>
+          </div>
+        </div>
+      `
+    }
+    
+    const MyInput = {
+      name: 'MyInput',
+      props: {
+        label: String,
+        modelValue: String,
+        placeholder: String
+      },
+      emits: ['update:modelValue'],
+      template: `
+        <div class="input-wrapper">
+          <label class="input-label">{{ label }}</label>
+          <input 
+            class="my-input"
+            type="text"
+            :value="modelValue"
+            :placeholder="placeholder"
+            @input="$emit('update:modelValue', $event.target.value)"
+          />
+        </div>
+      `
+    }
+    
+    const Counter = {
+      name: 'Counter',
+      props: {
+        initialValue: {
+          type: Number,
+          default: 0
+        }
+      },
+      emits: ['change'],
+      data() {
+        return {
+          count: this.initialValue
+        }
+      },
+      methods: {
+        increment() {
+          this.count++
+          this.$emit('change', this.count)
+        },
+        decrement() {
+          this.count--
+          this.$emit('change', this.count)
+        },
+        reset() {
+          this.count = this.initialValue
+          this.$emit('change', this.count)
+        }
+      },
+      template: `
+        <div class="counter">
+          <div class="counter-value">{{ count }}</div>
+          <div class="counter-buttons">
+            <button class="my-button secondary" @click="decrement">-</button>
+            <button class="my-button" @click="reset">重置</button>
+            <button class="my-button success" @click="increment">+</button>
+          </div>
+        </div>
+      `
+    }
+    
+    // ============================================
+    // Vue3 应用
+    // ============================================
+    
+    const app = Vue.createApp({
+      data() {
+        return {
+          clickCount: 0,
+          username: '',
+          email: '',
+          count: 0,
+          displayCount: 0,
+          rawText: 'hello world'
+        }
+      },
+      methods: {
+        handleClick() {
+          this.clickCount++
+        },
+        onCountChange(newValue) {
+          this.displayCount = newValue
+        },
+        // Vue3 方式：使用 methods 替代 Vue2 Filters
+        toUpper(value) {
+          return value ? value.toUpperCase() : ''
+        },
+        capitalize(value) {
+          if (!value) return ''
+          return value.charAt(0).toUpperCase() + value.slice(1)
+        },
+        reverse(value) {
+          return value ? value.split('').reverse().join('') : ''
+        }
+      }
+    })
+    
+    // 注册 Vue2 风格组件
+    app.component('MyButton', MyButton)
+    app.component('Card', Card)
+    app.component('MyInput', MyInput)
+    app.component('Counter', Counter)
+    
+    app.mount('#app')
+  </script>
+</body>
+</html>
