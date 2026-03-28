@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 组件流程步骤模式 - 交互式演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #58a6ff;
+      margin-bottom: 8px;
+      font-size: 1.8rem;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #8b949e;
+      margin-bottom: 24px;
+      font-size: 0.95rem;
+    }
+    
+    .demo-container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      background: #161b22;
+      padding: 6px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .tab-btn {
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      color: #8b949e;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .tab-btn:hover { background: #21262d; color: #e6edf3; }
+    .tab-btn.active { background: #58a6ff; color: #fff; }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    
+    .card-title {
+      color: #58a6ff;
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .card-title .icon { font-size: 1.2rem; }
+    
+    .code-block {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    
+    .code-block .comment { color: #8b949e; }
+    .code-block .keyword { color: #ff7b72; }
+    .code-block .function { color: #d2a8ff; }
+    .code-block .string { color: #a5d6ff; }
+    .code-block .variable { color: #79c0ff; }
+    .code-block .tag { color: #7ee787; }
+    .code-block .attr { color: #ffa657; }
+    
+    .result-panel {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 20px;
+      min-height: 120px;
+    }
+    
+    .result-panel .label {
+      color: #8b949e;
+      font-size: 12px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+    
+    button {
+      background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+    }
+    
+    button:disabled {
+      background: #21262d;
+      color: #484f58;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    button.secondary { background: #21262d; color: #e6edf3; }
+    button.secondary:hover { background: #30363d; box-shadow: none; }
+    button.danger { background: linear-gradient(135deg, #da3633 0%, #f85149 100%); }
+    button.danger:hover { box-shadow: 0 4px 12px rgba(218, 54, 51, 0.3); }
+    
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    
+    .step-dot {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #21262d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #8b949e;
+      transition: all 0.3s;
+    }
+    
+    .step-dot.active {
+      background: #58a6ff;
+      color: white;
+      box-shadow: 0 0 20px rgba(88, 166, 255, 0.4);
+    }
+    
+    .step-dot.completed { background: #238636; color: white; }
+    
+    .step-line {
+      width: 40px;
+      height: 3px;
+      background: #21262d;
+      align-self: center;
+      transition: background 0.3s;
+    }
+    
+    .step-line.completed { background: #238636; }
+    
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; color: #8b949e; font-size: 13px; margin-bottom: 6px; }
+    .form-group input {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      font-size: 14px;
+    }
+    .form-group input:focus { outline: none; border-color: #58a6ff; }
+    
+    .confirm-box {
+      background: #1c2128;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    
+    .confirm-icon { font-size: 48px; margin-bottom: 16px; }
+    
+    .confirm-message {
+      background: #0d1117;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 16px 0;
+      text-align: left;
+      font-size: 13px;
+      white-space: pre-wrap;
+      color: #8b949e;
+    }
+    
+    .state-machine { display: flex; flex-direction: column; gap: 12px; }
+    
+    .state-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    
+    .state-node {
+      padding: 8px 16px;
+      background: #21262d;
+      border-radius: 6px;
+      font-size: 13px;
+      min-width: 100px;
+      text-align: center;
+    }
+    
+    .state-node.current { background: #58a6ff; color: white; }
+    .state-arrow { color: #8b949e; font-size: 12px; }
+    
+    .quiz-question { margin-bottom: 24px; }
+    .quiz-question h4 { color: #e6edf3; margin-bottom: 12px; font-size: 15px; }
+    
+    .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+    
+    .quiz-option {
+      padding: 12px 16px;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .quiz-option:hover { border-color: #58a6ff; }
+    .quiz-option.selected { border-color: #58a6ff; background: rgba(88, 166, 255, 0.1); }
+    .quiz-option.correct { border-color: #238636; background: rgba(35, 134, 54, 0.1); }
+    .quiz-option.wrong { border-color: #da3633; background: rgba(218, 54, 51, 0.1); }
+    
+    .quiz-result {
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-weight: 500;
+    }
+    
+    .quiz-result.pass { background: rgba(35, 134, 54, 0.2); color: #3fb950; }
+    .quiz-result.fail { background: rgba(218, 54, 51, 0.2); color: #f85149; }
+    
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    
+    .concept-card {
+      background: #1c2128;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    
+    .concept-card h4 { color: #58a6ff; margin-bottom: 8px; font-size: 15px; }
+    .concept-card p { color: #8b949e; font-size: 13px; line-height: 1.6; }
+    
+    .output-log {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 13px;
+    }
+    
+    .output-log .entry {
+      padding: 4px 0;
+      border-bottom: 1px solid #21262d;
+      color: #8b949e;
+    }
+    
+    .output-log .entry:last-child { border-bottom: none; }
+    .output-log .entry .time { color: #484f58; margin-right: 8px; }
+    .output-log .entry.success { color: #3fb950; }
+    .output-log .entry.info { color: #58a6ff; }
+    .output-log .entry.warning { color: #d29922; }
+    
+    .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
+    
+    .slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
+    .slide-enter-from { opacity: 0; transform: translateX(30px); }
+    .slide-leave-to { opacity: 0; transform: translateX(-30px); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>🔀 组件流程步骤模式</h1>
+    <p class="subtitle">将确认框等复杂组件设计为顺序流程的一个步骤</p>
+    
+    <div class="demo-container">
+      <div class="tab-nav">
+        <button 
+          v-for="(tab, idx) in tabs" 
+          :key="idx"
+          :class="['tab-btn', { active: currentTab === idx }]"
+          @click="currentTab = idx"
+        >{{ tab }}</button>
+      </div>
+      
+      <!-- Tab 1: 概念总览 -->
+      <div :class="['tab-content', { active: currentTab === 0 }]">
+        <div class="card">
+          <div class="card-title"><span class="icon">📚</span>核心概念</div>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <h4>Step Pattern</h4>
+              <p>将完整流程拆分为多个独立步骤组件，每个步骤负责单一业务逻辑，通过统一接口与容器通信。</p>
+            </div>
+            <div class="concept-card">
+              <h4>State Machine</h4>
+              <p>用有限状态机管理流程状态转换，确保状态转换可预测，避免非法状态出现。</p>
+            </div>
+            <div class="concept-card">
+              <h4>Flow Context</h4>
+              <p>通过 provide/inject 跨组件传递流程上下文，包括当前步骤、共享数据、控制方法。</p>
+            </div>
+            <div class="concept-card">
+              <h4>Compound Component</h4>
+              <p>复合组件模式，通过插槽和上下文组合多个步骤，实现高度可复用的流程组件。</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title"><span class="icon">🔧</span>为什么需要流程步骤化？</div>
+          <div class="grid-2">
+            <div class="code-block"><span class="comment">// ❌ 传统方式：嵌套 if-else</span>
+<span class="tag">&lt;template&gt;</span>
+  <span class="tag">&lt;Step1</span> <span class="attr">v-if=</span><span class="string">"step === 1"</span> <span class="attr">@next=</span><span class="string">"step = 2"</span> <span class="tag">/&gt;</span>
+  <span class="tag">&lt;ConfirmDialog</span> <span class="attr">v-if=</span><span class="string">"step === 2"</span> <span class="tag">/&gt;</span>
+  <span class="tag">&lt;Result</span> <span class="attr">v-if=</span><span class="string">"step === 3"</span> <span class="tag">/&gt;</span>
+<span class="tag">&lt;/template&gt;</span>
+<span class="comment">// 问题：数据传递混乱，状态分散</span></div>
+            <div class="code-block"><span class="comment">// ✅ 流程步骤化：清晰的分层</span>
+<span class="keyword">provide</span>(<span class="string">'flow'</span>, {
+  <span class="attr">steps</span>: [...],
+  <span class="attr">formData</span>: <span class="variable">ref</span>({}),
+  <span class="attr">next</span>, <span class="attr">prev</span>, <span class="attr">goTo</span>
+})
+<span class="comment">// 每个步骤组件只关心自己</span>
+<span class="keyword">const</span> { formData, next } = <span class="function">inject</span>(<span class="string">'flow'</span>)</div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-title"><span class="icon">🏗️</span>架构示意</div>
+          <div class="code-block"><span class="comment">┌─────────────────────────────────────┐</span>
+<span class="comment">│         FlowContainer              │</span>
+<span class="comment">│  ┌─────────────────────────────┐   │</span>
+<span class="comment">│  │     StepIndicator          │   │</span>
+<span class="comment">│  └─────────────────────────────┘   │</span>
+<span class="comment">│  ┌─────────────────────────────┐   │</span>
+<span class="comment">│  │  &lt;Step1&gt; → &lt;Step2&gt; →     │</span>
+<span class="comment">│  │  &lt;Confirm&gt; → &lt;Result&gt;     │</span>
+<span class="comment">│  └─────────────────────────────┘   │</span>
+<span class="comment">│  ┌─────────────────────────────┐   │</span>
+<span class="comment">│  │  [上一步] [下一步] [取消]   │</span>
+<span class="comment">│  └─────────────────────────────┘   │</span>
+<span class="comment">└─────────────────────────────────────┘</span>
+<span class="comment">           ↑ provide/inject</span></div>
+        </div>
+      </div>
+      
+      <!-- Tab 2: 单步确认 -->
+      <div :class="['tab-content', { active: currentTab === 1 }]">
+        <div class="card">
+          <div class="card-title"><span class="icon">⚠️</span>单步确认流程</div>
+          <div class="step-indicator">
+            <div class="step-dot" :class="{ active: confirmStep === 0, completed: confirmStep > 0 }">1</div>
+            <div class="step-line" :class="{ completed: confirmStep > 0 }"></div>
+            <div class="step-dot" :class="{ active: confirmStep === 1, completed: confirmStep > 1 }">2</div>
+            <div class="step-line" :class="{ completed: confirmStep > 1 }"></div>
+            <div class="step-dot" :class="{ active: confirmStep === 2 }">3</div>
+          </div>
+          
+          <div class="grid-2">
+            <div class="result-panel">
+              <div class="label">当前步骤</div>
+              <div v-if="confirmStep === 0">
+                <h4 style="margin-bottom: 12px;">📝 填写删除目标</h4>
+                <div class="form-group">
+                  <label>要删除的项目名称</label>
+                  <input v-model="deleteItem" placeholder="例如：用户张三" />
+                </div>
+                <button @click="confirmStep = 1" :disabled="!deleteItem">下一步</button>
+              </div>
+              
+              <div v-else-if="confirmStep === 1">
+                <div class="confirm-box">
+                  <div class="confirm-icon">⚠️</div>
+                  <h4>确认删除</h4>
+                  <div class="confirm-message">确定要删除「{{ deleteItem }}」吗？
+此操作不可撤销。</div>
+                  <div class="btn-group" style="justify-content: center;">
+                    <button class="secondary" @click="confirmStep = 0">返回</button>
+                    <button class="danger" @click="confirmStep = 2; logAction('confirm')">确认删除</button>
+                  </div>
+                </div>
+              </div>
+              
+              <div v-else>
+                <h4 style="color: #3fb950; margin-bottom: 12px;">✅ 删除成功</h4>
+                <p style="color: #8b949e;">「{{ deleteItem }}」已被删除</p>
+                <button class="secondary" @click="resetConfirm" style="margin-top: 16px;">重新开始</button>
+              </div>
+            </div>
+            
+            <div>
+              <div class="code-block"><span class="comment">// 核心代码</span>
+<span class="keyword">const</span> { 
+  <span class="attr">currentStep</span>, <span class="attr">formData</span>, <span class="attr">next</span>, <span class="attr">prev</span>
+} = <span class="function">inject</span>(<span class="string">'flow'</span>)
+<span class="comment">// 确认框作为独立步骤</span>
+<span class="keyword">function</span> <span class="function">handleConfirm</span>() {
+  <span class="comment">// 执行删除逻辑</span>
+  <span class="function">next</span>()
+}</div>
+              <div class="output-log" style="margin-top: 16px;">
+                <div class="label">操作日志</div>
+                <div v-for="(log, idx) in confirmLogs" :key="idx" :class="['entry', log.type]">
+                  <span class="time">{{ log.time }}</span>
+                  {{ log.msg }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab 3: 多步流程 -->
+      <div :class="['tab-content', { active: currentTab === 2 }]">
+        <div class="card">
+          <div class="card-title"><span class="icon">📋</span>多步骤表单流程</div>
+          <div class="step-indicator">
+            <div class="step-dot" :class="{ active: formStep === 0, completed: formStep > 0 }">1</div>
+            <div class="step-line" :class="{ completed: formStep > 0 }"></div>
+            <div class="step-dot" :class="{ active: formStep === 1, completed: formStep > 1 }">2</div>
+            <div class="step-line" :class="{ completed: formStep > 1 }"></div>
+            <div class="step-dot" :class="{ active: formStep === 2 }">3</div>
+          </div>
+          
+          <div class="grid-2">
+            <div class="result-panel">
+              <transition name="slide" mode="out-in">
+                <div v-if="formStep === 0" key="step1">
+                  <h4 style="margin-bottom: 16px;">📝 基本信息</h4>
+                  <div class="form-group">
+                    <label>用户名</label>
+                    <input v-model="formData.username" placeholder="请输入用户名" />
+                  </div>
+                  <div class="form-group">
+                    <label>年龄</label>
+                    <input v-model="formData.age" type="number" placeholder="请输入年龄" />
+                  </div>
+                  <div class="btn-group">
+                    <button @click="formStep = 1" :disabled="!formData.username || !formData.age">下一步</button>
+                  </div>
+                </div>
+                
+                <div v-else-if="formStep === 1" key="step2">
+                  <h4 style="margin-bottom: 16px;">📞 联系方式</h4>
+                  <div class="form-group">
+                    <label>邮箱</label>
+                    <input v-model="formData.email" placeholder="example@domain.com" />
+                  </div>
+                  <div class="form-group">
+                    <label>电话</label>
+                    <input v-model="formData.phone" placeholder="138xxxxxxxx" />
+                  </div>
+                  <div class="btn-group">
+                    <button class="secondary" @click="formStep = 0">上一步</button>
+                    <button @click="formStep = 2" :disabled="!formData.email">下一步</button>
+                  </div>
+                </div>
+                
+                <div v-else key="step3">
+                  <h4 style="margin-bottom: 16px;">✅ 确认信息</h4>
+                  <div class="confirm-message">用户名：{{ formData.username }}
+年龄：{{ formData.age }}
+邮箱：{{ formData.email }}
+电话：{{ formData.phone }}</div>
+                  <div class="btn-group">
+                    <button class="secondary" @click="formStep = 1">返回修改</button>
+                    <button @click="submitForm">提交</button>
+                  </div>
+                </div>
+              </transition>
+            </div>
+            
+            <div>
+              <div class="code-block"><span class="comment">// 流程上下文</span>
+<span class="keyword">provide</span>(<span class="string">'formFlow'</span>, {
+  <span class="attr">steps</span>: [
+    { <span class="attr">id</span>: <span class="string">'basic'</span>, <span class="attr">title</span>: <span class="string">'基本信息'</span> },
+    { <span class="attr">id</span>: <span class="string">'contact'</span>, <span class="attr">title</span>: <span class="string">'联系方式'</span> },
+    { <span class="attr">id</span>: <span class="string">'confirm'</span>, <span class="attr">title</span>: <span class="string">'确认信息'</span> }
+  ],
+  <span class="attr">formData</span>: <span class="variable">ref</span>({...}),
+  <span class="attr">next</span>: () => step++,
+  <span class="attr">prev</span>: () => step--
+})</div>
+              
+              <div class="result-panel" style="margin-top: 16px;">
+                <div class="label">当前状态</div>
+                <div style="font-family: monospace; font-size: 13px; color: #8b949e;">
+                  step: {{ formStep }}<br>
+                  data: {{ JSON.stringify(formData, null, 2) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab 4: 状态机 -->
+      <div :class="['tab-content', { active: currentTab === 3 }]">
+        <div class="card">
+          <div class="card-title"><span class="icon">⚙️</span>State Machine 模式</div>
+          
+          <div class="grid-2">
+            <div>
+              <div class="state-machine">
+                <div class="state-row">
+                  <div :class="['state-node', { current: smState === 'idle' }]">idle</div>
+                  <span class="state-arrow">--start--&gt;</span>
+                  <div :class="['state-node', { current: smState === 'input' }]">input</div>
+                </div>
+                <div class="state-row">
+                  <div :class="['state-node', { current: smState === 'input' }]">input</div>
+                  <span class="state-arrow">--next--&gt;</span>
+                  <div :class="['state-node', { current: smState === 'confirm' }]">confirm</div>
+                  <span class="state-arrow">--cancel--&gt;</span>
+                  <div :class="['state-node', { current: smState === 'idle' }]">idle</div>
+                </div>
+                <div class="state-row">
+                  <div :class="['state-node', { current: smState === 'confirm' }]">confirm</div>
+                  <span class="state-arrow">--confirm--&gt;</span>
+                  <div :class="['state-node', { current: smState === 'success' }]">success</div>
+                  <span class="state-arrow">--back--&gt;</span>
+                  <div :class="['state-node', { current: smState === 'input' }]">input</div>
+                </div>
+              </div>
+              
+              <div style="margin-top: 24px;">
+                <div class="label">可用动作</div>
+                <div class="btn-group">
+                  <button 
+                    v-for="action in availableActions" 
+                    :key="action"
+                    @click="executeAction(action)"
+                    style="padding: 8px 16px; font-size: 13px;"
+                  >{{ action }}</button>
+                  <button class="secondary" @click="resetSM" style="padding: 8px 16px; font-size: 13px;">重置</button>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <div class="code-block"><span class="comment">// 状态转换规则</span>
+<span class="keyword">const</span> transitions = {
+  <span class="attr">idle</span>: { <span class="attr">start</span>: <span class="string">'input'</span> },
+  <span class="attr">input</span>: { <span class="attr">next</span>: <span class="string">'confirm'</span>, 
+              <span class="attr">cancel</span>: <span class="string">'idle'</span> },
+  <span class="attr">confirm</span>: { <span class="attr">confirm</span>: <span class="string">'success'</span>,
+                <span class="attr">back</span>: <span class="string">'input'</span>,
+                <span class="attr">cancel</span>: <span class="string">'idle'</span> },
+  <span class="attr">success</span>: { <span class="attr">restart</span>: <span class="string">'idle'</span> }
+}
+<span class="comment">// 执行转换</span>
+<span class="keyword">function</span> <span class="function">transition</span>(action) {
+  <span class="keyword">const</span> next = transitions[state][action]
+  <span class="keyword">if</span> (next) state = next
+}</div>
+              
+              <div class="result-panel" style="margin-top: 16px;">
+                <div class="label">状态历史</div>
+                <div v-for="(s, idx) in smHistory" :key="idx" class="entry">
+                  {{ idx + 1 }}. {{ s }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab 5: 自测题 -->
+      <div :class="['tab-content', { active: currentTab === 4 }]">
+        <div class="card">
+          <div class="card-title"><span class="icon">📝</span>自测题</div>
+          
+          <div class="quiz-question">
+            <h4>1. Flow Context 推荐使用哪个 Vue 特性传递？</h4>
+            <div class="quiz-options">
+              <div 
+                v-for="(opt, idx) in q1.options" 
+                :key="idx"
+                :class="['quiz-option', getQuizClass(1, idx)]"
+                @click="selectQuiz(1, idx)"
+              >
+                <span style="color: #58a6ff;">{{ String.fromCharCode(65 + idx) }}.</span>
+                {{ opt }}
+              </div>
+            </div>
+            <div v-if="quizResults[1]" :class="['quiz-result', quizResults[1].correct ? 'pass' : 'fail']">
+              {{ quizResults[1].correct ? '✅ 回答正确！' : '❌ 回答错误，正确答案是 B' }}
+            </div>
+          </div>
+          
+          <div class="quiz-question">
+            <h4>2. 状态机模式的主要目的是？</h4>
+            <div class="quiz-options">
+              <div 
+                v-for="(opt, idx) in q2.options" 
+                :key="idx"
+                :class="['quiz-option', getQuizClass(2, idx)]"
+                @click="selectQuiz(2, idx)"
+              >
+                <span style="color: #58a6ff;">{{ String.fromCharCode(65 + idx) }}.</span>
+                {{ opt }}
+              </div>
+            </div>
+            <div v-if="quizResults[2]" :class="['quiz-result', quizResults[2].correct ? 'pass' : 'fail']">
+              {{ quizResults[2].correct ? '✅ 回答正确！' : '❌ 回答错误，正确答案是 C' }}
+            </div>
+          </div>
+          
+          <div class="quiz-question">
+            <h4>3. 解构 inject 返回的响应式对象会？</h4>
+            <div class="quiz-options">
+              <div 
+                v-for="(opt, idx) in q3.options" 
+                :key="idx"
+                :class="['quiz-option', getQuizClass(3, idx)]"
+                @click="selectQuiz(3, idx)"
+              >
+                <span style="color: #58a6ff;">{{ String.fromCharCode(65 + idx) }}.</span>
+                {{ opt }}
+              </div>
+            </div>
+            <div v-if="quizResults[3]" :class="['quiz-result', quizResults[3].correct ? 'pass' : 'fail']">
+              {{ quizResults[3].correct ? '✅ 回答正确！' : '❌ 回答错误，正确答案是 A' }}
+            </div>
+          </div>
+          
+          <div style="margin-top: 24px; text-align: center;">
+            <div class="label">得分</div>
+            <div style="font-size: 2rem; color: #58a6ff; margin: 8px 0;">
+              {{ quizScore }} / 3
+            </div>
+            <button class="secondary" @click="resetQuiz">重置测试</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, reactive } = Vue
+    
+    createApp({
+      setup() {
+        // Tab Navigation
+        const tabs = ['概念总览', '单步确认', '多步流程', '状态机', '自测题']
+        const currentTab = ref(0)
+        
+        // ============ Tab 2: 单步确认 ============
+        const confirmStep = ref(0)
+        const deleteItem = ref('')
+        const confirmLogs = ref([])
+        
+        function logAction(action) {
+          const now = new Date()
+          const time = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          const messages = {
+            start: '用户开始删除流程',
+            next: '进入确认步骤',
+            confirm: '确认删除操作'
+          }
+          confirmLogs.value.unshift({
+            time,
+            msg: messages[action] || action,
+            type: action === 'confirm' ? 'success' : 'info'
+          })
+        }
+        
+        function resetConfirm() {
+          confirmStep.value = 0
+          deleteItem.value = ''
+          confirmLogs.value = [{ time: '00:00:00', msg: '流程已重置', type: 'warning' }]
+        }
+        
+        // ============ Tab 3: 多步流程 ============
+        const formStep = ref(0)
+        const formData = reactive({
+          username: '',
+          age: null,
+          email: '',
+          phone: ''
+        })
+        
+        function submitForm() {
+          alert(`提交成功！\n用户名：${formData.username}\n年龄：${formData.age}\n邮箱：${formData.email}\n电话：${formData.phone}`)
+          formStep.value = 0
+          Object.assign(formData, { username: '', age: null, email: '', phone: '' })
+        }
+        
+        // ============ Tab 4: 状态机 ============
+        const transitions = {
+          idle: { start: 'input' },
+          input: { next: 'confirm', cancel: 'idle' },
+          confirm: { confirm: 'success', back: 'input', cancel: 'idle' },
+          success: { restart: 'idle' }
+        }
+        
+        const smState = ref('idle')
+        const smHistory = ref(['idle'])
+        
+        const availableActions = computed(() => {
+          const allowed = transitions[smState.value] || {}
+          return Object.keys(allowed)
+        })
+        
+        function executeAction(action) {
+          const allowed = transitions[smState.value]
+          if (allowed && action in allowed) {
+            smState.value = allowed[action]
+            smHistory.value.push(smState.value)
+          }
+        }
+        
+        function resetSM() {
+          smState.value = 'idle'
+          smHistory.value = ['idle']
+        }
+        
+        // ============ Tab 5: 自测题 ============
+        const q1 = {
+          options: ['通过 props 层层传递', '通过 provide/inject', '通过 Vuex/Pinia', '通过 localStorage'],
+          answer: 1
+        }
+        
+        const q2 = {
+          options: ['加快页面加载速度', '减少代码量', '确保状态转换可预测，避免非法状态', '实现动画效果'],
+          answer: 2
+        }
+        
+        const q3 = {
+          options: ['丢失响应式', '程序报错', '没有任何影响', '自动变成 computed'],
+          answer: 0
+        }
+        
+        const quizResults = reactive({})
+        const quizAnswers = reactive({})
+        
+        function selectQuiz(questionNum, optionIdx) {
+          const q = questionNum === 1 ? q1 : questionNum === 2 ? q2 : q3
+          quizAnswers[questionNum] = optionIdx
+          quizResults[questionNum] = {
+            selected: optionIdx,
+            correct: optionIdx === q.answer
+          }
+        }
+        
+        function getQuizClass(questionNum, optionIdx) {
+          if (!quizResults[questionNum]) return ''
+          const result = quizResults[questionNum]
+          if (result.correct && optionIdx === q1.answer) return 'correct'
+          if (result.selected === optionIdx && !result.correct) return 'wrong'
+          return ''
+        }
+        
+        const quizScore = computed(() => {
+          return Object.values(quizResults).filter(r => r && r.correct).length
+        })
+        
+        function resetQuiz() {
+          Object.keys(quizResults).forEach(k => delete quizResults[k])
+          Object.keys(quizAnswers).forEach(k => delete quizAnswers[k])
+        }
+        
+        return {
+          // Tab nav
+          tabs,
+          currentTab,
+          // Tab 2
+          confirmStep,
+          deleteItem,
+          confirmLogs,
+          logAction,
+          resetConfirm,
+          // Tab 3
+          formStep,
+          formData,
+          submitForm,
+          // Tab 4
+          smState,
+          smHistory,
+          availableActions,
+          executeAction,
+          resetSM,
+          // Tab 5
+          q1, q2, q3,
+          quizResults,
+          quizAnswers,
+          selectQuiz,
+          getQuizClass,
+          quizScore,
+          resetQuiz
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
