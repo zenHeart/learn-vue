@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue Watch 异步数据首次渲染演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    h1 { font-size: 1.8rem; color: #fff; margin-bottom: 8px; }
+    .subtitle { color: #888; margin-bottom: 24px; font-size: 0.95rem; }
+    
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 10px 20px;
+      background: #1e1e1e;
+      border: 1px solid #333;
+      color: #888;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { background: #2a2a2a; color: #fff; }
+    .tab-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .demo-box {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .demo-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .demo-title { font-weight: 600; color: #fff; }
+    .demo-badge {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .badge-problem { background: #7f1d1d; color: #fca5a5; }
+    .badge-solution { background: #14532d; color: #86efac; }
+    
+    .demo-body { padding: 20px; }
+    .demo-section { margin-bottom: 24px; }
+    .demo-section:last-child { margin-bottom: 0; }
+    
+    .demo-row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+    .demo-item { flex: 1; min-width: 200px; }
+    .demo-label {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .demo-value {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      font-size: 0.9rem;
+      color: #86efac;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+    }
+    .demo-value.highlight { border-color: #2563eb; }
+    .demo-value.warning { color: #fde047; }
+    
+    .demo-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    .demo-btn {
+      padding: 8px 16px;
+      background: #2563eb;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .demo-btn:hover { background: #1d4ed8; }
+    .demo-btn.secondary { background: #374151; }
+    .demo-btn.secondary:hover { background: #4b5563; }
+    
+    .code-block {
+      background: #0d0d0d;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      color: #d4d4d4;
+    }
+    .code-keyword { color: #569cd6; }
+    .code-string { color: #ce9178; }
+    .code-number { color: #b5cea8; }
+    .code-comment { color: #6a9955; }
+    .code-function { color: #dcdcaa; }
+    .code-property { color: #9cdcfe; }
+    
+    .log-box {
+      background: #0d0d0d;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      font-size: 0.8rem;
+    }
+    .log-entry { padding: 4px 0; border-bottom: 1px solid #222; color: #d4d4d4; }
+    .log-entry:last-child { border-bottom: none; }
+    .log-time { color: #6a9955; margin-right: 8px; }
+    .log-trigger { color: #569cd6; }
+    .log-empty { color: #666; font-style: italic; }
+    
+    .flow-diagram {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .flow-step { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .flow-num {
+      width: 28px;
+      height: 28px;
+      background: #2563eb;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .flow-text { color: #d4d4d4; font-size: 0.9rem; }
+    .flow-arrow { text-align: center; color: #666; font-size: 1.2rem; margin: 4px 0; margin-left: 6px; }
+    
+    .comparison-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .comparison-table th, .comparison-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #333; }
+    .comparison-table th { background: #1e1e1e; color: #fff; font-weight: 600; }
+    .comparison-table td { color: #d4d4d4; }
+    .comparison-table tr:last-child td { border-bottom: none; }
+    .check { color: #86efac; }
+    .cross { color: #f87171; }
+    
+    .scenario-note {
+      background: #1c1c1c;
+      border-left: 4px solid #f59e0b;
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      font-size: 0.9rem;
+      color: #d4d4d4;
+    }
+    .scenario-note strong { color: #f59e0b; }
+    
+    .output-section {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+    .output-title {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <h1>Vue Watch 异步数据首次渲染</h1>
+    <p class="subtitle">演示 watch 在异步数据场景下首次渲染时的行为，以及三种解决方案</p>
+    
+    <div class="tabs">
+      <button v-for="(tab, index) in tabs" :key="index" :class="['tab-btn', { active: activeTab === index }]" @click="activeTab = index">{{ tab }}</button>
+    </div>
+    
+    <!-- Tab 0: 问题演示 -->
+    <div :class="['tab-content', { active: activeTab === 0 }]">
+      <div class="demo-box">
+        <div class="demo-header">
+          <span class="demo-title">问题演示：默认 watch 不触发</span>
+          <span class="demo-badge badge-problem">问题</span>
+        </div>
+        <div class="demo-body">
+          <div class="scenario-note">
+            <strong>场景：</strong>异步数据初始为 undefined，watch 回调不会在数据首次加载时被触发
+          </div>
+          
+          <div class="flow-diagram">
+            <div class="flow-step">
+              <span class="flow-num">1</span>
+              <span class="flow-text">组件初始化，userName = ref(undefined)</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step">
+              <span class="flow-num">2</span>
+              <span class="flow-text">注册 watch(userName, callback)</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step">
+              <span class="flow-num">3</span>
+              <span class="flow-text">异步请求返回，userName.value = 'Tom'</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step">
+              <span class="flow-num">4</span>
+              <span class="flow-text" style="color: #f87171;">⚠️ watch 回调没有执行！</span>
+            </div>
+          </div>
+          
+          <div class="demo-row">
+            <div class="demo-item">
+              <div class="demo-label">userName 当前值</div>
+              <div class="demo-value highlight">{{ problemData.userName ?? 'undefined' }}</div>
+            </div>
+            <div class="demo-item">
+              <div class="demo-label">watch 触发次数</div>
+              <div class="demo-value">{{ problemData.watchCount }}</div>
+            </div>
+          </div>
+          
+          <div class="demo-controls">
+            <button class="demo-btn" @click="simulateProblem">模拟异步加载</button>
+            <button class="demo-btn secondary" @click="resetProblem">重置</button>
+          </div>
+          
+          <div class="output-section">
+            <div class="output-title">控制台日志</div>
+            <div class="log-box">
+              <div v-if="problemData.logs.length === 0" class="log-empty">点击"模拟异步加载"观察日志...</div>
+              <div v-for="(log, i) in problemData.logs" :key="i" class="log-entry">
+                <span class="log-time">{{ log.time }}</span>
+                <span class="log-trigger">{{ log.msg }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="demo-section" style="margin-top: 20px;">
+            <div class="demo-label">问题代码</div>
+            <div class="code-block"><span class="code-keyword">const</span> userName = <span class="code-function">ref</span>(<span class="code-keyword">undefined</span>)
+
+<span class="code-comment">// ❌ 默认 watch 不会在首次渲染时执行</span>
+<span class="code-function">watch</span>(userName, (newVal, oldVal) => {
+  console.<span class="code-function">log</span>(<span class="code-string">'变化了'</span>, newVal)
+})
+
+<span class="code-comment">// 异步赋值后，watch 回调不触发</span>
+<span class="code-function">setTimeout</span>(() => {
+  userName.value = <span class="code-string">'Tom'</span>
+}, <span class="code-number">1000</span>)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tab 1: immediate: true -->
+    <div :class="['tab-content', { active: activeTab === 1 }]">
+      <div class="demo-box">
+        <div class="demo-header">
+          <span class="demo-title">方案一：watch + immediate: true</span>
+          <span class="demo-badge badge-solution">解决方案</span>
+        </div>
+        <div class="demo-body">
+          <div class="scenario-note">
+            <strong>核心：</strong>添加 <code>{ immediate: true }</code> 选项，使 watch 回调在首次渲染时就执行
+          </div>
+          
+          <div class="demo-row">
+            <div class="demo-item">
+              <div class="demo-label">userName 当前值</div>
+              <div class="demo-value highlight">{{ immediateData.userName ?? 'undefined' }}</div>
+            </div>
+            <div class="demo-item">
+              <div class="demo-label">watch 触发次数</div>
+              <div class="demo-value">{{ immediateData.watchCount }}</div>
+            </div>
+            <div class="demo-item">
+              <div class="demo-label">最后 oldVal</div>
+              <div class="demo-value warning">{{ immediateData.lastOldVal ?? 'undefined' }}</div>
+            </div>
+          </div>
+          
+          <div class="demo-controls">
+            <button class="demo-btn" @click="simulateImmediate">模拟异步加载</button>
+            <button class="demo-btn secondary" @click="resetImmediate">重置</button>
+          </div>
+          
+          <div class="output-section">
+            <div class="output-title">控制台日志</div>
+            <div class="log-box">
+              <div v-if="immediateData.logs.length === 0" class="log-empty">点击"模拟异步加载"观察日志...</div>
+              <div v-for="(log, i) in immediateData.logs" :key="i" class="log-entry">
+                <span class="log-time">{{ log.time }}</span>
+                <span class="log-trigger">{{ log.msg }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="demo-section" style="margin-top: 20px;">
+            <div class="demo-label">解决方案代码</div>
+            <div class="code-block"><span class="code-keyword">const</span> userName = <span class="code-function">ref</span>(<span class="code-keyword">undefined</span>)
+
+<span class="code-comment">// ✅ 添加 immediate: true</span>
+<span class="code-function">watch</span>(userName, (newVal, oldVal) => {
+  console.<span class="code-function">log</span>(<span class="code-string">'变化了'</span>, { oldVal, newVal })
+}, { <span class="code-property">immediate</span>: <span class="code-keyword">true</span> })
+
+<span class="code-function">setTimeout</span>(() => {
+  userName.value = <span class="code-string">'Tom'</span>
+}, <span class="code-number">1000</span>)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tab 2: watchEffect -->
+    <div :class="['tab-content', { active: activeTab === 2 }]">
+      <div class="demo-box">
+        <div class="demo-header">
+          <span class="demo-title">方案二：watchEffect</span>
+          <span class="demo-badge badge-solution">解决方案</span>
+        </div>
+        <div class="demo-body">
+          <div class="scenario-note">
+            <strong>核心：</strong>watchEffect <strong>自动追踪</strong>依赖并在首次渲染时立即执行，不需要 `immediate`
+          </div>
+          
+          <div class="demo-row">
+            <div class="demo-item">
+              <div class="demo-label">userName 当前值</div>
+              <div class="demo-value highlight">{{ effectData.userName ?? 'undefined' }}</div>
+            </div>
+            <div class="demo-item">
+              <div class="demo-label">watchEffect 执行次数</div>
+              <div class="demo-value">{{ effectData.effectCount }}</div>
+            </div>
+            <div class="demo-item">
+              <div class="demo-label">当前显示</div>
+              <div class="demo-value">{{ effectData.displayText }}</div>
+            </div>
+          </div>
+          
+          <div class="demo-controls">
+            <button class="demo-btn" @click="simulateEffect">模拟异步加载</button>
+            <button class="demo-btn secondary" @click="resetEffect">重置</button>
+          </div>
+          
+          <div class="output-section">
+            <div class="output-title">控制台日志</div>
+            <div class="log-box">
+              <div v-if="effectData.logs.length === 0" class="log-empty">点击"模拟异步加载"观察日志...</div>
+              <div v-for="(log, i) in effectData.logs" :key="i" class="log-entry">
+                <span class="log-time">{{ log.time }}</span>
+                <span class="log-trigger">{{ log.msg }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="demo-section" style="margin-top: 20px;">
+            <div class="demo-label">解决方案代码</div>
+            <div class="code-block"><span class="code-keyword">const</span> userName = <span class="code-function">ref</span>(<span class="code-keyword">undefined</span>)
+
+<span class="code-comment">// ✅ watchEffect 自动追踪，并在首次渲染时执行</span>
+<span class="code-function">watchEffect</span>(() => {
+  console.<span class="code-function">log</span>(<span class="code-string">'userName 当前值:'</span>, userName.value)
+  
+  <span class="code-keyword">if</span> (userName.value) {
+    console.<span class="code-function">log</span>(<span class="code-string">'用户已加载'</span>)
+  }
+})
+
+<span class="code-function">setTimeout</span>(() => {
+  userName.value = <span class="code-string">'Tom'</span>
+}, <span class="code-number">1000</span>)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tab 3: onMounted -->
+    <div :class="['tab-content', { active: activeTab === 3 }]">
+      <div class="demo-box">
+        <div class="demo-header">
+          <span class="demo-title">方案三：onMounted + 条件处理</span>
+          <span class="demo-badge badge-solution">解决方案</span>
+        </div>
+        <div class="demo-body">
+          <div class="scenario-note">
+            <strong>核心：</strong>在 onMounted 中显式处理异步数据，不依赖 watch
+          </div>
+          
+          <div class="demo-row">
+            <div class="demo-item">
+              <div class="demo-label">userName 当前值</div>
+              <div class="demo-value highlight">{{ mountedData.userName ?? 'undefined' }}</div>
+            </div>
+            <div class="demo-item">
+              <div class="demo-label">加载状态</div>
+              <div class="demo-value">{{ mountedData.loading ? '加载中...' : '已完成' }}</div>
+            </div>
+            <div class="demo-item">
+              <div class="demo-label">onMounted 执行</div>
+              <div class="demo-value">{{ mountedData.mountedExecuted ? '✓' : '✗' }}</div>
+            </div>
+          </div>
+          
+          <div class="demo-controls">
+            <button class="demo-btn" @click="simulateMounted">模拟异步加载</button>
+            <button class="demo-btn secondary" @click="resetMounted">重置</button>
+          </div>
+          
+          <div class="output-section">
+            <div class="output-title">控制台日志</div>
+            <div class="log-box">
+              <div v-if="mountedData.logs.length === 0" class="log-empty">点击"模拟异步加载"观察日志...</div>
+              <div v-for="(log, i) in mountedData.logs" :key="i" class="log-entry">
+                <span class="log-time">{{ log.time }}</span>
+                <span class="log-trigger">{{ log.msg }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="demo-section" style="margin-top: 20px;">
+            <div class="demo-label">解决方案代码</div>
+            <div class="code-block"><span class="code-keyword">const</span> userName = <span class="code-function">ref</span>(<span class="code-keyword">undefined</span>)
+<span class="code-keyword">const</span> loading = <span class="code-function">ref</span>(<span class="code-keyword">true</span>)
+
+<span class="code-function">onMounted</span>(<span class="code-keyword">async</span> () => {
+  <span class="code-keyword">try</span> {
+    <span class="code-keyword">const</span> data = <span class="code-keyword">await</span> <span class="code-function">fetch</span>(<span class="code-string">'/api/user'</span>)
+    userName.value = data.name
+  } <span class="code-keyword">finally</span> {
+    loading.value = <span class="code-keyword">false</span>
+  }
+})</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tab 4: 方案对比 -->
+    <div :class="['tab-content', { active: activeTab === 4 }]">
+      <div class="demo-box">
+        <div class="demo-header">
+          <span class="demo-title">方案对比与选择</span>
+          <span class="demo-badge badge-solution">对比</span>
+        </div>
+        <div class="demo-body">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>特性</th>
+                <th>watch (默认)</th>
+                <th>watch + immediate</th>
+                <th>watchEffect</th>
+                <th>onMounted</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>首次渲染执行</td>
+                <td class="cross">✗</td>
+                <td class="check">✓</td>
+                <td class="check">✓</td>
+                <td class="check">✓</td>
+              </tr>
+              <tr>
+                <td>访问旧值</td>
+                <td class="check">✓</td>
+                <td class="check">✓</td>
+                <td class="cross">✗</td>
+                <td class="check">✓</td>
+              </tr>
+              <tr>
+                <td>自动追踪依赖</td>
+                <td class="cross">✗</td>
+                <td class="cross">✗</td>
+                <td class="check">✓</td>
+                <td class="cross">✗</td>
+              </tr>
+              <tr>
+                <td>适用场景</td>
+                <td>不需要首次执行</td>
+                <td>需要新旧值对比</td>
+                <td>副作用，不需要旧值</td>
+                <td>数据用于模板渲染</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div style="margin-top: 24px;">
+            <div class="demo-label" style="margin-bottom: 12px;">选择决策树</div>
+            <div class="code-block">需要访问旧值吗？
+│
+├── 是 → 使用 watch + immediate: true
+│
+├── 否 → 需要立即执行吗？
+│         │
+│         ├── 是 → watchEffect
+│         │
+│         └── 否 → 直接在 onMounted 中处理</div>
+          </div>
+          
+          <div style="margin-top: 20px;">
+            <div class="demo-label" style="margin-bottom: 12px;">常见问题</div>
+            <div class="scenario-note">
+              <strong>Q: immediate: true 时 oldVal 是 undefined？</strong><br>
+              A: 这是正常行为。首次执行时没有"旧值"，Vue 将 oldVal 设为 undefined。
+            </div>
+            <div class="scenario-note" style="margin-top: 8px;">
+              <strong>Q: watchEffect 和 watch 哪个性能更好？</strong><br>
+              A: watch 更精确（只监听指定依赖），但 watchEffect 开发体验更好。对大多数场景差异可忽略。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const { createApp, ref, watch, watchEffect, onMounted } = Vue
+    
+    createApp({
+      setup() {
+        const activeTab = ref(0)
+        const tabs = ['问题演示', 'immediate: true', 'watchEffect', 'onMounted', '方案对比']
+        
+        // 问题演示数据
+        const problemData = ref({ userName: undefined, watchCount: 0, logs: [] })
+        
+        // immediate: true 数据
+        const immediateData = ref({ userName: undefined, watchCount: 0, lastOldVal: undefined, logs: [] })
+        
+        // watchEffect 数据
+        const effectData = ref({ userName: undefined, effectCount: 0, displayText: '等待加载...', logs: [] })
+        
+        // onMounted 数据
+        const mountedData = ref({ userName: undefined, loading: false, mountedExecuted: false, logs: [] })
+        
+        const getTime = () => new Date().toLocaleTimeString('zh-CN', { hour12: false })
+        
+        // 问题演示
+        const simulateProblem = () => {
+          const data = problemData.value
+          data.logs = []
+          data.userName = undefined
+          data.watchCount = 0
+          
+          watch(() => data.userName, (newVal, oldVal) => {
+            data.watchCount++
+            data.logs.push({ time: getTime(), msg: `触发 #${data.watchCount}: oldVal=${oldVal ?? 'undefined'} → newVal=${newVal ?? 'undefined'}` })
+          })
+          
+          setTimeout(() => {
+            data.userName = 'Tom'
+          }, 800)
+        }
+        
+        const resetProblem = () => {
+          problemData.value = { userName: undefined, watchCount: 0, logs: [] }
+        }
+        
+        // immediate: true
+        const simulateImmediate = () => {
+          const data = immediateData.value
+          data.logs = []
+          data.userName = undefined
+          data.watchCount = 0
+          data.lastOldVal = undefined
+          
+          watch(() => data.userName, (newVal, oldVal) => {
+            data.watchCount++
+            data.lastOldVal = oldVal
+            data.logs.push({ time: getTime(), msg: `触发 #${data.watchCount}: oldVal=${oldVal ?? 'undefined'} → newVal=${newVal ?? 'undefined'}` })
+          }, { immediate: true })
+          
+          setTimeout(() => {
+            data.userName = 'Tom'
+          }, 800)
+        }
+        
+        const resetImmediate = () => {
+          immediateData.value = { userName: undefined, watchCount: 0, lastOldVal: undefined, logs: [] }
+        }
+        
+        // watchEffect
+        const simulateEffect = () => {
+          const data = effectData.value
+          data.logs = []
+          data.userName = undefined
+          data.effectCount = 0
+          data.displayText = '等待加载...'
+          
+          watchEffect(() => {
+            data.effectCount++
+            const val = data.userName
+            data.logs.push({ time: getTime(), msg: `执行 #${data.effectCount}: userName = ${val ?? 'undefined'}` })
+            
+            if (val) {
+              data.displayText = `欢迎, ${val}!`
+            } else {
+              data.displayText = '等待加载...'
+            }
+          })
+          
+          setTimeout(() => {
+            data.userName = 'Tom'
+          }, 800)
+        }
+        
+        const resetEffect = () => {
+          effectData.value = { userName: undefined, effectCount: 0, displayText: '等待加载...', logs: [] }
+        }
+        
+        // onMounted
+        const simulateMounted = () => {
+          const data = mountedData.value
+          data.logs = []
+          data.userName = undefined
+          data.loading = true
+          data.mountedExecuted = false
+          
+          onMounted(() => {
+            data.mountedExecuted = true
+            data.logs.push({ time: getTime(), msg: 'onMounted 执行，开始异步请求...' })
+            
+            setTimeout(() => {
+              data.userName = 'Tom'
+              data.loading = false
+              data.logs.push({ time: getTime(), msg: `数据加载完成: ${data.userName}` })
+            }, 800)
+          })
+        }
+        
+        const resetMounted = () => {
+          mountedData.value = { userName: undefined, loading: false, mountedExecuted: false, logs: [] }
+        }
+        
+        return {
+          activeTab,
+          tabs,
+          problemData,
+          immediateData,
+          effectData,
+          mountedData,
+          simulateProblem,
+          resetProblem,
+          simulateImmediate,
+          resetImmediate,
+          simulateEffect,
+          resetEffect,
+          simulateMounted,
+          resetMounted
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
