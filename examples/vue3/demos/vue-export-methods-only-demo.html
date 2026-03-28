@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 组件只导出方法演示</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { color: #42b983; }
+    .demo-container {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 10px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .exposed-indicator {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .exposed { background: #d4edda; color: #155724; }
+    .not-exposed { background: #f8d7da; color: #721c24; }
+    pre {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    code { font-family: 'Fira Code', monospace; }
+    .tab-container { margin-top: 20px; }
+    .tab-buttons { display: flex; gap: 4px; }
+    .tab-btn {
+      padding: 8px 16px;
+      border: none;
+      background: #e0e0e0;
+      cursor: pointer;
+      border-radius: 4px 4px 0 0;
+    }
+    .tab-btn.active { background: #42b983; color: white; }
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 20px;
+      border-radius: 0 0 4px 4px;
+    }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body>
+  <h1>Vue 组件只导出方法演示</h1>
+  
+  <div class="demo-container">
+    <h2>核心结论</h2>
+    <p><strong>Vue 组件可以只导出方法而不导出样式。</strong> 样式始终是组件私有的。</p>
+    <p>
+      <span class="exposed-indicator exposed">defineExpose() 可暴露</span>
+      <span style="margin-left:10px;">样式无法暴露</span>
+    </p>
+  </div>
+
+  <div class="tab-container">
+    <div class="tab-buttons">
+      <button class="tab-btn active" onclick="showTab('concept')">概念解析</button>
+      <button class="tab-btn" onclick="showTab('code')">代码示例</button>
+      <button class="tab-btn" onclick="showTab('comparison')">对比表</button>
+    </div>
+    
+    <div id="concept" class="tab-content active">
+      <h3>为什么可以只导出方法？</h3>
+      <p>Vue 组件的各个部分是解耦的：</p>
+      <ul>
+        <li><strong>逻辑（script）</strong>：通过 defineExpose() 控制暴露内容</li>
+        <li><strong>模板（template）</strong>：仅在父组件中被渲染为子组件的视图</li>
+        <li><strong>样式（style）</strong>：始终 scoped，无法从外部访问</li>
+      </ul>
+      <p><code>defineExpose()</code> 就像一个"白名单"，只有列入其中的内容才对父组件可见。</p>
+    </div>
+    
+    <div id="code" class="tab-content">
+      <h3>完整示例</h3>
+      <h4>子组件 (Counter.vue)</h4>
+      <pre><code>&lt;script setup&gt;
+import { ref } from 'vue'
+
+const count = ref(0)
+
+function increment() {
+  count.value++
+}
+
+defineExpose({ increment }) // ✅ 只暴露方法
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;div class="my-style"&gt;{{ count }}&lt;/div&gt; &lt;!-- 样式私有 --&gt;
+&lt;/template&gt;
+
+&lt;style scoped&gt;
+.my-style { color: red; } /* 父组件看不到 */
+&lt;/style&gt;</code></pre>
+      
+      <h4>父组件使用</h4>
+      <pre><code>const counterRef = ref(null)
+counterRef.value.increment() // ✅ 可以
+counterRef.value.count        // ❌ 报错：未暴露</code></pre>
+    </div>
+    
+    <div id="comparison" class="tab-content">
+      <h3>暴露内容对比</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr style="background:#42b983;color:white;">
+          <th style="padding:10px;text-align:left;">内容</th>
+          <th style="padding:10px;text-align:left;">能否暴露</th>
+          <th style="padding:10px;text-align:left;">样式暴露</th>
+        </tr>
+        <tr style="background:white;">
+          <td style="padding:10px;">data</td>
+          <td style="padding:10px;"><span class="exposed-indicator exposed">可以</span></td>
+          <td style="padding:10px;"><span class="exposed-indicator not-exposed">不暴露</span></td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td style="padding:10px;">methods</td>
+          <td style="padding:10px;"><span class="exposed-indicator exposed">可以</span></td>
+          <td style="padding:10px;"><span class="exposed-indicator not-exposed">不暴露</span></td>
+        </tr>
+        <tr style="background:white;">
+          <td style="padding:10px;">computed</td>
+          <td style="padding:10px;"><span class="exposed-indicator exposed">可以</span></td>
+          <td style="padding:10px;"><span class="exposed-indicator not-exposed">不暴露</span></td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td style="padding:10px;">内部样式</td>
+          <td style="padding:10px;"><span class="exposed-indicator not-exposed">不可能</span></td>
+          <td style="padding:10px;"><span class="exposed-indicator not-exposed">不暴露</span></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="demo-container">
+    <h3>小结</h3>
+    <p>Vue 组件的样式通过 <code>&lt;style scoped&gt;</code> 实现完美隔离。父组件通过 ref 获取的只是组件暴露的 API（方法、数据），样式完全不受影响。</p>
+    <p>这是一个有意的设计决策，让组件可以同时包含复杂的内部样式和简洁的公共接口。</p>
+  </div>
+
+  <script>
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>
