@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue Computed 与异步数据交互演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #00d9ff;
+      margin-bottom: 30px;
+      font-size: 1.8rem;
+    }
+    
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .demo-section {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 1px solid #0f3460;
+    }
+    
+    .demo-title {
+      color: #00d9ff;
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #0f3460;
+    }
+    
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    @media (max-width: 768px) {
+      .demo-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .code-panel, .result-panel {
+      background: #0f0f23;
+      border-radius: 8px;
+      padding: 16px;
+      overflow: auto;
+    }
+    
+    .code-panel {
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    
+    .code-panel .comment {
+      color: #6a9955;
+    }
+    
+    .code-panel .keyword {
+      color: #c586c0;
+    }
+    
+    .code-panel .function {
+      color: #dcdcaa;
+    }
+    
+    .code-panel .string {
+      color: #ce9178;
+    }
+    
+    .code-panel .variable {
+      color: #9cdcfe;
+    }
+    
+    .result-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .result-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #1a1a2e;
+      border-radius: 6px;
+      border-left: 3px solid #00d9ff;
+    }
+    
+    .result-label {
+      color: #888;
+      font-size: 14px;
+    }
+    
+    .result-value {
+      color: #00ff88;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+    }
+    
+    .result-value.loading {
+      color: #ffcc00;
+    }
+    
+    .result-value.error {
+      color: #ff6b6b;
+    }
+    
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      opacity: 0.9;
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button.secondary {
+      background: #0f3460;
+    }
+    
+    .log-container {
+      background: #0a0a15;
+      border-radius: 6px;
+      padding: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 12px;
+    }
+    
+    .log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid #1a1a2e;
+    }
+    
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    
+    .log-time {
+      color: #666;
+      margin-right: 8px;
+    }
+    
+    .log-action {
+      color: #00d9ff;
+    }
+    
+    .log-computed {
+      color: #00ff88;
+    }
+    
+    .log-watch {
+      color: #ffcc00;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .input-group label {
+      color: #888;
+      font-size: 14px;
+    }
+    
+    input {
+      background: #0f0f23;
+      border: 1px solid #0f3460;
+      color: #eee;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #00d9ff;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .status-badge.success {
+      background: rgba(0, 255, 136, 0.2);
+      color: #00ff88;
+    }
+    
+    .status-badge.loading {
+      background: rgba(255, 204, 0, 0.2);
+      color: #ffcc00;
+    }
+    
+    .status-badge.error {
+      background: rgba(255, 107, 107, 0.2);
+      color: #ff6b6b;
+    }
+    
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    
+    .comparison-table th,
+    .comparison-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #0f3460;
+    }
+    
+    .comparison-table th {
+      color: #00d9ff;
+      font-weight: 600;
+    }
+    
+    .comparison-table td {
+      color: #ccc;
+    }
+    
+    .highlight {
+      background: rgba(0, 217, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    
+    .warning {
+      background: rgba(255, 107, 107, 0.1);
+      border-left: 3px solid #ff6b6b;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 12px;
+    }
+    
+    .warning-title {
+      color: #ff6b6b;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="demo-container">
+      <h1>🔄 Vue Computed 与异步数据交互演示</h1>
+      
+      <!-- 演示1：基础 Computed 与异步数据 -->
+      <div class="demo-section">
+        <div class="demo-title">演示1：Computed 依赖异步数据</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">// 模拟异步获取用户数据</span>
+<span class="keyword">const</span> <span class="variable">user</span> = <span class="function">ref</span>(<span class="keyword">null</span>)
+
+<span class="comment">// Computed 依赖 user.value</span>
+<span class="keyword">const</span> <span class="variable">greeting</span> = <span class="function">computed</span>(() => {
+  <span class="keyword">return</span> <span class="variable">user</span>.<span class="variable">value</span> 
+    ? <span class="string">`Hello, ${user.value.name}!`</span>
+    : <span class="string">'加载中...'</span>
+})
+
+<span class="comment">// 异步请求</span>
+<span class="function">fetchUser</span>().<span class="function">then</span>(<span class="variable">data</span> => {
+  <span class="variable">user</span>.<span class="variable">value</span> = <span class="variable">data</span>  <span class="comment">// ✅ 触发 computed</span>
+})</pre>
+          </div>
+          <div class="result-panel">
+            <div class="result-item">
+              <span class="result-label">user.value:</span>
+              <span class="result-value" :class="{ loading: !user }">
+                {{ user ? JSON.stringify(user) : 'null' }}
+              </span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">computed greeting:</span>
+              <span class="result-value" :class="{ loading: !user }">{{ greeting }}</span>
+            </div>
+            <div class="controls">
+              <button @click="loadUser">模拟异步加载用户</button>
+              <button @click="clearUser" class="secondary">清空用户</button>
+            </div>
+            <div class="log-container">
+              <div v-for="(log, i) in logs1" :key="i" class="log-entry">
+                <span class="log-time">{{ log.time }}</span>
+                <span :class="log.type === 'computed' ? 'log-computed' : 'log-action'">
+                  {{ log.msg }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 演示2：Computed 闭包陷阱 -->
+      <div class="demo-section">
+        <div class="demo-title">演示2：Computed 闭包建立时机</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">// 问题：setup 执行时 computed 建立</span>
+<span class="comment">// 但此时 user.value === null</span>
+<span class="keyword">const</span> <span class="variable">user</span> = <span class="function">ref</span>(<span class="keyword">null</span>)
+
+<span class="comment">// ✅ Computed 自动追踪 user.value</span>
+<span class="keyword">const</span> <span class="variable">displayName</span> = <span class="function">computed</span>(() => {
+  <span class="keyword">return</span> <span class="variable">user</span>.<span class="variable">value</span>?.<span class="variable">name</span> ?? <span class="string">'匿名'</span>
+})
+
+<span class="comment">// 异步后赋值</span>
+<span class="function">setTimeout</span>(() => {
+  <span class="variable">user</span>.<span class="variable">value</span> = { <span class="variable">name</span>: <span class="string">'Alice'</span> }
+  <span class="comment">// ✅ 正确触发更新，因为 ref 引用不变</span>
+}, <span class="string">1000</span>)</pre>
+          </div>
+          <div class="result-panel">
+            <div class="result-item">
+              <span class="result-label">user.value:</span>
+              <span class="result-value">
+                {{ closureUser ? closureUser.name : 'null (等待加载...)' }}
+              </span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">computed displayName:</span>
+              <span class="result-value">{{ displayName }}</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">状态:</span>
+              <span class="status-badge" :class="closureStatus">{{ closureStatus.toUpperCase() }}</span>
+            </div>
+            <div class="controls">
+              <button @click="testClosure">测试闭包机制 (2秒后更新)</button>
+            </div>
+            <div class="warning">
+              <div class="warning-title">⚠️ 关键点</div>
+              <div>Computed 建立时捕获的是 ref 的引用，而非值。只要 ref 引用不变，后续赋值就能触发更新。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 演示3：Watch vs Computed -->
+      <div class="demo-section">
+        <div class="demo-title">演示3：Watch 与 Computed 的区别</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">// Computed：派生值，有缓存</span>
+<span class="keyword">const</span> <span class="variable">filteredItems</span> = <span class="function">computed</span>(() => {
+  <span class="variable">console</span>.<span class="function">log</span>(<span class="string">'Computed 计算中...'</span>)
+  <span class="keyword">return</span> <span class="variable">items</span>.<span class="variable">value</span>.<span class="function">filter</span>(...)
+})
+
+<span class="comment">// Watch：执行副作用，无缓存</span>
+<span class="function">watch</span>(<span class="variable">items</span>, (<span class="variable">newVal</span>, <span class="variable">oldVal</span>) => {
+  <span class="variable">console</span>.<span class="function">log</span>(<span class="string">'Watch 执行中...'</span>)
+  <span class="comment">// 执行副作用，如保存到存储</span>
+}, { <span class="variable">deep</span>: <span class="keyword">true</span> })</pre>
+          </div>
+          <div class="result-panel">
+            <div class="input-group">
+              <label>筛选条件:</label>
+              <input v-model="filterQuery" placeholder="输入筛选条件...">
+              <select v-model="filterType">
+                <option value="name">按名称</option>
+                <option value="value">按数值</option>
+              </select>
+            </div>
+            <div class="result-item">
+              <span class="result-label">原始数据:</span>
+              <span class="result-value">{{ JSON.stringify(items) }}</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Computed 结果:</span>
+              <span class="result-value">{{ JSON.stringify(filteredItems) }}</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Watch 触发计数:</span>
+              <span class="result-value">{{ watchTriggerCount }}</span>
+            </div>
+            <div class="controls">
+              <button @click="resetItems">重置数据</button>
+            </div>
+            <table class="comparison-table">
+              <tr>
+                <th>特性</th>
+                <th>Computed</th>
+                <th>Watch</th>
+              </tr>
+              <tr>
+                <td>用途</td>
+                <td>派生值</td>
+                <td>副作用</td>
+              </tr>
+              <tr>
+                <td>缓存</td>
+                <td>✅ 有</td>
+                <td>❌ 无</td>
+              </tr>
+              <tr>
+                <td>访问旧值</td>
+                <td>❌</td>
+                <td>✅</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 演示4：异步数据修改数组 -->
+      <div class="demo-section">
+        <div class="demo-title">演示4：异步修改数组/对象</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">// ❌ 错误：直接修改数组内容</span>
+<span class="variable">list</span>.<span class="variable">value</span>.<span class="function">push</span>(<span class="variable">item</span>)  
+<span class="comment">// 可能不触发更新（取决于 Vue 版本）</span>
+
+<span class="comment">// ✅ 正确：替换整个数组</span>
+<span class="variable">list</span>.<span class="variable">value</span> = [...<span class="variable">list</span>.<span class="variable">value</span>, <span class="variable">item</span>]
+
+<span class="comment">// ✅ 正确：使用响应式数组方法</span>
+<span class="variable">proxy</span>.<span class="function">push</span>(<span class="variable">item</span>)  <span class="comment">// reactive 代理的数组</span></pre>
+          </div>
+          <div class="result-panel">
+            <div class="result-item">
+              <span class="result-label">ref 数组:</span>
+              <span class="result-value">{{ JSON.stringify(refArray) }}</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">reactive 数组:</span>
+              <span class="result-value">{{ JSON.stringify(reactiveArray) }}</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">ref computed sum:</span>
+              <span class="result-value">{{ refArraySum }}</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">reactive computed sum:</span>
+              <span class="result-value">{{ reactiveArraySum }}</span>
+            </div>
+            <div class="controls">
+              <button @click="pushToRef">ref.push() ❌</button>
+              <button @click="pushToRefReplace">ref = [...ref, item] ✅</button>
+              <button @click="pushToReactive">reactive.push() ✅</button>
+            </div>
+            <div class="log-container">
+              <div v-for="(log, i) in logs2" :key="i" class="log-entry">
+                <span class="log-time">{{ log.time }}</span>
+                <span :class="log.type === 'computed' ? 'log-computed' : 'log-action'">
+                  {{ log.msg }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 演示5：嵌套异步问题 -->
+      <div class="demo-section">
+        <div class="demo-title">演示5：嵌套异步导致的时序问题</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">// 问题场景：嵌套异步依赖</span>
+<span class="keyword">const</span> <span class="variable">entity</span> = <span class="function">ref</span>(<span class="keyword">null</span>)
+<span class="keyword">const</span> <span class="variable">relatedData</span> = <span class="function">ref</span>(<span class="keyword">null</span>)
+
+<span class="comment">// Computed 依赖多个响应式数据</span>
+<span class="keyword">const</span> <span class="variable">fullInfo</span> = <span class="function">computed</span>(() => {
+  <span class="keyword">if</span> (!<span class="variable">entity</span>.<span class="variable">value</span> || !<span class="variable">relatedData</span>.<span class="variable">value</span>) {
+    <span class="keyword">return</span> <span class="string">'加载中...'</span>
+  }
+  <span class="keyword">return</span> { ...<span class="variable">entity</span>.<span class="variable">value</span>, ...<span class="variable">relatedData</span>.<span class="variable">value</span> }
+})</pre>
+          </div>
+          <div class="result-panel">
+            <div class="result-item">
+              <span class="result-label">entity:</span>
+              <span class="result-value">{{ entity ? entity.name : 'null' }}</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">relatedData:</span>
+              <span class="result-value">{{ relatedData || 'null' }}</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">fullInfo:</span>
+              <span class="result-value" :class="{ loading: !fullInfo || fullInfo === '加载中...' }">
+                {{ typeof fullInfo === 'object' ? JSON.stringify(fullInfo) : fullInfo }}
+              </span>
+            </div>
+            <div class="controls">
+              <button @click="loadNestedAsync">执行嵌套异步</button>
+              <button @click="resetNested">重置</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 演示6：WatchEffect 处理异步 -->
+      <div class="demo-section">
+        <div class="demo-title">演示6：使用 watchEffect 处理异步</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">// ✅ watchEffect 自动追踪依赖</span>
+<span class="function">watchEffect</span>(<span class="keyword">async</span> () => {
+  <span class="keyword">if</span> (!<span class="variable">userId</span>.<span class="variable">value</span>) <span class="keyword">return</span>
+  
+  <span class="variable">loading</span>.<span class="variable">value</span> = <span class="keyword">true</span>
+  <span class="keyword">try</span> {
+    <span class="keyword">const</span> <span class="variable">data</span> = <span class="keyword">await</span> <span class="function">fetch</span>(<span class="string">`/api/user/${userId.value}`</span>)
+    <span class="variable">userData</span>.<span class="variable">value</span> = <span class="variable">data</span>
+  } <span class="keyword">finally</span> {
+    <span class="variable">loading</span>.<span class="variable">value</span> = <span class="keyword">false</span>
+  }
+})</pre>
+          </div>
+          <div class="result-panel">
+            <div class="input-group">
+              <label>用户ID:</label>
+              <input type="number" v-model.number="watchEffectUserId" min="1" max="3">
+            </div>
+            <div class="result-item">
+              <span class="result-label">userData:</span>
+              <span class="result-value" :class="{ loading: watchEffectLoading }">
+                {{ watchEffectUserData ? JSON.stringify(watchEffectUserData) : 'null' }}
+              </span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">状态:</span>
+              <span class="status-badge" :class="watchEffectLoading ? 'loading' : 'success'">
+                {{ watchEffectLoading ? 'LOADING' : 'READY' }}
+              </span>
+            </div>
+            <div class="controls">
+              <button @click="testWatchEffect">切换用户ID触发</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 总结 -->
+      <div class="demo-section">
+        <div class="demo-title">📚 核心要点总结</div>
+        <table class="comparison-table">
+          <tr>
+            <th>场景</th>
+            <th>问题</th>
+            <th>解决方案</th>
+          </tr>
+          <tr>
+            <td>Computed 初始值为 null</td>
+            <td>直接访问属性报错</td>
+            <td>使用可选链 <span class="highlight">?.</span> 和空值合并 <span class="highlight">??</span></td>
+          </tr>
+          <tr>
+            <td>异步数据更新后不触发</td>
+            <td>赋值方式错误</td>
+            <td>确保使用 <span class="highlight">.value = newValue</span></td>
+          </tr>
+          <tr>
+            <td>需要执行副作用</td>
+            <td>Computed 不应执行副作用</td>
+            <td>使用 <span class="highlight">watch</span> 或 <span class="highlight">watchEffect</span></td>
+          </tr>
+          <tr>
+            <td>修改数组内容</td>
+            <td>直接 push 可能不触发</td>
+            <td>使用响应式代理的方法或替换数组</td>
+          </tr>
+          <tr>
+            <td>需要访问旧值</td>
+            <td>Computed 无法访问旧值</td>
+            <td>使用 <span class="highlight">watch</span> 的第二个参数</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, watch, watchEffect, reactive, toRefs } = Vue
+
+    createApp({
+      setup() {
+        // ========== 演示1：基础 Computed 与异步数据 ==========
+        const user = ref(null)
+        const greeting = computed(() => {
+          const u = user.value
+          const result = u ? `Hello, ${u.name}!` : '加载中...'
+          logs1.unshift({ time: now(), type: 'computed', msg: `computed 执行: ${result}` })
+          return result
+        })
+        
+        const logs1 = ref([])
+        
+        function now() {
+          const d = new Date()
+          return `${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`
+        }
+        
+        function loadUser() {
+          logs1.value = []
+          logs1.unshift({ time: now(), type: 'action', msg: '开始异步加载用户...' })
+          setTimeout(() => {
+            user.value = { id: 1, name: '张三', age: 25 }
+            logs1.unshift({ time: now(), type: 'action', msg: 'user.value 已更新' })
+          }, 1000)
+        }
+        
+        function clearUser() {
+          user.value = null
+          logs1.unshift({ time: now(), type: 'action', msg: 'user.value 已清空' })
+        }
+        
+        // ========== 演示2：闭包陷阱 ==========
+        const closureUser = ref(null)
+        const closureStatus = ref('idle')
+        
+        const displayName = computed(() => {
+          const name = closureUser.value?.name ?? '匿名'
+          return name
+        })
+        
+        function testClosure() {
+          closureStatus.value = 'loading'
+          logs1.unshift({ time: now(), type: 'action', msg: '2秒后将更新用户数据...' })
+          setTimeout(() => {
+            closureUser.value = { name: 'Alice', age: 30 }
+            closureStatus.value = 'success'
+            logs1.unshift({ time: now(), type: 'action', msg: '用户数据已更新 (闭包机制验证)' })
+          }, 2000)
+        }
+        
+        // ========== 演示3：Watch vs Computed ==========
+        const filterQuery = ref('')
+        const filterType = ref('name')
+        const items = ref([
+          { id: 1, name: '苹果', value: 10 },
+          { id: 2, name: '香蕉', value: 20 },
+          { id: 3, name: '橙子', value: 15 },
+          { id: 4, name: '葡萄', value: 30 }
+        ])
+        
+        const filteredItems = computed(() => {
+          const q = filterQuery.value.toLowerCase()
+          if (!q) return items.value
+          return items.value.filter(item => {
+            if (filterType.value === 'name') {
+              return item.name.toLowerCase().includes(q)
+            } else {
+              return item.value.toString().includes(q)
+            }
+          })
+        })
+        
+        const watchTriggerCount = ref(0)
+        
+        watch(items, (newVal, oldVal) => {
+          watchTriggerCount.value++
+        }, { deep: true })
+        
+        function resetItems() {
+          items.value = [
+            { id: 1, name: '苹果', value: 10 },
+            { id: 2, name: '香蕉', value: 20 },
+            { id: 3, name: '橙子', value: 15 },
+            { id: 4, name: '葡萄', value: 30 }
+          ]
+        }
+        
+        // ========== 演示4：数组修改 ==========
+        const refArray = ref([1, 2, 3])
+        const reactiveArray = reactive([1, 2, 3])
+        
+        const refArraySum = computed(() => {
+          logs2.unshift({ time: now(), type: 'computed', msg: `refArraySum 计算: ${refArray.value.reduce((a, b) => a + b, 0)}` })
+          return refArray.value.reduce((a, b) => a + b, 0)
+        })
+        
+        const reactiveArraySum = computed(() => {
+          logs2.unshift({ time: now(), type: 'computed', msg: `reactiveArraySum 计算: ${reactiveArray.reduce((a, b) => a + b, 0)}` })
+          return reactiveArray.reduce((a, b) => a + b, 0)
+        })
+        
+        const logs2 = ref([])
+        
+        function pushToRef() {
+          refArray.value.push(refArray.value.length + 1)
+          logs2.unshift({ time: now(), type: 'action', msg: 'ref.push() - 可能不触发 computed!' })
+        }
+        
+        function pushToRefReplace() {
+          refArray.value = [...refArray.value, refArray.value.length + 1]
+          logs2.unshift({ time: now(), type: 'action', msg: 'ref = [...ref, item] - ✅ 触发 computed' })
+        }
+        
+        function pushToReactive() {
+          reactiveArray.push(reactiveArray.length + 1)
+          logs2.unshift({ time: now(), type: 'action', msg: 'reactive.push() - ✅ 触发 computed' })
+        }
+        
+        // ========== 演示5：嵌套异步 ==========
+        const entity = ref(null)
+        const relatedData = ref(null)
+        
+        const fullInfo = computed(() => {
+          if (!entity.value || !relatedData.value) {
+            return '加载中...'
+          }
+          return { ...entity.value, ...relatedData.value }
+        })
+        
+        function loadNestedAsync() {
+          // 模拟嵌套异步
+          setTimeout(() => {
+            entity.value = { id: 1, name: '产品A', price: 100 }
+            setTimeout(() => {
+              relatedData.value = { category: '电子产品', stock: 50 }
+            }, 500)
+          }, 500)
+        }
+        
+        function resetNested() {
+          entity.value = null
+          relatedData.value = null
+        }
+        
+        // ========== 演示6：watchEffect ==========
+        const watchEffectUserId = ref(1)
+        const watchEffectUserData = ref(null)
+        const watchEffectLoading = ref(false)
+        
+        // 模拟用户数据
+        const mockUsers = {
+          1: { id: 1, name: '用户A', email: 'user1@example.com' },
+          2: { id: 2, name: '用户B', email: 'user2@example.com' },
+          3: { id: 3, name: '用户C', email: 'user3@example.com' }
+        }
+        
+        watchEffect(async () => {
+          const id = watchEffectUserId.value
+          if (!id) return
+          
+          watchEffectLoading.value = true
+          // 模拟异步请求
+          await new Promise(resolve => setTimeout(resolve, 800))
+          watchEffectUserData.value = mockUsers[id] || null
+          watchEffectLoading.value = false
+        })
+        
+        function testWatchEffect() {
+          watchEffectUserId.value = watchEffectUserId.value % 3 + 1
+        }
+        
+        return {
+          // 演示1
+          user, greeting, logs1, loadUser, clearUser,
+          // 演示2
+          closureUser, closureStatus, displayName, testClosure,
+          // 演示3
+          filterQuery, filterType, items, filteredItems, watchTriggerCount, resetItems,
+          // 演示4
+          refArray, reactiveArray, refArraySum, reactiveArraySum, 
+          pushToRef, pushToRefReplace, pushToReactive, logs2,
+          // 演示5
+          entity, relatedData, fullInfo, loadNestedAsync, resetNested,
+          // 演示6
+          watchEffectUserId, watchEffectUserData, watchEffectLoading, testWatchEffect
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
