@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 模板编译错误诊断 - 交互演示</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .tab-nav {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #888;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { background: #252540; color: #fff; }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-color: transparent;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .demo-area {
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .code-block {
+      background: #0d0d15;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      color: #a8a8a8;
+      white-space: pre-wrap;
+    }
+    .code-error { color: #ff6b6b; }
+    .code-correct { color: #1dd1a1; }
+    .info-box {
+      background: rgba(102, 126, 234, 0.1);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+    .info-box.error {
+      background: rgba(255, 107, 107, 0.1);
+      border-color: rgba(255, 107, 107, 0.3);
+    }
+    .info-box.success {
+      background: rgba(29, 209, 161, 0.1);
+      border-color: rgba(29, 209, 161, 0.3);
+    }
+    .demo-title { font-size: 1rem; color: #888; margin-bottom: 12px; }
+    .error-list {
+      list-style: none;
+      padding: 0;
+    }
+    .error-item {
+      background: rgba(255, 107, 107, 0.1);
+      border: 1px solid rgba(255, 107, 107, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .error-item h4 {
+      color: #ff6b6b;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .error-item p {
+      color: #888;
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+    }
+    .error-item .fix {
+      color: #1dd1a1;
+      font-size: 0.85rem;
+    }
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 12px;
+    }
+    @media (max-width: 600px) {
+      .comparison { grid-template-columns: 1fr; }
+    }
+    .comparison-item {
+      background: #0d0d15;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .comparison-item h4 {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+    }
+    .comparison-item.wrong h4 { color: #ff6b6b; }
+    .comparison-item.correct h4 { color: #1dd1a1; }
+    .quiz { margin-top: 16px; }
+    .quiz-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .quiz-item h4 {
+      font-size: 0.9rem;
+      color: #ddd;
+      margin-bottom: 8px;
+    }
+    .quiz-item label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+    .quiz-item input[type="radio"] { accent-color: #667eea; }
+    .quiz-item.correct label:nth-child(1) { color: #1dd1a1; }
+    .quiz-item.wrong label:nth-child(1) { color: #ff6b6b; }
+  </style>
+</head>
+<body>
+  <h1>Vue 模板编译错误诊断 - 交互演示</h1>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" data-tab="overview">概念总览</button>
+    <button class="tab-btn" data-tab="common-errors">常见错误</button>
+    <button class="tab-btn" data-tab="diagnosis">诊断方法</button>
+    <button class="tab-btn" data-tab="fixes">修复示例</button>
+    <button class="tab-btn" data-tab="quiz">自测题</button>
+  </div>
+
+  <!-- 概念总览 -->
+  <div id="overview" class="tab-content active">
+    <div class="demo-area">
+      <div class="info-box">
+        Vue 模板编译错误发生在 <strong>模板语法不符合 Vue 规范</strong> 时。这些错误在开发环境通过编译器的错误提示暴露出来，帮助开发者快速定位问题。
+      </div>
+
+      <div class="demo-title">错误类型分类</div>
+      <ul class="error-list">
+        <li class="error-item">
+          <h4>模板语法错误</h4>
+          <p>标签未闭合、标签匹配错误、属性缺少引号</p>
+        </li>
+        <li class="error-item">
+          <h4>指令使用错误</h4>
+          <p>v-for 缺少 key、v-if 和 v-for 混用、修饰符错误</p>
+        </li>
+        <li class="error-item">
+          <h4>绑定语法错误</h4>
+          <p>动态属性值格式错误、混用插值和属性绑定</p>
+        </li>
+        <li class="error-item">
+          <h4>插槽相关错误</h4>
+          <p>作用域插槽 props 使用错误、slot/template 混淆</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 常见错误 -->
+  <div id="common-errors" class="tab-content">
+    <div class="demo-area">
+      <div class="info-box">
+        以下是 Vue 开发中最常见的模板编译错误类型及其原因。
+      </div>
+
+      <div class="demo-title">1. 缺少闭合标签</div>
+      <div class="comparison">
+        <div class="comparison-item wrong">
+          <h4>❌ 错误</h4>
+          <div class="code-block"><span class="code-error">&lt;div&gt;
+  &lt;span&gt;Hello&lt;/span&gt;
+&lt;!-- 缺少 &lt;/div&gt; --&gt;</span></div>
+        </div>
+        <div class="comparison-item correct">
+          <h4>✅ 正确</h4>
+          <div class="code-block"><span class="code-correct">&lt;div&gt;
+  &lt;span&gt;Hello&lt;/span&gt;
+&lt;/div&gt;</span></div>
+        </div>
+      </div>
+
+      <div class="demo-title" style="margin-top: 20px;">2. v-for 缺少 key</div>
+      <div class="comparison">
+        <div class="comparison-item wrong">
+          <h4>❌ 错误</h4>
+          <div class="code-block"><span class="code-error">&lt;li v-for="item in items"&gt;
+  {{ item.name }}
+&lt;/li&gt;</span></div>
+        </div>
+        <div class="comparison-item correct">
+          <h4>✅ 正确</h4>
+          <div class="code-block"><span class="code-correct">&lt;li v-for="(item, index) in items" :key="index"&gt;
+  {{ item.name }}
+&lt;/li&gt;</span></div>
+        </div>
+      </div>
+
+      <div class="demo-title" style="margin-top: 20px;">3. 混用 v-if 和 v-for</div>
+      <div class="comparison">
+        <div class="comparison-item wrong">
+          <h4>❌ 错误（性能问题）</h4>
+          <div class="code-block"><span class="code-error">&lt;div v-for="item in items" v-if="item.show"&gt;
+  {{ item.name }}
+&lt;/div&gt;</span></div>
+        </div>
+        <div class="comparison-item correct">
+          <h4>✅ 正确（使用计算属性）</h4>
+          <div class="code-block"><span class="code-correct">&lt;div v-for="item in visibleItems" :key="item.id"&gt;
+  {{ item.name }}
+&lt;/div&gt;
+
+// computed: {
+  visibleItems() {
+    return this.items.filter(i => i.show)
+  }
+}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 诊断方法 -->
+  <div id="diagnosis" class="tab-content">
+    <div class="demo-area">
+      <div class="info-box">
+        <strong>Vue 3 编译器 API</strong> 可以在运行时检测模板编译错误，帮助开发者调试。
+      </div>
+
+      <div class="demo-title">使用 compile API 检测错误</div>
+      <div class="code-block">import { compile } from 'vue';
+
+const template = `
+  &lt;div&gt;
+    &lt;span&gt;{{ message }}&lt;/span&gt;
+  &lt;/div&gt;
+`;
+
+const { code, errors } = compile(template);
+
+if (errors.length > 0) {
+  console.error('编译错误:', errors);
+  // 输出：[]
+}</div>
+
+      <div class="demo-title" style="margin-top: 20px;">常见错误信息对照表</div>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 12px;">
+        <thead>
+          <tr style="border-bottom: 1px solid #333;">
+            <th style="text-align: left; padding: 8px; color: #888;">错误信息</th>
+            <th style="text-align: left; padding: 8px; color: #888;">原因</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #222;">
+            <td style="padding: 8px; color: #ff6b6b; font-size: 0.85rem;">Invalid end tag</td>
+            <td style="padding: 8px; color: #aaa; font-size: 0.85rem;">标签未正确闭合</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #222;">
+            <td style="padding: 8px; color: #ff6b6b; font-size: 0.85rem;">Cannot v-for on root element</td>
+            <td style="padding: 8px; color: #aaa; font-size: 0.85rem;">v-for 不能在根元素上</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #222;">
+            <td style="padding: 8px; color: #ff6b6b; font-size: 0.85rem;">v-if/else must be adjacent</td>
+            <td style="padding: 8px; color: #aaa; font-size: 0.85rem;">v-if/else 必须相邻</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #222;">
+            <td style="padding: 8px; color: #ff6b6b; font-size: 0.85rem;">Missing key for v-for</td>
+            <td style="padding: 8px; color: #aaa; font-size: 0.85rem;">v-for 循环缺少 :key</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 修复示例 -->
+  <div id="fixes" class="tab-content">
+    <div class="demo-area">
+      <div class="demo-title">属性绑定错误修复</div>
+      <div class="comparison">
+        <div class="comparison-item wrong">
+          <h4>❌ 动态属性值缺少引号</h4>
+          <div class="code-block"><span class="code-error">&lt;div :class=[activeClass]&gt;
+  内容
+&lt;/div&gt;</span></div>
+        </div>
+        <div class="comparison-item correct">
+          <h4>✅ 使用引号包裹</h4>
+          <div class="code-block"><span class="code-correct">&lt;div :class="activeClass"&gt;
+  内容
+&lt;/div&gt;</span></div>
+        </div>
+      </div>
+
+      <div class="demo-title" style="margin-top: 20px;">混用插值和属性绑定</div>
+      <div class="comparison">
+        <div class="comparison-item wrong">
+          <h4>❌ 错误</h4>
+          <div class="code-block"><span class="code-error">&lt;div :title="{{ message }}"&gt;
+  {{ content }}
+&lt;/div&gt;</span></div>
+        </div>
+        <div class="comparison-item correct">
+          <h4>✅ 正确</h4>
+          <div class="code-block"><span class="code-correct">&lt;div :title="message"&gt;
+  {{ content }}
+&lt;/div&gt;</span></div>
+        </div>
+      </div>
+
+      <div class="demo-title" style="margin-top: 20px;">事件修饰符错误</div>
+      <div class="comparison">
+        <div class="comparison-item wrong">
+          <h4>❌ 错误：.stop 和 .prevent 混用</h4>
+          <div class="code-block"><span class="code-error">&lt;form @submit.stop.prevent="submit"&gt;
+  ...
+&lt;/form&gt;</span></div>
+        </div>
+        <div class="comparison-item correct">
+          <h4>✅ 正确：单独使用</h4>
+          <div class="code-block"><span class="code-correct">&lt;form @submit.prevent="submit"&gt;
+  ...
+&lt;/form&gt;</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="tab-content">
+    <div class="demo-area">
+      <div class="quiz">
+        <div class="quiz-item" data-correct="2">
+          <h4>1. v-for 循环必须提供什么属性？</h4>
+          <label><input type="radio" name="q1" value="1"> name</label>
+          <label><input type="radio" name="q1" value="2"> :key</label>
+          <label><input type="radio" name="q1" value="3"> id</label>
+        </div>
+        <div class="quiz-item" data-correct="3">
+          <h4>2. 以下哪个是 v-for 和 v-if 混用的正确做法？</h4>
+          <label><input type="radio" name="q2" value="1"> 直接在元素上同时使用</label>
+          <label><input type="radio" name="q2" value="2"> 用 computed 包裹 v-for</label>
+          <label><input type="radio" name="q2" value="3"> 用计算属性过滤数据后 v-for 遍历</label>
+        </div>
+        <div class="quiz-item" data-correct="1">
+          <h4>3. "Invalid end tag" 错误的常见原因是什么？</h4>
+          <label><input type="radio" name="q3" value="1"> 标签未正确闭合</label>
+          <label><input type="radio" name="q3" value="2"> 变量未定义</label>
+          <label><input type="radio" name="q3" value="3"> 组件未注册</label>
+        </div>
+        <div class="quiz-item" data-correct="2">
+          <h4>4. :class="[activeClass]" 中括号内需要什么？</h4>
+          <label><input type="radio" name="q4" value="1"> 不需要引号</label>
+          <label><input type="radio" name="q4" value="2"> 需要引号包裹</label>
+          <label><input type="radio" name="q4" value="3"> 需要大括号</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tab navigation
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Quiz
+    document.querySelectorAll('.quiz-item').forEach(item => {
+      item.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', () => {
+          const correct = item.dataset.correct;
+          item.classList.remove('correct', 'wrong');
+          if (input.value === correct) {
+            item.classList.add('correct');
+          } else {
+            item.classList.add('wrong');
+            setTimeout(() => item.classList.remove('wrong'), 1000);
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
