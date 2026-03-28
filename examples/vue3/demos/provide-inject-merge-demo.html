@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue provide/inject merge 行为演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
+    h1 { text-align: center; color: #42b883; margin-bottom: 30px; }
+    .demo-container { max-width: 900px; margin: 0 auto; }
+    .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab { padding: 10px 20px; border: none; background: #e0e0e0; cursor: pointer; border-radius: 8px 8px 0 0; font-size: 14px; transition: all 0.2s; }
+    .tab:hover { background: #d0d0d0; }
+    .tab.active { background: #42b883; color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .tree { display: flex; flex-direction: column; gap: 16px; }
+    .node { border: 2px solid #42b883; border-radius: 8px; padding: 16px; background: #f8fff8; }
+    .node.parent { border-color: #1867c0; background: #f0f7ff; }
+    .node.child { border-color: #5c3d8f; background: #f7f0ff; }
+    .node-label { font-weight: bold; margin-bottom: 8px; color: #333; }
+    .node-code { background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 6px; font-family: 'Monaco', 'Menlo', monospace; font-size: 13px; white-space: pre; overflow-x: auto; margin: 8px 0; }
+    .result-box { background: #fffbe6; border: 1px solid #ffd33d; border-radius: 6px; padding: 12px; margin-top: 12px; }
+    .result-box strong { color: #b8860b; }
+    .warning { color: #c0392b; font-size: 14px; margin-top: 8px; }
+    .success { color: #27ae60; font-size: 14px; margin-top: 8px; }
+    .btn { background: #42b883; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; margin-top: 8px; }
+    .btn:hover { background: #3aa876; }
+    .comparison-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    .comparison-table th, .comparison-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    .comparison-table th { background: #42b883; color: white; }
+    .comparison-table tr:nth-child(even) { background: #f9f9f9; }
+    .code-block { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; font-family: 'Monaco', monospace; font-size: 13px; overflow-x: auto; }
+    .inline-code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #c7254e; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Vue provide/inject merge 行为演示</h1>
+    
+    <div class="demo-container">
+      <!-- Tab 1: Merge Behavior Demo -->
+      <div class="card">
+        <div class="tabs">
+          <button class="tab" :class="{ active: activeTab === 0 }" @click="activeTab = 0">合并行为演示</button>
+          <button class="tab" :class="{ active: activeTab === 1 }" @click="activeTab = 1">手动合并方案</button>
+          <button class="tab" :class="{ active: activeTab === 2 }" @click="activeTab = 2">响应式合并</button>
+          <button class="tab" :class="{ active: activeTab === 3 }" @click="activeTab = 3">核心结论</button>
+        </div>
+
+        <!-- Tab 0: Merge Behavior Demo -->
+        <div class="tab-content" :class="{ active: activeTab === 0 }">
+          <h3>场景：多层组件 provide 同一个 key</h3>
+          <div class="tree">
+            <div class="node parent">
+              <div class="node-label">🧔 Root 组件</div>
+              <div class="node-code">provide('config', { a: 1, b: 2, source: 'root' })</div>
+            </div>
+            <div style="margin-left: 40px;">
+              <div class="node child">
+                <div class="node-label">👦 Child 组件</div>
+                <div class="node-code">provide('config', { b: 3, c: 4, source: 'child' })</div>
+                <div class="warning">⚠️ 注意：这里会覆盖（override）而非合并（merge）</div>
+              </div>
+              <div style="margin-left: 40px;">
+                <div class="node" style="border-color: #e67e22; background: #fff8f0;">
+                  <div class="node-label">👶 Grandchild 组件（inject）</div>
+                  <div class="result-box">
+                    <strong>实际注入结果：</strong>
+                    <pre>{{ JSON.stringify(injectedConfig, null, 2) }}</pre>
+                    <div class="warning">❌ 丢失了 { a: 1 }，因为子组件的 provide 完全覆盖了父级的</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="btn" @click="showOverrideExplanation = !showOverrideExplanation">
+            {{ showOverrideExplanation ? '隐藏' : '显示' }} 源码解释
+          </button>
+          <div v-if="showOverrideExplanation" class="code-block" style="margin-top: 16px;">
+// Vue 源码简化逻辑（Vue 3）
+function provide(key, value) {
+  let provides = currentInstance.provides
+  
+  // 关键：如果有父级 provides，基于它创建原型链
+  const parentProvides = currentInstance.parent?.provides
+  if (parentProvides) {
+    provides = Object.create(parentProvides)  // 创建原型链
+  }
+  
+  // 直接赋值 = 覆盖，而非合并
+  provides[key] = value
+}
+
+// 查找时使用原型链
+function inject(key) {
+  let provides = currentInstance.provides
+  // 沿着原型链向上找，找到最近的定义
+  while (!(key in provides)) {
+    provides = Object.getPrototypeOf(provides)
+  }
+  return provides[key]
+}
+          </div>
+        </div>
+
+        <!-- Tab 1: Manual Merge -->
+        <div class="tab-content" :class="{ active: activeTab === 1 }">
+          <h3>方法一：在 provide 时手动合并</h3>
+          <div class="code-block">
+// Child.vue
+import { inject, provide } from 'vue'
+
+export default {
+  setup() {
+    // 1. 先注入父级的 config
+    const parentConfig = inject('config', {})
+    
+    // 2. 手动合并：父级展开 + 子级覆盖
+    const mergedConfig = {
+      ...parentConfig,   // 保留父级的 a: 1
+      b: 3,              // 子级覆盖 b
+      c: 4               // 子级新增 c
+    }
+    
+    // 3. provide 合并后的结果
+    provide('config', mergedConfig)
+  }
+}
+          </div>
+          <div class="result-box">
+            <strong>✅ 合并后的正确结果：</strong>
+            <pre>{{ JSON.stringify(manualMergeResult, null, 2) }}</pre>
+          </div>
+        </div>
+
+        <!-- Tab 2: Reactive Merge -->
+        <div class="tab-content" :class="{ active: activeTab === 2 }">
+          <h3>方法二：使用 reactive 对象（推荐）</h3>
+          <p style="margin: 16px 0;">使用 reactive 对象传递，所有组件共享同一个引用，修改会自动同步：</p>
+          <div class="code-block">
+// Root.vue
+import { provide, reactive } from 'vue'
+
+setup() {
+  const globalState = reactive({
+    user: { name: 'Alice', theme: 'light' },
+    count: 0
+  })
+  provide('globalState', globalState)
+}
+
+// Child.vue（任意层级）
+import { inject } from 'vue'
+
+setup() {
+  const globalState = inject('globalState')
+  
+  // 直接修改，所有 inject 的组件都会响应
+  globalState.count++
+  globalState.user.theme = 'dark'
+}
+          </div>
+          <div class="result-box">
+            <strong>计数器演示：</strong>
+            <p>当前计数：{{ reactiveCount }}</p>
+            <button class="btn" @click="reactiveCount++">+1</button>
+            <button class="btn" @click="reactiveCount--" style="background: #e74c3c;">-1</button>
+          </div>
+        </div>
+
+        <!-- Tab 3: Conclusion -->
+        <div class="tab-content" :class="{ active: activeTab === 3 }">
+          <h3>核心结论</h3>
+          <table class="comparison-table">
+            <tr>
+              <th>行为</th>
+              <th>是否支持</th>
+              <th>说明</th>
+            </tr>
+            <tr>
+              <td>自动合并（merge）</td>
+              <td>❌ 不支持</td>
+              <td>子组件 provide 完全覆盖父组件的同名 key</td>
+            </tr>
+            <tr>
+              <td>原型链查找</td>
+              <td>✅ 支持</td>
+              <td>inject 沿着原型链向上找，找不到才用默认值</td>
+            </tr>
+            <tr>
+              <td>响应式传递</td>
+              <td>✅ 支持</td>
+              <td>使用 reactive/ref 包装的值保持响应</td>
+            </tr>
+            <tr>
+              <td>手动合并</td>
+              <td>✅ 支持</td>
+              <td>在 provide 时手动 merge 父级和子级的值</td>
+            </tr>
+          </table>
+
+          <h4 style="margin: 16px 0 8px;">选择建议</h4>
+          <table class="comparison-table">
+            <tr>
+              <th>场景</th>
+              <th>推荐方案</th>
+            </tr>
+            <tr>
+              <td>全局共享配置</td>
+              <td>reactive 对象</td>
+            </tr>
+            <tr>
+              <td>多层组件局部覆盖</td>
+              <td>手动合并</td>
+            </tr>
+            <tr>
+              <td>主题/语言切换</td>
+              <td>reactive 单例</td>
+            </tr>
+            <tr>
+              <td>插件默认配置</td>
+              <td>手动 merge + defaultsDeep</td>
+            </tr>
+          </table>
+
+          <div class="result-box" style="background: #e8f5e9; border-color: #4caf50; margin-top: 16px;">
+            <strong>💡 最佳实践：</strong>
+            <ol style="margin: 8px 0 0 20px;">
+              <li>优先使用 reactive 对象传递响应式状态</li>
+              <li>如需覆盖，使用手动合并：<span class="inline-code">{ ...parent, ...child }</span></li>
+              <li>避免深层嵌套的 provide 链，保持数据流清晰</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive, provide, inject } = Vue
+
+    createApp({
+      setup() {
+        const activeTab = ref(0)
+        const showOverrideExplanation = ref(false)
+
+        // 模拟注入结果（演示用）
+        const injectedConfig = reactive({
+          b: 3,
+          c: 4,
+          source: 'child'
+        })
+
+        // 手动合并结果
+        const manualMergeResult = {
+          a: 1,   // 保留父级
+          b: 3,   // 子级覆盖
+          c: 4    // 子级新增
+        }
+
+        // 响应式计数器演示
+        const reactiveCount = ref(0)
+
+        return {
+          activeTab,
+          showOverrideExplanation,
+          injectedConfig,
+          manualMergeResult,
+          reactiveCount
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
