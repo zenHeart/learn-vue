@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>v-for 动态插槽排序异常演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #fff;
+    }
+
+    #app {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 1.8rem;
+      background: linear-gradient(120deg, #00d9ff, #00ff88);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 30px;
+      font-size: 0.9rem;
+    }
+
+    /* 控制面板 */
+    .control-panel {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-label {
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.primary {
+      background: linear-gradient(135deg, #00d9ff 0%, #00ff88 100%);
+      color: #1a1a2e;
+      font-weight: bold;
+    }
+
+    button.danger {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+    }
+
+    /* 方案切换器 */
+    .tabs {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: transparent;
+    }
+
+    /* 内容区域 */
+    .content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .panel-header {
+      padding: 15px 20px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-header .badge {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: normal;
+    }
+
+    .badge.error {
+      background: rgba(255, 107, 107, 0.2);
+      color: #ff6b6b;
+    }
+
+    .badge.success {
+      background: rgba(0, 255, 136, 0.2);
+      color: #00ff88;
+    }
+
+    .panel-body {
+      padding: 20px;
+    }
+
+    /* 组件卡片 */
+    .component-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .component-card {
+      padding: 15px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .component-card.type-a {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+      border-color: rgba(102, 126, 234, 0.3);
+    }
+
+    .component-card.type-b {
+      background: linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(0, 255, 136, 0.2));
+      border-color: rgba(0, 217, 255, 0.3);
+    }
+
+    .component-card .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .component-card .card-title {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .component-card .card-type {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .component-card .card-props {
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+
+    .component-card .card-state {
+      margin-top: 8px;
+      padding: 5px 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .state-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00ff88;
+    }
+
+    /* 问题说明 */
+    .problem-box {
+      background: rgba(255, 107, 107, 0.1);
+      border: 1px solid rgba(255, 107, 107, 0.3);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .problem-box h4 {
+      color: #ff6b6b;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+
+    .problem-box p {
+      font-size: 0.85rem;
+      color: #ccc;
+      line-height: 1.6;
+    }
+
+    .problem-box code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.85em;
+      color: #00d9ff;
+    }
+
+    /* 解决方案说明 */
+    .solution-box {
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .solution-box h4 {
+      color: #00ff88;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+
+    .solution-box p {
+      font-size: 0.85rem;
+      color: #ccc;
+      line-height: 1.6;
+    }
+
+    /* 代码展示 */
+    .code-block {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      overflow-x: auto;
+    }
+
+    .code-block pre {
+      margin: 0;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: #e0e0e0;
+    }
+
+    .code-block .keyword {
+      color: #c792ea;
+    }
+
+    .code-block .string {
+      color: #c3e88d;
+    }
+
+    .code-block .attr {
+      color: #ffcb6b;
+    }
+
+    .code-block .tag {
+      color: #89ddff;
+    }
+
+    .code-block .comment {
+      color: #546e7a;
+    }
+
+    /* 数据表格 */
+    .data-table {
+      width: 100%;
+      margin-top: 15px;
+      border-collapse: collapse;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.85rem;
+    }
+
+    .data-table th {
+      background: rgba(0, 0, 0, 0.2);
+      color: #888;
+      font-weight: normal;
+    }
+
+    .data-table td {
+      color: #ccc;
+    }
+
+    .data-table .highlight {
+      color: #00d9ff;
+      font-weight: bold;
+    }
+
+    /* transition-group 动画 */
+    .sort-item {
+      display: inline-block;
+      margin-right: 10px;
+    }
+
+    .sort-enter-active,
+    .sort-leave-active {
+      transition: all 0.5s ease;
+    }
+
+    .sort-enter-from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    .sort-leave-to {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+
+    .sort-move {
+      transition: transform 0.5s ease;
+    }
+
+    /* 状态跟踪 */
+    .state-log {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .state-log h5 {
+      color: #888;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+    }
+
+    .log-entry {
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.75rem;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      gap: 10px;
+    }
+
+    .log-entry .time {
+      color: #666;
+    }
+
+    .log-entry .action {
+      color: #00d9ff;
+    }
+
+    .log-entry .result {
+      color: #ccc;
+    }
+
+    .log-entry .result.error {
+      color: #ff6b6b;
+    }
+
+    .log-entry .result.success {
+      color: #00ff88;
+    }
+
+    /* 页脚 */
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #666;
+      font-size: 0.8rem;
+    }
+
+    /* 计数器样式 */
+    .counter-demo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .counter-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .counter-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+      min-width: 40px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>v-for 动态插槽排序异常演示</h1>
+    <p class="subtitle">演示 Vue.js 中 v-for 配合动态组件排序时的问题及解决方案</p>
+
+    <!-- 控制面板 -->
+    <div class="control-panel">
+      <div class="control-row">
+        <div class="control-group">
+          <span class="control-label">当前方案：</span>
+          <div class="tabs">
+            <div 
+              v-for="(tab, index) in tabs" 
+              :key="index"
+              class="tab"
+              :class="{ active: currentTab === index }"
+              @click="currentTab = index"
+            >
+              {{ tab.title }}
+            </div>
+          </div>
+        </div>
+        
+        <button class="primary" @click="toggleSort">
+          {{ sortDesc ? '🔽 降序排列' : '🔼 升序排列' }}
+        </button>
+
+        <button class="danger" @click="resetData">
+          🔄 重置数据
+        </button>
+      </div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="content">
+      <!-- 左面板：渲染结果 -->
+      <div class="panel">
+        <div class="panel-header">
+          渲染结果
+          <span v-if="currentTab === 0" class="badge error">问题演示</span>
+          <span v-else class="badge success">解决方案</span>
+        </div>
+        <div class="panel-body">
+          <!-- 动态组件列表 -->
+          <div class="component-list">
+            <transition-group name="sort">
+              <div
+                v-for="item in displayedItems"
+                :key="item.key"
+                class="component-card"
+                :class="'type-' + item.type.toLowerCase()"
+              >
+                <div class="card-header">
+                  <span class="card-title">{{ item.title }}</span>
+                  <span class="card-type">{{ item.type }} 组件</span>
+                </div>
+                <div class="card-props">
+                  ID: {{ item.id }} | 数值: {{ item.value }}
+                </div>
+                <!-- 计数器状态演示 -->
+                <div class="card-state">
+                  <span class="state-indicator"></span>
+                  内部计数器: 
+                  <component 
+                    :is="'CounterDemo'" 
+                    :initialValue="item.counter"
+                    :itemId="item.id"
+                    @update="(val) => updateCounter(item.id, val)"
+                  />
+                </div>
+              </div>
+            </transition-group>
+          </div>
+
+          <!-- 问题说明 -->
+          <div v-if="currentTab === 0" class="problem-box">
+            <h4>⚠️ 问题现象</h4>
+            <p>
+              排序后，组件类型和内容出现错乱！<br>
+              - <code>组件A</code> 可能显示为 <code>组件B</code> 的样式<br>
+              - 内部计数器状态被错误复用<br>
+              - 这是因为使用了 <code>index</code> 作为 key
+            </p>
+          </div>
+
+          <!-- 解决方案说明 -->
+          <div v-else class="solution-box">
+            <h4>✅ 解决方案</h4>
+            <p v-if="currentTab === 1">
+              <strong>方案一：条件渲染</strong><br>
+              根据组件类型使用条件渲染，完全避免动态组件。适合组件类型较少的情况。
+            </p>
+            <p v-else-if="currentTab === 2">
+              <strong>方案二：唯一ID作为Key</strong><br>
+              使用 <code>item.id</code> 替代 <code>index</code> 作为 key，确保 Vue 能正确追踪每个元素。
+            </p>
+            <p v-else-if="currentTab === 3">
+              <strong>方案三：Computed包装</strong><br>
+              使用 computed 的 get/set 包装排序逻辑，保持数据响应性。
+            </p>
+            <p v-else>
+              <strong>方案四：过渡动画</strong><br>
+              在正确 key 的基础上添加 <code>transition-group</code> 动画，提升用户体验。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右面板：数据与代码 -->
+      <div class="panel">
+        <div class="panel-header">
+          数据状态追踪
+        </div>
+        <div class="panel-body">
+          <!-- 数据表格 -->
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>原始Index</th>
+                <th>ID</th>
+                <th>类型</th>
+                <th>排序后Index</th>
+                <th>Key值</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, idx) in rawItems" :key="item.id">
+                <td>{{ item.originalIndex }}</td>
+                <td class="highlight">{{ item.id }}</td>
+                <td>{{ item.type }}</td>
+                <td>{{ getSortedIndex(item.id) }}</td>
+                <td :class="currentTab === 0 ? 'highlight' : ''">
+                  {{ currentTab === 0 ? idx : item.id }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- 代码展示 -->
+          <div class="code-block">
+            <pre><span class="comment">&lt;!-- {{ currentTab === 0 ? '问题代码' : '解决方案' }} --&gt;</span>
+<span class="tag">&lt;component</span>
+  <span class="attr">v-for</span>="<span class="string">(item, index) in items</span>"
+  <span class="attr">:key</span>="<span class="string">{{ currentTab === 0 ? 'index' : 'item.id' }}</span>"
+  <span class="attr">:is</span>="<span class="string">item.component</span>"
+  <span class="attr">v-bind</span>="<span class="string">item.props</span>"
+<span class="tag">/&gt;</span></pre>
+          </div>
+
+          <!-- 状态日志 -->
+          <div class="state-log">
+            <h5>📋 操作日志</h5>
+            <div 
+              v-for="(log, idx) in logs" 
+              :key="idx"
+              class="log-entry"
+            >
+              <span class="time">{{ log.time }}</span>
+              <span class="action">{{ log.action }}</span>
+              <span :class="'result ' + log.type">{{ log.result }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>基于 Vue 3 Composition API 演示 | 源码：examples/vue3/demos/v-for-dynamic-slot-sorting.html</p>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, watch } = Vue
+
+    // Counter Demo Component
+    const CounterDemo = {
+      props: ['initialValue', 'itemId'],
+      emits: ['update'],
+      setup(props, { emit }) {
+        const count = ref(props.initialValue)
+        
+        watch(count, (newVal) => {
+          emit('update', newVal)
+        })
+
+        const increment = () => count.value++
+        const decrement = () => count.value--
+
+        return { count, increment, decrement }
+      },
+      template: `
+        <div class="counter-demo">
+          <button class="counter-btn" @click="decrement">-</button>
+          <span class="counter-value">{{ count }}</span>
+          <button class="counter-btn" @click="increment">+</button>
+        </div>
+      `
+    }
+
+    createApp({
+      components: { CounterDemo },
+      setup() {
+        // 方案标签
+        const tabs = [
+          { title: '问题演示', key: 'problem' },
+          { title: '方案一', key: 'solution1' },
+          { title: '方案二', key: 'solution2' },
+          { title: '方案三', key: 'solution3' },
+          { title: '方案四', key: 'solution4' },
+        ]
+        const currentTab = ref(0)
+
+        // 原始数据
+        const originalData = [
+          { id: 1, type: 'A', title: '组件 Alpha', value: 10, counter: 5 },
+          { id: 2, type: 'B', title: '组件 Beta', value: 20, counter: 10 },
+          { id: 3, type: 'A', title: '组件 Gamma', value: 30, counter: 15 },
+          { id: 4, type: 'B', title: '组件 Delta', value: 40, counter: 20 },
+        ]
+
+        // 响应式数据
+        const sortDesc = ref(false)
+        const items = ref(JSON.parse(JSON.stringify(originalData)))
+        const logs = ref([])
+
+        // 添加日志
+        const addLog = (action, result, type = 'success') => {
+          const now = new Date()
+          const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+          logs.value.unshift({ time, action, result, type })
+          if (logs.value.length > 10) logs.value.pop()
+        }
+
+        // 初始化日志
+        addLog('系统初始化', '数据加载完成')
+
+        // 原始数据（带原始index）
+        const rawItems = computed(() => {
+          return items.value.map((item, idx) => ({
+            ...item,
+            originalIndex: idx
+          }))
+        })
+
+        // 排序后的数据
+        const sortedItems = computed(() => {
+          const sorted = [...items.value].sort((a, b) => {
+            return sortDesc.value ? b.id - a.id : a.id - b.id
+          })
+          return sorted
+        })
+
+        // 用于显示的数据
+        const displayedItems = computed(() => {
+          return sortedItems.value.map((item, idx) => ({
+            ...item,
+            // 问题演示时使用 index 作为 key
+            key: currentTab.value === 0 ? idx : item.id
+          }))
+        })
+
+        // 获取排序后的index
+        const getSortedIndex = (id) => {
+          return sortedItems.value.findIndex(item => item.id === id)
+        }
+
+        // 切换排序
+        const toggleSort = () => {
+          sortDesc.value = !sortDesc.value
+          const order = sortDesc.value ? '降序' : '升序'
+          addLog('排序操作', `切换为${order}排列`)
+        }
+
+        // 重置数据
+        const resetData = () => {
+          items.value = JSON.parse(JSON.stringify(originalData))
+          sortDesc.value = false
+          addLog('重置操作', '数据已恢复到初始状态')
+        }
+
+        // 更新计数器
+        const updateCounter = (id, value) => {
+          const item = items.value.find(i => i.id === id)
+          if (item) {
+            item.counter = value
+          }
+        }
+
+        // 监听排序变化，记录问题
+        watch(() => sortDesc.value, (newVal, oldVal) => {
+          if (currentTab.value === 0) {
+            const problems = []
+            sortedItems.value.forEach((item, idx) => {
+              const originalIdx = originalData.findIndex(d => d.id === item.id)
+              if (originalIdx !== idx) {
+                problems.push(`${item.type}组件(ID=${item.id})从位置${originalIdx}移动到${idx}`)
+              }
+            })
+            if (problems.length > 0) {
+              addLog('⚠️ 排序异常', problems.join(', '), 'error')
+            }
+          }
+        })
+
+        return {
+          tabs,
+          currentTab,
+          sortDesc,
+          items,
+          rawItems,
+          displayedItems,
+          logs,
+          getSortedIndex,
+          toggleSort,
+          resetData,
+          updateCounter
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
