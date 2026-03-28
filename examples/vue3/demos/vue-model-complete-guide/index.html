@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue v-model 完整指南 - Vue 2 vs Vue 3 对比演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #00d9ff;
+      margin-bottom: 30px;
+      font-size: 1.8rem;
+    }
+
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .demo-section {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 1px solid #0f3460;
+    }
+
+    .demo-title {
+      color: #00d9ff;
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #0f3460;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .demo-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .code-panel, .result-panel {
+      background: #0f0f23;
+      border-radius: 8px;
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .code-panel {
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .code-panel .comment {
+      color: #6a9955;
+    }
+
+    .code-panel .keyword {
+      color: #c586c0;
+    }
+
+    .code-panel .function {
+      color: #dcdcaa;
+    }
+
+    .code-panel .string {
+      color: #ce9178;
+    }
+
+    .code-panel .variable {
+      color: #9cdcfe;
+    }
+
+    .code-panel .tag {
+      color: #569cd6;
+    }
+
+    .code-panel .attr {
+      color: #9cdcfe;
+    }
+
+    .result-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .result-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #1a1a2e;
+      border-radius: 6px;
+      border-left: 3px solid #00d9ff;
+    }
+
+    .result-label {
+      color: #888;
+      font-size: 14px;
+    }
+
+    .result-value {
+      color: #00ff88;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      opacity: 0.9;
+    }
+
+    button.secondary {
+      background: #0f3460;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-group label {
+      color: #888;
+      font-size: 14px;
+    }
+
+    input, select, textarea {
+      background: #0f0f23;
+      border: 1px solid #0f3460;
+      color: #eee;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #00d9ff;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .status-badge.on {
+      background: rgba(0, 255, 136, 0.2);
+      color: #00ff88;
+    }
+
+    .status-badge.off {
+      background: rgba(255, 107, 107, 0.2);
+      color: #ff6b6b;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #0f3460;
+    }
+
+    .comparison-table th {
+      color: #00d9ff;
+      font-weight: 600;
+    }
+
+    .comparison-table td {
+      color: #ccc;
+    }
+
+    .highlight {
+      background: rgba(0, 217, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .tag-demo {
+      display: inline-block;
+      padding: 8px 16px;
+      background: #0f3460;
+      border-radius: 6px;
+      margin: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tag-demo:hover {
+      background: #667eea;
+    }
+
+    .tag-demo.active {
+      background: #00ff88;
+      color: #1a1a2e;
+    }
+
+    .custom-component {
+      background: #0f3460;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+
+    .custom-component-label {
+      color: #888;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .toggle-btn {
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+
+    .toggle-btn.active {
+      background: #00ff88;
+      color: #1a1a2e;
+    }
+
+    .log-container {
+      background: #0a0a15;
+      border-radius: 6px;
+      padding: 12px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 12px;
+    }
+
+    .log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid #1a1a2e;
+    }
+
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+
+    .log-time {
+      color: #666;
+      margin-right: 8px;
+    }
+
+    .log-action {
+      color: #00d9ff;
+    }
+
+    .log-result {
+      color: #00ff88;
+    }
+
+    .multi-vmodel-demo {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .multi-vmodel-demo {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .vmodel-item {
+      background: #0f3460;
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    .vmodel-item label {
+      display: block;
+      color: #888;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .vmodel-item input {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="demo-container">
+      <h1>🔄 Vue v-model 完整指南 - Vue 2 vs Vue 3 对比</h1>
+
+      <!-- 演示1：基础表单绑定 -->
+      <div class="demo-section">
+        <div class="demo-title">演示1：表单输入 - 基础 v-model</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">&lt;!-- Vue 3 基础用法 --&gt;</span>
+<span class="tag">&lt;script</span> <span class="attr">setup</span><span class="tag">&gt;</span>
+<span class="keyword">import</span> { ref } from <span class="string">'vue'</span>
+<span class="keyword">const</span> <span class="variable">message</span> = <span class="function">ref</span>(<span class="string">''</span>)
+<span class="tag">&lt;/script&gt;</span>
+
+<span class="tag">&lt;template&gt;</span>
+  <span class="tag">&lt;input</span> <span class="attr">v-model</span>=<span class="string">"message"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;p&gt;</span>输入: {{ message }}<span class="tag">&lt;/p&gt;</span>
+<span class="tag">&lt;/template&gt;</span></pre>
+          </div>
+          <div class="result-panel">
+            <div class="input-group">
+              <label>输入消息:</label>
+              <input v-model="basicMessage" placeholder="输入任意内容...">
+            </div>
+            <div class="result-item">
+              <span class="result-label">绑定值:</span>
+              <span class="result-value">"{{ basicMessage }}"</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">字符数:</span>
+              <span class="result-value">{{ basicMessage.length }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 演示2：修饰符 -->
+      <div class="demo-section">
+        <div class="demo-title">演示2：修饰符 - .trim / .number / .lazy</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">&lt;!-- .trim - 自动去除首尾空白 --&gt;</span>
+<span class="tag">&lt;input</span> <span class="attr">v-model.trim</span>=<span class="string">"username"</span><span class="tag">&gt;</span>
+
+<span class="comment">&lt;!-- .number - 自动转换为数字 --&gt;</span>
+<span class="tag">&lt;input</span> <span class="attr">v-model.number</span>=<span class="string">"age"</span><span class="tag">&gt;</span>
+
+<span class="comment">&lt;!-- .lazy - change 事件触发 --&gt;</span>
+<span class="tag">&lt;input</span> <span class="attr">v-model.lazy</span>=<span class="string">"query"</span><span class="tag">&gt;</span></pre>
+          </div>
+          <div class="result-panel">
+            <div class="input-group">
+              <label>.trim:</label>
+              <input v-model.trim="trimValue" placeholder="输入带空白的文本">
+            </div>
+            <div class="result-item">
+              <span class="result-label">原值 (含空白):</span>
+              <span class="result-value">"[[{{ trimValue }}]]"</span>
+            </div>
+            <div class="input-group">
+              <label>.number:</label>
+              <input v-model.number="numberValue" type="text" placeholder="输入数字">
+            </div>
+            <div class="result-item">
+              <span class="result-label">类型:</span>
+              <span class="result-value">{{ typeof numberValue }} = {{ numberValue }}</span>
+            </div>
+            <div class="input-group">
+              <label>.lazy (回车或失焦触发):</label>
+              <input v-model.lazy="lazyValue" placeholder="输入并回车确认">
+            </div>
+            <div class="result-item">
+              <span class="result-label">确认值:</span>
+              <span class="result-value">"{{ lazyValue }}"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 演示3：Vue 2 vs Vue 3 核心区别 -->
+      <div class="demo-section">
+        <div class="demo-title">演示3：Vue 2 vs Vue 3 核心区别</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">// ========== Vue 2 ==========</span>
+<span class="comment">// 子组件</span>
+<span class="keyword">props</span>: [<span class="string">'value'</span>],
+<span class="function">$emit</span>(<span class="string">'input'</span>, newValue)
+
+<span class="comment">// 父组件</span>
+<span class="tag">&lt;MyInput</span> <span class="attr">v-model</span>=<span class="string">"msg"</span><span class="tag">&gt;&lt;/MyInput&gt;</span>
+
+<span class="comment">// ========== Vue 3 ==========</span>
+<span class="comment">// 子组件</span>
+<span class="function">defineProps</span>({<span class="variable">modelValue</span>: String})
+<span class="function">defineEmits</span>([<span class="string">'update:modelValue'</span>])
+
+<span class="comment">// 父组件</span>
+<span class="tag">&lt;MyInput</span> <span class="attr">v-model</span>=<span class="string">"msg"</span><span class="tag">&gt;&lt;/MyInput&gt;</span></pre>
+          </div>
+          <div class="result-panel">
+            <table class="comparison-table">
+              <tr>
+                <th>特性</th>
+                <th>Vue 2</th>
+                <th>Vue 3</th>
+              </tr>
+              <tr>
+                <td>默认 Prop</td>
+                <td><code>value</code></td>
+                <td><code>modelValue</code></td>
+              </tr>
+              <tr>
+                <td>默认事件</td>
+                <td><code>input</code></td>
+                <td><code>update:modelValue</code></td>
+              </tr>
+              <tr>
+                <td>多 v-model</td>
+                <td>❌ 不支持</td>
+                <td>✅ <code>v-model:prop</code></td>
+              </tr>
+              <tr>
+                <td>自定义修饰符</td>
+                <td>❌ 不支持</td>
+                <td>✅ <code>modelModifiers</code></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 演示4：自定义组件 v-model -->
+      <div class="demo-section">
+        <div class="demo-title">演示4：自定义组件 - Toggle 开关</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">&lt;!-- Toggle.vue --&gt;</span>
+<span class="tag">&lt;template&gt;</span>
+  <span class="tag">&lt;button</span>
+    <span class="attr">@click</span>=<span class="string">"toggle"</span>
+    <span class="attr">:class</span>=<span class="string">"{ active: modelValue }"</span>
+  <span class="tag">&gt;</span>
+    {{ modelValue ? <span class="string">'ON'</span> : <span class="string">'OFF'</span> }}
+  <span class="tag">&lt;/button&gt;</span>
+<span class="tag">&lt;/template&gt;</span>
+
+<span class="tag">&lt;script</span> <span class="attr">setup</span><span class="tag">&gt;</span>
+<span class="keyword">const</span> props = <span class="function">defineProps</span>({
+  <span class="variable">modelValue</span>: Boolean
+})
+<span class="keyword">const</span> emit = <span class="function">defineEmits</span>([<span class="string">'update:modelValue'</span>])
+
+<span class="keyword">function</span> <span class="function">toggle</span>() {
+  emit(<span class="string">'update:modelValue'</span>, !props.modelValue)
+}
+<span class="tag">&lt;/script&gt;</span></pre>
+          </div>
+          <div class="result-panel">
+            <div class="custom-component">
+              <div class="custom-component-label">Toggle 组件演示</div>
+              <button
+                class="toggle-btn"
+                :class="{ active: toggleValue }"
+                @click="toggleValue = !toggleValue"
+              >
+                {{ toggleValue ? 'ON ✓' : 'OFF' }}
+              </button>
+            </div>
+            <div class="result-item">
+              <span class="result-label">toggleValue:</span>
+              <span class="status-badge" :class="toggleValue ? 'on' : 'off'">
+                {{ toggleValue }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 演示5：多 v-model -->
+      <div class="demo-section">
+        <div class="demo-title">演示5：多 v-model（Vue 3 特性）</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">&lt;!-- 父组件使用多个 v-model --&gt;</span>
+<span class="tag">&lt;template&gt;</span>
+  <span class="tag">&lt;UserForm</span>
+    <span class="attr">v-model:name</span>=<span class="string">"form.name"</span>
+    <span class="attr">v-model:email</span>=<span class="string">"form.email"</span>
+    <span class="attr">v-model:age</span>=<span class="string">"form.age"</span>
+  <span class="tag">&lt;/UserForm&gt;</span>
+<span class="tag">&lt;/template&gt;</span>
+
+<span class="comment">&lt;!-- 子组件接收 --&gt;</span>
+<span class="tag">&lt;script</span> <span class="attr">setup</span><span class="tag">&gt;</span>
+<span class="function">defineProps</span>({
+  <span class="variable">name</span>: String,
+  <span class="variable">email</span>: String,
+  <span class="variable">age</span>: Number
+})
+<span class="function">defineEmits</span>([
+  <span class="string">'update:name'</span>,
+  <span class="string">'update:email'</span>,
+  <span class="string">'update:age'</span>
+])
+<span class="tag">&lt;/script&gt;</span></pre>
+          </div>
+          <div class="result-panel">
+            <div class="multi-vmodel-demo">
+              <div class="vmodel-item">
+                <label>姓名</label>
+                <input :value="form.name" @input="$emit('update:name', $event.target.value)" placeholder="请输入姓名">
+                <span class="result-value">{{ form.name }}</span>
+              </div>
+              <div class="vmodel-item">
+                <label>邮箱</label>
+                <input :value="form.email" @input="$emit('update:email', $event.target.value)" placeholder="请输入邮箱">
+                <span class="result-value">{{ form.email }}</span>
+              </div>
+              <div class="vmodel-item">
+                <label>年龄</label>
+                <input :value="form.age" @input="$emit('update:age', $event.target.value)" type="number" placeholder="请输入年龄">
+                <span class="result-value">{{ form.age }}</span>
+              </div>
+            </div>
+            <div class="result-item">
+              <span class="result-label">完整数据:</span>
+              <span class="result-value">{{ JSON.stringify(form) }}</span>
+            </div>
+            <div class="controls">
+              <button @click="resetForm" class="secondary">重置表单</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 演示6：自定义修饰符 -->
+      <div class="demo-section">
+        <div class="demo-title">演示6：自定义修饰符（capitalize）</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">&lt;!-- 父组件 --&gt;</span>
+<span class="tag">&lt;template&gt;</span>
+  <span class="tag">&lt;MyInput</span>
+    <span class="attr">v-model.capitalize</span>=<span class="string">"text"</span>
+  <span class="tag">&lt;/MyInput&gt;</span>
+<span class="tag">&lt;/template&gt;</span>
+
+<span class="comment">&lt;!-- 子组件接收 --&gt;</span>
+<span class="keyword">const</span> props = <span class="function">defineProps</span>({
+  <span class="variable">modelValue</span>: String,
+  <span class="variable">modelModifiers</span>: {
+    <span class="attr">default</span>: () =&gt; ({})
+  }
+})
+
+<span class="keyword">function</span> <span class="function">onInput</span>(e) {
+  <span class="keyword">let</span> value = e.target.value
+  <span class="keyword">if</span> (props.modelModifiers.capitalize) {
+    value = value.<span class="function">charAt</span>(0).<span class="function">toUpperCase</span>() + value.<span class="function">slice</span>(1)
+  }
+  emit(<span class="string">'update:modelValue'</span>, value)
+}</pre>
+          </div>
+          <div class="result-panel">
+            <div class="input-group">
+              <label>输入 (自动首字母大写):</label>
+              <input v-model="capitalizeText" placeholder="输入任意文字...">
+            </div>
+            <div class="result-item">
+              <span class="result-label">结果:</span>
+              <span class="result-value">"{{ capitalizeText }}"</span>
+            </div>
+            <div class="log-container">
+              <div class="log-entry">
+                <span class="log-action">提示: 输入任意文字，首字母会自动大写</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 演示7：不同表单元素 -->
+      <div class="demo-section">
+        <div class="demo-title">演示7：各种表单元素</div>
+        <div class="demo-grid">
+          <div class="code-panel">
+<pre><span class="comment">&lt;!-- 不同表单元素的 v-model --&gt;</span>
+
+<span class="comment">&lt;!-- 复选框 --&gt;</span>
+<span class="tag">&lt;input</span> <span class="attr">type</span>=<span class="string">"checkbox"</span> <span class="attr">v-model</span>=<span class="string">"checked"</span><span class="tag">&gt;</span>
+
+<span class="comment">&lt;!-- 单选框 --&gt;</span>
+<span class="tag">&lt;input</span> <span class="attr">type</span>=<span class="string">"radio"</span> <span class="attr">v-model</span>=<span class="string">"pick"</span><span class="tag">&gt;</span>
+
+<span class="comment">&lt;!-- 选择框 --&gt;</span>
+<span class="tag">&lt;select</span> <span class="attr">v-model</span>=<span class="string">"selected"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;option&gt;</span>A<span class="tag">&lt;/option&gt;</span>
+<span class="tag">&lt;/select&gt;</span>
+
+<span class="comment">&lt;!-- 多行文本 --&gt;</span>
+<span class="tag">&lt;textarea</span> <span class="attr">v-model</span>=<span class="string">"bio"</span><span class="tag">&gt;&lt;/textarea&gt;</span></pre>
+          </div>
+          <div class="result-panel">
+            <div class="input-group">
+              <label>
+                <input type="checkbox" v-model="agree"> 同意协议
+              </label>
+            </div>
+            <div class="result-item">
+              <span class="result-label">checkbox:</span>
+              <span class="result-value">{{ agree }}</span>
+            </div>
+
+            <div class="input-group">
+              <label>选择颜色:</label>
+              <label v-for="c in colors" :key="c" style="margin-right: 12px;">
+                <input type="radio" v-model="selectedColor" :value="c"> {{ c }}
+              </label>
+            </div>
+            <div class="result-item">
+              <span class="result-label">radio:</span>
+              <span class="result-value">{{ selectedColor }}</span>
+            </div>
+
+            <div class="input-group">
+              <label>选择城市:</label>
+              <select v-model="selectedCity">
+                <option value="">请选择</option>
+                <option value="beijing">北京</option>
+                <option value="shanghai">上海</option>
+                <option value="hangzhou">杭州</option>
+              </select>
+            </div>
+            <div class="result-item">
+              <span class="result-label">select:</span>
+              <span class="result-value">{{ selectedCity }}</span>
+            </div>
+
+            <div class="input-group">
+              <label>简介:</label>
+            </div>
+            <textarea v-model="bio" placeholder="请输入简介..."></textarea>
+            <div class="result-item">
+              <span class="result-label">textarea:</span>
+              <span class="result-value">{{ bio.substring(0, 50) }}...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 总结 -->
+      <div class="demo-section">
+        <div class="demo-title">📚 核心要点总结</div>
+        <table class="comparison-table">
+          <tr>
+            <th>场景</th>
+            <th>Vue 2</th>
+            <th>Vue 3</th>
+          </tr>
+          <tr>
+            <td>基本绑定</td>
+            <td><code>v-model="x"</code></td>
+            <td><code>v-model="x"</code></td>
+          </tr>
+          <tr>
+            <td>组件 prop</td>
+            <td><code>value</code></td>
+            <td><code>modelValue</code></td>
+          </tr>
+          <tr>
+            <td>组件事件</td>
+            <td><code>input</code></td>
+            <td><code>update:modelValue</code></td>
+          </tr>
+          <tr>
+            <td>多 v-model</td>
+            <td>❌</td>
+            <td><code>v-model:prop</code></td>
+          </tr>
+          <tr>
+            <td>修饰符</td>
+            <td><code>.lazy/.number/.trim</code></td>
+            <td><code>.lazy/.number/.trim</code></td>
+          </tr>
+          <tr>
+            <td>自定义修饰符</td>
+            <td>❌</td>
+            <td><code>modelModifiers</code></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive } = Vue
+
+    createApp({
+      setup() {
+        // 演示1：基础
+        const basicMessage = ref('')
+
+        // 演示2：修饰符
+        const trimValue = ref('')
+        const numberValue = ref(0)
+        const lazyValue = ref('')
+
+        // 演示4：自定义组件
+        const toggleValue = ref(false)
+
+        // 演示5：多 v-model
+        const form = reactive({
+          name: '',
+          email: '',
+          age: 0
+        })
+
+        function resetForm() {
+          form.name = ''
+          form.email = ''
+          form.age = 0
+        }
+
+        // 演示6：自定义修饰符
+        const capitalizeText = ref('')
+
+        // 演示7：各种表单
+        const agree = ref(false)
+        const colors = ['红', '绿', '蓝']
+        const selectedColor = ref('红')
+        const selectedCity = ref('')
+        const bio = ref('')
+
+        return {
+          // 演示1
+          basicMessage,
+          // 演示2
+          trimValue,
+          numberValue,
+          lazyValue,
+          // 演示4
+          toggleValue,
+          // 演示5
+          form,
+          resetForm,
+          // 演示6
+          capitalizeText,
+          // 演示7
+          agree,
+          colors,
+          selectedColor,
+          selectedCity,
+          bio
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
