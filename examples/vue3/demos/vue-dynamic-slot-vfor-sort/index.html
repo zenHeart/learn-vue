@@ -1,0 +1,461 @@
+---
+tags: [learn]
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>v-for 动态插槽排序异常演示</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background: #f5f5f5; }
+    .container { max-width: 900px; margin: 0 auto; }
+    
+    h1 { font-size: 24px; margin-bottom: 20px; color: #333; }
+    h2 { font-size: 18px; margin: 20px 0 10px; color: #555; }
+    h3 { font-size: 14px; margin: 15px 0 8px; color: #666; }
+    
+    .section { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    
+    .demo-controls { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+    .demo-controls button {
+      padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;
+      background: #4CAF50; color: white; transition: background 0.2s;
+    }
+    .demo-controls button:hover { background: #45a049; }
+    .demo-controls button.secondary { background: #2196F3; }
+    .demo-controls button.secondary:hover { background: #1976D2; }
+    .demo-controls button.danger { background: #f44336; }
+    .demo-controls button.danger:hover { background: #d32f2f; }
+    .demo-controls button.warning { background: #FF9800; }
+    .demo-controls button.warning:hover { background: #e68a00; }
+    
+    .item-list { list-style: none; }
+    .item-list li {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; margin: 4px 0; border-radius: 6px;
+      background: #fafafa; border: 1px solid #e0e0e0;
+      transition: all 0.3s ease;
+    }
+    .item-list li .index { font-weight: bold; color: #888; min-width: 24px; }
+    .item-list li .id { font-size: 12px; color: #999; background: #eee; padding: 2px 6px; border-radius: 3px; }
+    .item-list li .slot-type { font-size: 12px; color: #fff; padding: 2px 8px; border-radius: 3px; min-width: 60px; text-align: center; }
+    .item-list li .slot-type.header { background: #9C27B0; }
+    .item-list li .slot-type.body { background: #2196F3; }
+    .item-list li .slot-type.footer { background: #FF9800; }
+    .item-list li .content { flex: 1; color: #333; }
+    .item-list li .order { font-size: 12px; color: #666; }
+    
+    .explanation {
+      margin-top: 15px; padding: 12px; background: #fff3cd;
+      border-radius: 6px; border-left: 4px solid #ffc107; font-size: 14px; color: #856404;
+    }
+    
+    .tabs { display: flex; gap: 4px; margin-bottom: 15px; border-bottom: 2px solid #eee; }
+    .tab {
+      padding: 10px 20px; cursor: pointer; border: none; background: transparent;
+      font-size: 14px; color: #666; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: all 0.2s;
+    }
+    .tab:hover { color: #333; }
+    .tab.active { color: #4CAF50; border-bottom-color: #4CAF50; font-weight: 500; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    pre { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+    code { font-family: 'Fira Code', 'Consolas', monospace; }
+    
+    .quiz { background: #e3f2fd; padding: 15px; border-radius: 6px; margin-top: 15px; }
+    .quiz h3 { color: #1565C0; margin-top: 0; }
+    .quiz-item { margin: 10px 0; }
+    .quiz-item label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .quiz-item input[type="radio"] { width: 16px; height: 16px; }
+    
+    .result-correct { color: #4CAF50; font-weight: bold; }
+    .result-wrong { color: #f44336; font-weight: bold; }
+    
+    .info-box { background: #e8f5e9; border-left: 4px solid #4CAF50; padding: 12px; margin: 10px 0; border-radius: 0 6px 6px 0; }
+    .warning-box { background: #fff3e0; border-left: 4px solid #FF9800; padding: 12px; margin: 10px 0; border-radius: 0 6px 6px 0; }
+    
+    .comparison-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    .comparison-table th, .comparison-table td { padding: 10px; text-align: left; border: 1px solid #ddd; }
+    .comparison-table th { background: #f5f5f5; font-weight: 600; }
+    .comparison-table tr:hover { background: #fafafa; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>v-for 中使用动态插槽排序显示异常</h1>
+    
+    <!-- 演示区域 -->
+    <div class="section">
+      <h2>交互式演示</h2>
+      
+      <div class="demo-controls">
+        <button onclick="sortByOrder()" class="secondary">按顺序排序</button>
+        <button onclick="sortByName()" class="secondary">按名称排序</button>
+        <button onclick="shuffleItems()" class="warning">随机打乱</button>
+        <button onclick="resetItems()" class="danger">重置</button>
+      </div>
+      
+      <div id="demo1">
+        <ul class="item-list">
+          <li v-for="item in items" :key="item.id">
+            <span class="index">{{ items.indexOf(item) + 1 }}</span>
+            <span class="id">ID:{{ item.id }}</span>
+            <span class="slot-type" :class="item.slotType">{{ item.slotType }}</span>
+            <span class="content">{{ item.content }}</span>
+            <span class="order">排序值: {{ item.order }}</span>
+          </li>
+        </ul>
+      </div>
+      
+      <div class="explanation">
+        <strong>观察：</strong>点击排序按钮后，列表顺序改变，但每项的 ID、类型标签、内容是否正确对应？
+        如果出现错位，说明存在「排序后显示异常」问题。
+      </div>
+    </div>
+    
+    <!-- Tab 切换内容 -->
+    <div class="section">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(this, 'tab1')">问题根源</button>
+        <button class="tab" onclick="switchTab(this, 'tab2')">解决方案</button>
+        <button class="tab" onclick="switchTab(this, 'tab3')">代码示例</button>
+        <button class="tab" onclick="switchTab(this, 'tab4')">对比测试</button>
+        <button class="tab" onclick="switchTab(this, 'tab5')">自测题</button>
+      </div>
+      
+      <!-- Tab 1: 问题根源 -->
+      <div id="tab1" class="tab-content active">
+        <h3>为什么排序后显示异常？</h3>
+        
+        <div class="info-box">
+          <strong>核心问题：</strong>v-for 渲染列表时，如果使用了动态插槽（<code>v-slot:[name]</code>），
+          当列表排序后，<strong>插槽内容可能与列表项不匹配</strong>。
+        </div>
+        
+        <h3>常见原因</h3>
+        <table class="comparison-table">
+          <thead>
+            <tr><th>原因</th><th>说明</th><th>后果</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>key 绑定错误</td>
+              <td>key 放在子组件上，而非插槽根元素</td>
+              <td>Vue 无法正确追踪列表项</td>
+            </tr>
+            <tr>
+              <td>直接修改数组</td>
+              <td><code>.sort()</code> 修改原数组但不触发更新</td>
+              <td>视图不更新</td>
+            </tr>
+            <tr>
+              <td>动态插槽名晚于内容渲染</td>
+              <td>slotName 变化时内容未同步更新</td>
+              <td>显示错误的插槽内容</td>
+            </tr>
+            <tr>
+              <td>排序动画与动态插槽冲突</td>
+              <td><code>&lt;transition-group&gt;</code> 管理动画时插槽变化</td>
+              <td>动画错乱</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h3>问题代码示例</h3>
+        <pre><code>&lt;!-- ❌ 错误示例 --&gt;
+&lt;div v-for="item in sortedItems" :key="item.id"&gt;
+  &lt;component :is="item.type" :key="item.id"&gt;
+    &lt;template v-slot:[item.slotName]&gt;{{ item.content }}&lt;/template&gt;
+  &lt;/component&gt;
+&lt;/div&gt;</code></pre>
+        
+        <div class="warning-box">
+          <strong>注意：</strong>这里的 <code>:key="item.id"</code> 绑定在 <code>&lt;component&gt;</code> 上，
+          但真正需要唯一标识的是包含插槽内容的父容器。
+        </div>
+      </div>
+      
+      <!-- Tab 2: 解决方案 -->
+      <div id="tab2" class="tab-content">
+        <h3>四种解决方案</h3>
+        
+        <h3>方案一：确保 key 正确绑定</h3>
+        <pre><code>&lt;!-- ✅ 正确：key 在模板根元素上 --&gt;
+&lt;template v-for="item in sortedItems" :key="item.id"&gt;
+  &lt;component :is="item.type"&gt;
+    &lt;template #[item.slotName]&gt;{{ item.content }}&lt;/template&gt;
+  &lt;/component&gt;
+&lt;/template&gt;</code></pre>
+        
+        <h3>方案二：替换数组引用触发更新</h3>
+        <pre><code>// ❌ 错误：直接修改
+this.items.sort((a, b) => a.order - b.order)
+
+// ✅ 正确：替换引用
+this.items = [...this.items].sort((a, b) => a.order - b.order)
+
+// 或使用 computed
+const sortedItems = computed(() => {
+  return [...items.value].sort((a, b) => a.order - b.order)
+})</code></pre>
+        
+        <h3>方案三：使用复合 key</h3>
+        <pre><code>&lt;!-- 使用动态值组合确保 key 唯一 --&gt;
+&lt;div v-for="item in sortedItems" :key="`${item.id}-${item.slotName}`"&gt;</code></pre>
+        
+        <h3>方案四：强制响应式更新</h3>
+        <pre><code>import { nextTick } from 'vue'
+
+async function forceUpdate() {
+  show.value = false
+  await nextTick()
+  show.value = true
+}</code></pre>
+      </div>
+      
+      <!-- Tab 3: 代码示例 -->
+      <div id="tab3" class="tab-content">
+        <h3>完整 Vue 3 示例</h3>
+        <pre><code>&lt;template&gt;
+  &lt;div&gt;
+    &lt;button @click="sortByOrder"&gt;按顺序排序&lt;/button&gt;
+    &lt;button @click="sortByName"&gt;按名称排序&lt;/button&gt;
+    
+    &lt;!-- ✅ key 在模板根元素上 --&gt;
+    &lt;template v-for="item in sortedItems" :key="item.id"&gt;
+      &lt;component :is="getComponent(item)"&gt;
+        &lt;template #[item.slotName]&gt;
+          &lt;span&gt;{{ item.content }}&lt;/span&gt;
+        &lt;/template&gt;
+      &lt;/component&gt;
+    &lt;/template&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+import { ref, computed } from 'vue'
+
+const items = ref([
+  { id: 1, slotName: 'header', content: 'Header A', order: 3 },
+  { id: 2, slotName: 'body', content: 'Body B', order: 1 },
+  { id: 3, slotName: 'footer', content: 'Footer C', order: 2 }
+])
+
+// ✅ 使用 computed 确保排序后触发响应式更新
+const sortedItems = computed(() => {
+  return [...items.value].sort((a, b) => a.order - b.order)
+})
+
+const sortByOrder = () => {
+  items.value = [...items.value].sort((a, b) => a.order - b.order)
+}
+
+const getComponent = (item) => 'div'
+&lt;/script&gt;</code></pre>
+        
+        <h3>关键点总结</h3>
+        <div class="info-box">
+          <ol>
+            <li><strong>key 绑定位置：</strong>放在 <code>&lt;template&gt;</code> 根元素上</li>
+            <li><strong>数组更新方式：</strong>使用 <code>[...arr]</code> 创建新数组</li>
+            <li><strong>computed 排序：</strong>自动追踪依赖，触发更新</li>
+            <li><strong>动态插槽名：</strong>确保与响应式数据同步变化</li>
+          </ol>
+        </div>
+      </div>
+      
+      <!-- Tab 4: 对比测试 -->
+      <div id="tab4" class="tab-content">
+        <h3>错误方案 vs 正确方案对比</h3>
+        
+        <table class="comparison-table">
+          <thead>
+            <tr><th>场景</th><th>错误方案</th><th>正确方案</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>key 绑定</td>
+              <td><code>:key="item.id"</code> 在 component 上</td>
+              <td><code>:key="item.id"</code> 在 template 上</td>
+            </tr>
+            <tr>
+              <td>数组排序</td>
+              <td><code>arr.sort()</code></td>
+              <td><code>arr = [...arr].sort()</code></td>
+            </tr>
+            <tr>
+              <td>动态插槽</td>
+              <td><code>v-slot:[item.name]</code> 单独使用</td>
+              <td>配合稳定的 key 和响应式数据</td>
+            </tr>
+            <tr>
+              <td>强制更新</td>
+              <td><code>vm.$forceUpdate()</code></td>
+              <td><code>ref.value = [...ref.value]</code></td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h3>测试你的理解</h3>
+        <div class="info-box">
+          在上方演示区进行以下操作，观察结果：
+          <ol>
+            <li>点击「按顺序排序」- 列表是否正确排序？</li>
+            <li>点击「随机打乱」- 是否每次都正确更新？</li>
+            <li>多次点击同一排序按钮 - 结果是否稳定？</li>
+          </ol>
+        </div>
+      </div>
+      
+      <!-- Tab 5: 自测题 -->
+      <div id="tab5" class="tab-content">
+        <h3>自测题</h3>
+        
+        <div class="quiz">
+          <h3>第1题</h3>
+          <p>以下哪种方式能正确触发 v-for 列表的响应式更新？</p>
+          <div class="quiz-item">
+            <label><input type="radio" name="q1" value="a"> <code>this.items.sort((a,b) => a-b)</code></label>
+          </div>
+          <div class="quiz-item">
+            <label><input type="radio" name="q1" value="b"> <code>this.items = [...this.items].sort((a,b) => a-b)</code></label>
+          </div>
+          <div class="quiz-item">
+            <label><input type="radio" name="q1" value="c"> <code>this.items.push(...[])</code></label>
+          </div>
+          <button onclick="checkAnswer('q1', 'b')" style="margin-top:10px;padding:6px 12px;background:#4CAF50;color:white;border:none;border-radius:4px;cursor:pointer">检查答案</button>
+          <span id="q1-result"></span>
+        </div>
+        
+        <div class="quiz" style="margin-top:15px">
+          <h3>第2题</h3>
+          <p>在 v-for 中使用动态插槽时，key 应该绑定在哪里？</p>
+          <div class="quiz-item">
+            <label><input type="radio" name="q2" value="a"> 绑定在 <code>&lt;component&gt;</code> 上</label>
+          </div>
+          <div class="quiz-item">
+            <label><input type="radio" name="q2" value="b"> 绑定在 <code>&lt;template&gt;</code> 根元素上</label>
+          </div>
+          <div class="quiz-item">
+            <label><input type="radio" name="q2" value="c"> 不需要 key</label>
+          </div>
+          <button onclick="checkAnswer('q2', 'b')" style="margin-top:10px;padding:6px 12px;background:#4CAF50;color:white;border:none;border-radius:4px;cursor:pointer">检查答案</button>
+          <span id="q2-result"></span>
+        </div>
+        
+        <div class="quiz" style="margin-top:15px">
+          <h3>第3题</h3>
+          <p>为什么动态插槽可能导致排序后显示异常？</p>
+          <div class="quiz-item">
+            <label><input type="radio" name="q3" value="a"> 动态插槽会阻塞渲染</label>
+          </div>
+          <div class="quiz-item">
+            <label><input type="radio" name="q3" value="b"> 插槽内容未正确追踪 key，导致重新渲染时错位</label>
+          </div>
+          <div class="quiz-item">
+            <label><input type="radio" name="q3" value="c"> 动态插槽不支持排序</label>
+          </div>
+          <button onclick="checkAnswer('q3', 'b')" style="margin-top:10px;padding:6px 12px;background:#4CAF50;color:white;border:none;border-radius:4px;cursor:pointer">检查答案</button>
+          <span id="q3-result"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue@next"></script>
+  <script>
+    const { createApp, ref } = Vue
+    
+    const initialItems = [
+      { id: 1, slotType: 'header', content: 'Header 项目 A', order: 3 },
+      { id: 2, slotType: 'body', content: 'Body 项目 B', order: 1 },
+      { id: 3, slotType: 'footer', content: 'Footer 项目 C', order: 2 },
+      { id: 4, slotType: 'header', content: 'Header 项目 D', order: 6 },
+      { id: 5, slotType: 'body', content: 'Body 项目 E', order: 4 },
+      { id: 6, slotType: 'footer', content: 'Footer 项目 F', order: 5 }
+    ]
+    
+    createApp({
+      setup() {
+        const items = ref([...initialItems])
+        
+        const sortByOrder = () => {
+          items.value = [...items.value].sort((a, b) => a.order - b.order)
+        }
+        
+        const sortByName = () => {
+          items.value = [...items.value].sort((a, b) => a.content.localeCompare(b.content))
+        }
+        
+        const shuffleItems = () => {
+          const shuffled = [...items.value]
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+          }
+          items.value = shuffled
+        }
+        
+        const resetItems = () => {
+          items.value = [...initialItems]
+        }
+        
+        return { items, sortByOrder, sortByName, shuffleItems, resetItems }
+      }
+    }).mount('#demo1')
+    
+    // 排序函数（全局，供按钮调用）
+    function sortByOrder() {
+      const vm = document.querySelector('#demo1').__vue_app__._instance.proxy
+      vm.sortByOrder()
+    }
+    
+    function sortByName() {
+      const vm = document.querySelector('#demo1').__vue_app__._instance.proxy
+      vm.sortByName()
+    }
+    
+    function shuffleItems() {
+      const vm = document.querySelector('#demo1').__vue_app__._instance.proxy
+      vm.shuffleItems()
+    }
+    
+    function resetItems() {
+      const vm = document.querySelector('#demo1').__vue_app__._instance.proxy
+      vm.resetItems()
+    }
+    
+    // Tab 切换
+    function switchTab(btn, tabId) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'))
+      btn.classList.add('active')
+      document.getElementById(tabId).classList.add('active')
+    }
+    
+    // 答题检查
+    function checkAnswer(question, correct) {
+      const selected = document.querySelector(`input[name="${question}"]:checked`)
+      const resultEl = document.getElementById(`${question}-result`)
+      
+      if (!selected) {
+        resultEl.innerHTML = ' 请先选择一个答案'
+        resultEl.className = ''
+        return
+      }
+      
+      if (selected.value === correct) {
+        resultEl.innerHTML = ' ✓ 正确！'
+        resultEl.className = 'result-correct'
+      } else {
+        resultEl.innerHTML = ' ✗ 错误，正确答案是 ' + correct.toUpperCase()
+        resultEl.className = 'result-wrong'
+      }
+    }
+  </script>
+</body>
+</html>
