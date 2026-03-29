@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 3 TypeScript 常见报错及解决方案</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #00d9ff;
+      margin-bottom: 24px;
+      font-size: 1.8rem;
+    }
+
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Tab Navigation */
+    .tab-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #0f3460;
+    }
+
+    .tab-btn {
+      padding: 10px 18px;
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 8px;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      border-color: #00d9ff;
+      color: #00d9ff;
+    }
+
+    .tab-btn.active {
+      background: #0f3460;
+      border-color: #00d9ff;
+      color: #00d9ff;
+      font-weight: 600;
+    }
+
+    .demo-section {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 1px solid #0f3460;
+    }
+
+    .demo-title {
+      color: #00d9ff;
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+    }
+
+    .demo-desc {
+      color: #888;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .demo-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .code-panel, .result-panel {
+      background: #0f0f23;
+      border-radius: 8px;
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .code-panel {
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .code-panel .error-line {
+      background: rgba(255, 0, 0, 0.1);
+      border-left: 3px solid #ff5555;
+      padding-left: 8px;
+      margin-left: -8px;
+    }
+
+    .code-panel .comment {
+      color: #6a9955;
+    }
+
+    .code-panel .keyword {
+      color: #c586c0;
+    }
+
+    .code-panel .function {
+      color: #dcdcaa;
+    }
+
+    .code-panel .string {
+      color: #ce9178;
+    }
+
+    .code-panel .variable {
+      color: #9cdcfe;
+    }
+
+    .code-panel .tag {
+      color: #569cd6;
+    }
+
+    .code-panel .attr {
+      color: #9cdcfe;
+    }
+
+    .code-panel .type {
+      color: #4ec9b0;
+    }
+
+    .code-panel .number {
+      color: #b5cea8;
+    }
+
+    .panel-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1a1a2e;
+    }
+
+    .label-error {
+      color: #ff5555;
+    }
+
+    .label-fix {
+      color: #50fa7b;
+    }
+
+    .label-result {
+      color: #00d9ff;
+    }
+
+    .result-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .result-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      background: #1a1a2e;
+      border-radius: 6px;
+      border-left: 3px solid #00d9ff;
+    }
+
+    .result-label {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+    }
+
+    .result-value {
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      color: #fff;
+    }
+
+    .result-success {
+      border-left-color: #50fa7b;
+    }
+
+    .result-error {
+      border-left-color: #ff5555;
+    }
+
+    .error-msg {
+      color: #ff5555;
+      font-size: 12px;
+      padding: 8px 12px;
+      background: rgba(255, 85, 85, 0.1);
+      border-radius: 6px;
+      margin-top: 8px;
+    }
+
+    .error-prefix {
+      font-weight: bold;
+    }
+
+    .live-demo {
+      margin-top: 20px;
+      padding: 20px;
+      background: #0a0a1a;
+      border-radius: 8px;
+    }
+
+    .live-demo h4 {
+      color: #00d9ff;
+      margin-bottom: 16px;
+    }
+
+    .demo-btn {
+      padding: 8px 16px;
+      background: #00d9ff;
+      color: #0f0f23;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    .demo-btn:hover {
+      background: #00b8d9;
+    }
+
+    .demo-output {
+      margin-top: 12px;
+      padding: 12px;
+      background: #16213e;
+      border-radius: 6px;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+    }
+
+    .info-box {
+      background: rgba(0, 217, 255, 0.1);
+      border: 1px solid rgba(0, 217, 255, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .info-box h4 {
+      color: #00d9ff;
+      margin-bottom: 8px;
+    }
+
+    .info-box p {
+      font-size: 14px;
+      color: #ccc;
+      line-height: 1.6;
+    }
+
+    .toggle-btn {
+      display: inline-block;
+      padding: 6px 14px;
+      background: #0f3460;
+      border: 1px solid #00d9ff;
+      border-radius: 6px;
+      color: #00d9ff;
+      cursor: pointer;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .toggle-btn:hover {
+      background: #00d9ff;
+      color: #0f0f23;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>🔧 Vue 3 TypeScript 常见报错及解决方案</h1>
+
+    <div class="demo-container">
+      <!-- Tab Navigation -->
+      <div class="tab-nav">
+        <button
+          v-for="(tab, index) in tabs"
+          :key="tab.id"
+          :class="['tab-btn', { active: activeTab === index }]"
+          @click="activeTab = index"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+
+      <!-- Error 1: Type 'unknown' -->
+      <div v-if="activeTab === 0" class="demo-section">
+        <div class="demo-title">1. Type 'unknown' is not assignable to type 'xxx'</div>
+        <div class="demo-desc">reactive/ref 的类型推断导致 unknown 类型</div>
+
+        <div class="info-box">
+          <h4>💡 原因分析</h4>
+          <p>Vue 3 的响应式函数会根据初始值推断类型。如果 ref/reactive 没有初始值或初始值为 null/undefined，TypeScript 会推断为 unknown，导致无法赋值给具体类型。</p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="code-panel">
+            <div class="panel-label label-error">❌ 错误示例</div>
+            <pre><code><span class="comment">// ref 初始值为 null</span>
+<span class="keyword">const</span> data = <span class="function">ref</span>(<span class="keyword">null</span>)
+data.value = <span class="string">'hello'</span>  <span class="comment">// TS2345</span>
+
+<span class="comment">// reactive 空对象</span>
+<span class="keyword">const</span> state = <span class="function">reactive</span>({})
+state.<span class="variable">name</span> = <span class="string">'Tom'</span>  <span class="comment">// TS2339</span></code></pre>
+          </div>
+          <div class="code-panel">
+            <div class="panel-label label-fix">✅ 解决方案</div>
+            <pre><code><span class="comment">// 泛型声明具体类型</span>
+<span class="keyword">const</span> data = <span class="function">ref</span>&lt;<span class="type">string</span> | <span class="keyword">null</span>&gt;(<span class="keyword">null</span>)
+data.value = <span class="string">'hello'</span>  <span class="comment">// ✅ 正常</span>
+
+<span class="comment">// reactive 使用泛型</span>
+<span class="keyword">const</span> state = <span class="function">reactive</span>&lt;{<span class="variable">name</span>: <span class="type">string</span>}&gt;({
+  <span class="variable">name</span>: <span class="string">'Tom'</span>
+})
+state.<span class="variable">name</span> = <span class="string">'Alice'</span>  <span class="comment">// ✅ 正常</span></code></pre>
+          </div>
+        </div>
+
+        <div class="live-demo">
+          <h4>🎮 交互演示</h4>
+          <button class="demo-btn" @click="demo1Error">❌ 触发错误</button>
+          <button class="demo-btn" @click="demo1Fix">✅ 查看修复</button>
+          <div class="demo-output">
+            <div v-if="demo1Output">{{ demo1Output }}</div>
+            <div v-else style="color: #888;">点击按钮查看结果</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error 2: Property does not exist -->
+      <div v-if="activeTab === 1" class="demo-section">
+        <div class="demo-title">2. Property does not exist on type</div>
+        <div class="demo-desc">模板 ref 的类型未正确定义</div>
+
+        <div class="info-box">
+          <h4>💡 原因分析</h4>
+          <p>模板 ref 需要显式声明类型，Vue 无法自动推断 .vue 文件组件实例的类型。需要使用 InstanceType&lt;typeof Component&gt; 来获取组件类型。</p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="code-panel">
+            <div class="panel-label label-error">❌ 错误示例</div>
+            <pre><code><span class="comment">// 没有声明类型</span>
+<span class="keyword">const</span> myRef = <span class="function">ref</span>(<span class="keyword">null</span>)
+myRef.value.<span class="variable">someMethod</span>()  <span class="comment">// TS2339</span>
+
+<span class="comment">// DOM ref 未指定类型</span>
+<span class="keyword">const</span> inputEl = <span class="function">ref</span>(<span class="keyword">null</span>)
+inputEl.value?.<span class="variable">focus</span>()  <span class="comment">// TS</span></code></pre>
+          </div>
+          <div class="code-panel">
+            <div class="panel-label label-fix">✅ 解决方案</div>
+            <pre><code><span class="comment">// DOM 元素指定 HTML 类型</span>
+<span class="keyword">const</span> inputEl = <span class="function">ref</span>&lt;<span class="type">HTMLInputElement</span> | <span class="keyword">null</span>&gt;(<span class="keyword">null</span>)
+inputEl.value?.<span class="function">focus</span>()  <span class="comment">// ✅</span>
+
+<span class="comment">// 子组件使用 InstanceType</span>
+<span class="keyword">import</span> Child <span class="keyword">from</span> <span class="string">'./Child.vue'</span>
+<span class="keyword">const</span> childRef = <span class="function">ref</span>&lt;<span class="type">InstanceType</span>&lt;<span class="keyword">typeof</span> Child&gt; | <span class="keyword">null</span>&gt;(<span class="keyword">null</span>)</code></pre>
+          </div>
+        </div>
+
+        <div class="live-demo">
+          <h4>🎮 交互演示</h4>
+          <button class="demo-btn" @click="demo2Fix">✅ 查看修复效果</button>
+          <div class="demo-output">
+            <div v-if="demo2Output">{{ demo2Output }}</div>
+            <div v-else style="color: #888;">点击按钮查看结果</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error 3: Cannot find module -->
+      <div v-if="activeTab === 2" class="demo-section">
+        <div class="demo-title">3. Cannot find module or its corresponding type declarations</div>
+        <div class="demo-desc">组件类型声明缺失或 shims-vue.d.ts 配置问题</div>
+
+        <div class="info-box">
+          <h4>💡 原因分析</h4>
+          <p>TypeScript 默认不识别 .vue 文件，需要通过 shims-vue.d.ts 声明模块类型。Vite 项目还需要配置 vite/client 类型。</p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="code-panel">
+            <div class="panel-label label-error">❌ 缺少配置</div>
+            <pre><code><span class="comment">// 项目根目录缺少 shims-vue.d.ts</span>
+<span class="comment">// 或 tsconfig.json 未包含</span>
+
+<span class="comment">// 导入 .vue 文件时报错</span>
+<span class="keyword">import</span> MyComponent <span class="keyword">from</span> <span class="string">'./MyComponent.vue'</span>
+<span class="comment">// TS2307: Cannot find module</span></code></pre>
+          </div>
+          <div class="code-panel">
+            <div class="panel-label label-fix">✅ 解决方案</div>
+            <pre><code><span class="comment">// shims-vue.d.ts</span>
+<span class="keyword">declare</span> <span class="keyword">module</span> <span class="string">'*.vue'</span> {
+  <span class="keyword">import</span> <span class="type">Component</span> <span class="keyword">from</span> <span class="string">'vue'</span>
+  <span class="keyword">const</span> component: <span class="type">Component</span>
+  <span class="keyword">export</span> <span class="keyword">default</span> component
+}
+
+<span class="comment">// tsconfig.json</span>
+{
+  <span class="string">"include"</span>: [<span class="string">"src/**/*.ts"</span>, <span class="string">"src/**/*.vue"</span>],
+  <span class="string">"types"</span>: [<span class="string">"vite/client"</span>]
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error 4: Module has no exported member -->
+      <div v-if="activeTab === 3" class="demo-section">
+        <div class="demo-title">4. Module has no exported member</div>
+        <div class="demo-desc">Vue 2 到 Vue 3 的 API 导入差异</div>
+
+        <div class="info-box">
+          <h4>💡 原因分析</h4>
+          <p>Vue 3 重构了大量 API，某些 Vue 2 的导入在 Vue 3 中已不存在或已重命名。</p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="code-panel">
+            <div class="panel-label label-error">❌ Vue 2 写法</div>
+            <pre><code><span class="comment">// Vue 2 导入方式</span>
+<span class="keyword">import</span> Vue <span class="keyword">from</span> <span class="string">'vue'</span>
+Vue.<span class="function">mixin</span>({})
+Vue.<span class="function">extend</span>({})
+
+<span class="comment">// Vue 2 过滤器</span>
+<span class="keyword">import</span> <span class="string">'vue2-filters'</span></code></pre>
+          </div>
+          <div class="code-panel">
+            <div class="panel-label label-fix">✅ Vue 3 正确写法</div>
+            <pre><code><span class="comment">// Vue 3 Composition API</span>
+<span class="keyword">import</span> {
+  <span class="variable">ref</span>,
+  <span class="variable">reactive</span>,
+  <span class="variable">computed</span>,
+  <span class="variable">watch</span>
+} <span class="keyword">from</span> <span class="string">'vue'</span>
+
+<span class="comment">// 插件使用 createApp</span>
+<span class="keyword">import</span> { <span class="variable">createApp</span> } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">const</span> app = <span class="function">createApp</span>({})
+app.<span class="function">mount</span>(<span class="string">'#app'</span>)</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error 5: Props type inference -->
+      <div v-if="activeTab === 4" class="demo-section">
+        <div class="demo-title">5. Props 类型推断问题</div>
+        <div class="demo-desc">defineProps 的类型推断不正确</div>
+
+        <div class="info-box">
+          <h4>💡 原因分析</h4>
+          <p>使用基于类型的 defineProps 声明时，可选属性可能推断为 undefined。Vue 3.4+ 推荐使用 withDefaults 提供默认值。</p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="code-panel">
+            <div class="panel-label label-error">❌ 问题写法</div>
+            <pre><code><span class="comment">// 可选属性推断不准确</span>
+<span class="keyword">const</span> props = <span class="function">defineProps</span>&lt;{
+  <span class="variable">name</span>: <span class="type">string</span>
+  <span class="variable">count</span>?: <span class="type">number</span>
+}&gt;()
+<span class="comment">// props.count 可能是 undefined</span>
+console.<span class="function">log</span>(props.count + <span class="number">1</span>) <span class="comment">// TS</span></code></pre>
+          </div>
+          <div class="code-panel">
+            <div class="panel-label label-fix">✅ 解决方案</div>
+            <pre><code><span class="comment">// Vue 3.4+ withDefaults</span>
+<span class="keyword">const</span> props = <span class="function">withDefaults</span>(
+  <span class="function">defineProps</span>&lt;{
+    <span class="variable">name</span>: <span class="type">string</span>
+    <span class="variable">count</span>?: <span class="type">number</span>
+    <span class="variable">items</span>?: <span class="type">string</span>[]
+  }&gt;(),
+  {
+    <span class="variable">count</span>: <span class="number">0</span>,
+    <span class="variable">items</span>: () => []
+  }
+)
+console.<span class="function">log</span>(props.count + <span class="number">1</span>) <span class="comment">// ✅</span></code></pre>
+          </div>
+        </div>
+
+        <div class="live-demo">
+          <h4>🎮 交互演示</h4>
+          <button class="demo-btn" @click="demo5Fix">✅ 查看 Props 类型</button>
+          <div class="demo-output">
+            <div v-if="demo5Output">
+              <div>name: {{ demo5Output.name }} ({{ typeof demo5Output.name }})</div>
+              <div>count: {{ demo5Output.count }} ({{ typeof demo5Output.count }})</div>
+            </div>
+            <div v-else style="color: #888;">点击按钮查看结果</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error 6: Volar config -->
+      <div v-if="activeTab === 5" class="demo-section">
+        <div class="demo-title">6. Volar 工具链配置问题</div>
+        <div class="demo-desc">Volar/vue-tsc 版本不兼容或配置错误</div>
+
+        <div class="info-box">
+          <h4>💡 原因分析</h4>
+          <p>Volar 是 Vue 3 的官方 VS Code 扩展，需要与 vue-tsc 配合使用。如果类型提示失效或报错，检查版本和配置。</p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="code-panel">
+            <div class="panel-label label-error">❌ 常见问题</div>
+            <pre><code><span class="comment">// Volar 版本过旧</span>
+<span class="comment">// vue-tsc 未安装</span>
+<span class="comment">// tsconfig.json 配置错误</span>
+
+<span class="comment">// 错误示例配置</span>
+{
+  <span class="string">"moduleResolution"</span>: <span class="string">"node"</span>  <span class="comment">// ❌</span>
+  <span class="string">"types"</span>: []  <span class="comment">// ❌ 缺少 vite/client</span>
+}</code></pre>
+          </div>
+          <div class="code-panel">
+            <div class="panel-label label-fix">✅ 正确配置</div>
+            <pre><code><span class="comment">// 安装 vue-tsc</span>
+npm install -D vue-tsc
+
+<span class="comment">// tsconfig.json</span>
+{
+  <span class="string">"compilerOptions"</span>: {
+    <span class="string">"moduleResolution"</span>: <span class="string">"bundler"</span>,
+    <span class="string">"types"</span>: [<span class="string">"vite/client"</span>],
+    <span class="string">"skipLibCheck"</span>: <span class="keyword">true</span>
+  }
+}
+
+<span class="comment">// package.json 添加检查脚本</span>
+{
+  <span class="string">"scripts"</span>: {
+    <span class="string">"type-check"</span>: <span class="string">"vue-tsc --noEmit"</span>
+  }
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error 7: Template ref type -->
+      <div v-if="activeTab === 6" class="demo-section">
+        <div class="demo-title">7. 模板 ref 类型错误</div>
+        <div class="demo-desc">模板 ref 需要显式声明组件实例类型</div>
+
+        <div class="info-box">
+          <h4>💡 原因分析</h4>
+          <p>模板 ref 需要通过 InstanceType&lt;typeof Component&gt; 获取组件类型，子组件需通过 defineExpose 暴露方法。</p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="code-panel">
+            <div class="panel-label label-error">❌ 错误示例</div>
+            <pre><code><span class="comment">// 子组件未暴露方法</span>
+<span class="comment">// &lt;script setup&gt;</span>
+<span class="keyword">const</span> count = <span class="function">ref</span>(<span class="number">0</span>)
+<span class="comment">// ❌ 没有 defineExpose</span>
+
+<span class="comment">// 父组件</span>
+<span class="keyword">const</span> childRef = <span class="function">ref</span>(<span class="keyword">null</span>)
+childRef.value?.<span class="variable">increment</span>() <span class="comment">// TS</span></code></pre>
+          </div>
+          <div class="code-panel">
+            <div class="panel-label label-fix">✅ 解决方案</div>
+            <pre><code><span class="comment">// 子组件暴露方法</span>
+<span class="keyword">const</span> count = <span class="function">ref</span>(<span class="number">0</span>)
+<span class="keyword">const</span> increment = () => count.value++
+
+<span class="function">defineExpose</span>({ count, increment })
+
+<span class="comment">// 父组件正确引用</span>
+<span class="keyword">import</span> Child <span class="keyword">from</span> <span class="string">'./Child.vue'</span>
+<span class="keyword">const</span> childRef = <span class="function">ref</span>&lt;<span class="type">InstanceType</span>&lt;<span class="keyword">typeof</span> Child&gt;&gt;(<span class="keyword">null</span>)
+childRef.value?.<span class="function">increment</span>()  <span class="comment">// ✅</span></code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error 8: watch callback type -->
+      <div v-if="activeTab === 7" class="demo-section">
+        <div class="demo-title">8. watch/watchEffect 回调类型错误</div>
+        <div class="demo-desc">watch 多个数据源时类型推断不准确</div>
+
+        <div class="info-box">
+          <h4>💡 原因分析</h4>
+          <p>watch 监听多个数据源时，newValues 和 oldValues 都是数组类型，TypeScript 无法准确推断每个元素的类型。</p>
+        </div>
+
+        <div class="demo-grid">
+          <div class="code-panel">
+            <div class="panel-label label-error">❌ 问题写法</div>
+            <pre><code><span class="comment">// 多个数据源类型不明</span>
+<span class="function">watch</span>([count, name], (newValues) => {
+  <span class="comment">// newValues 类型: unknown[]</span>
+  <span class="function">console</span>(newValues[<span class="number">0</span>] + <span class="number">1</span>) <span class="comment">// TS</span>
+})
+
+<span class="comment">// 单个源但未声明类型</span>
+<span class="function">watch</span>(count, (newVal) => {
+  <span class="comment">// 可能推断为 unknown</span>
+})</code></pre>
+          </div>
+          <div class="code-panel">
+            <div class="panel-label label-fix">✅ 解决方案</div>
+            <pre><code><span class="comment">// 元组形式明确类型</span>
+<span class="function">watch</span>(
+  [count, name],
+  ([<span class="variable">newCount</span>, <span class="variable">newName</span>], [<span class="variable">oldCount</span>, <span class="variable">oldName</span>]) => {
+    <span class="function">console</span>(<span class="variable">newCount</span> + <span class="number">1</span>)  <span class="comment">// ✅</span>
+  }
+)
+
+<span class="comment">// 单个源显式声明</span>
+<span class="function">watch</span>(count, (<span class="variable">newVal</span>: <span class="type">number</span>) => {
+  <span class="function">console</span>(<span class="variable">newVal</span> + <span class="number">1</span>)  <span class="comment">// ✅</span>
+})</code></pre>
+          </div>
+        </div>
+
+        <div class="live-demo">
+          <h4>🎮 交互演示</h4>
+          <button class="demo-btn" @click="demo8Fix">✅ 查看 watch 类型</button>
+          <div class="demo-output">
+            <div v-if="demo8Output">{{ demo8Output }}</div>
+            <div v-else style="color: #888;">点击按钮查看结果</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref } = Vue
+
+    createApp({
+      setup() {
+        const activeTab = ref(0)
+        const demo1Output = ref('')
+        const demo2Output = ref('')
+        const demo5Output = ref(null)
+        const demo8Output = ref('')
+
+        const tabs = [
+          { id: 'unknown', label: '1️⃣ Type unknown' },
+          { id: 'property', label: '2️⃣ Property 不存在' },
+          { id: 'module', label: '3️⃣ 模块找不到' },
+          { id: 'export', label: '4️⃣ 导出成员' },
+          { id: 'props', label: '5️⃣ Props 类型' },
+          { id: 'volar', label: '6️⃣ Volar 配置' },
+          { id: 'ref', label: '7️⃣ 模板 ref' },
+          { id: 'watch', label: '8️⃣ watch 类型' },
+        ]
+
+        function demo1Error() {
+          // 模拟 TypeScript 错误行为
+          demo1Output.value = '❌ TypeScript Error:\nTS2345: Argument of type \'string\' is not assignable to parameter of type \'unknown\''
+        }
+
+        function demo1Fix() {
+          // 模拟修复后的正确行为
+          demo1Output.value = '✅ 正确运行:\nconst data = ref<string | null>(null)\ndata.value = "hello" // OK!'
+        }
+
+        function demo2Fix() {
+          demo2Output.value = '✅ InstanceType<typeof Component> 正确推断:\nconst inputEl = ref<HTMLInputElement | null>(null)\nconst childRef = ref<InstanceType<typeof Child> | null>(null)'
+        }
+
+        function demo5Fix() {
+          demo5Output.value = {
+            name: 'Tom',
+            count: 42
+          }
+        }
+
+        function demo8Fix() {
+          demo8Output.value = '✅ 元组类型正确推断:\nwatch([count, name],\n  ([newCount, newName], [oldCount, oldName]) => {\n    // newCount: number, newName: string\n  }\n)'
+        }
+
+        return {
+          activeTab,
+          tabs,
+          demo1Output,
+          demo2Output,
+          demo5Output,
+          demo8Output,
+          demo1Error,
+          demo1Fix,
+          demo2Fix,
+          demo5Fix,
+          demo8Fix,
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
