@@ -1,0 +1,139 @@
+<script src="https://unpkg.com/vue@2"></script>
+
+<style>
+  body { font-family: sans-serif; padding: 20px; }
+  .dialog {
+    border: 2px solid #42b983;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 10px 0;
+    background: #f0fdf4;
+  }
+  .dialog p { margin: 8px 0; }
+  button {
+    padding: 6px 16px;
+    margin: 4px;
+    cursor: pointer;
+    background: #42b983;
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+  button:hover { background: #3aa876; }
+  h4 { margin: 16px 0 8px; color: #333; }
+  .desc { color: #666; font-size: 13px; margin: 4px 0 12px; }
+  .slot-placeholder { color: #aaa; font-style: italic; }
+  .log { background: #1a1a1a; color: #0f0; padding: 10px; border-radius: 4px; font-size: 12px; max-height: 120px; overflow-y: auto; margin-top: 10px; }
+</style>
+
+<!-- 问题示例：v-if 在组件上，slot 内容无法响应 -->
+<script type="text/x-template" id="tpl-problem">
+  <div class="dialog">
+    <slot>（无内容）</slot>
+  </div>
+</script>
+
+<!-- 解决方案一：v-if 放在 slot 内容内部 -->
+<script type="text/x-template" id="tpl-solution1">
+  <div class="dialog">
+    <slot>（无内容）</slot>
+  </div>
+</script>
+
+<!-- 解决方案三：条件 slot（推荐） -->
+<script type="text/x-template" id="tpl-solution3">
+  <div class="dialog">
+    <slot>（无内容）</slot>
+  </div>
+</script>
+
+<div id="app">
+
+  <h4>问题演示：v-if 在组件上</h4>
+  <p class="desc">点击切换按钮，slot 内容可能无法正常响应。</p>
+  <div id="problem">
+    <!-- v-if 控制整个子组件，slot 内容被"冻结" -->
+    <problem-dialog v-if="problemShow">
+      <p>这是对话框内容</p>
+    </problem-dialog>
+    <button @click="problemShow = !problemShow">切换 v-if={{ problemShow }}</button>
+  </div>
+
+  <h4>解决方案一：v-if 放在 slot 内容内部</h4>
+  <p class="desc">条件判断发生在父组件作用域，slot 始终传入。</p>
+  <div id="solution1">
+    <solution1-dialog>
+      <p v-if="sol1Show">这是对话框内容</p>
+    </solution1-dialog>
+    <button @click="sol1Show = !sol1Show">切换 v-if={{ sol1Show }}</button>
+  </div>
+
+  <h4>解决方案二：使用 v-show 替代 v-if</h4>
+  <p class="desc">CSS display 控制显隐，组件始终存在，slot 始终渲染。</p>
+  <div id="solution2">
+    <solution2-dialog v-show="sol2Show">
+      <p>这是对话框内容（用 v-show）</p>
+    </solution2-dialog>
+    <button @click="sol2Show = !sol2Show">切换 v-show={{ sol2Show }}</button>
+  </div>
+
+  <h4>解决方案三：条件 slot（推荐）</h4>
+  <p class="desc">使用 template + v-if 精确控制 slot 内容的渲染时机。</p>
+  <div id="solution3">
+    <solution3-dialog>
+      <template v-if="sol3Show">
+        <p>这是对话框内容</p>
+      </template>
+    </solution3-dialog>
+    <button @click="sol3Show = !sol3Show">切换 v-if={{ sol3Show }}</button>
+  </div>
+
+  <h4>日志</h4>
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+  // 问题示例
+  Vue.component('problem-dialog', {
+    template: '#tpl-problem',
+    mounted() { log('problem-dialog mounted'); },
+    destroyed() { log('problem-dialog destroyed'); }
+  })
+
+  // 解决方案一
+  Vue.component('solution1-dialog', {
+    template: '#tpl-solution1',
+    mounted() { log('solution1-dialog mounted'); },
+    destroyed() { log('solution1-dialog destroyed'); }
+  })
+
+  // 解决方案二
+  Vue.component('solution2-dialog', {
+    template: '#tpl-solution2',
+    mounted() { log('solution2-dialog mounted'); },
+    destroyed() { log('solution2-dialog destroyed'); }
+  })
+
+  // 解决方案三
+  Vue.component('solution3-dialog', {
+    template: '#tpl-solution3',
+    mounted() { log('solution3-dialog mounted'); },
+    destroyed() { log('solution3-dialog destroyed'); }
+  })
+
+  function log(msg) {
+    var el = document.getElementById('log')
+    var time = new Date().toLocaleTimeString()
+    el.innerHTML = '<div>[' + time + '] ' + msg + '</div>' + el.innerHTML
+  }
+
+  new Vue({
+    el: '#app',
+    data: {
+      problemShow: false,
+      sol1Show: false,
+      sol2Show: false,
+      sol3Show: false
+    }
+  })
+</script>
