@@ -1,0 +1,164 @@
+---
+tags: [vue-router,路由控制,导航守卫,权限控制]
+---
+<script src="https://unpkg.com/vue@2/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+
+<div id="app">
+  <h1>Vue Router 路由控制示例</h1>
+  
+  <!-- 导航栏 -->
+  <nav>
+    <router-link to="/home">首页</router-link> |
+    <router-link to="/about">关于</router-link> |
+    <router-link to="/profile">个人中心</router-link> |
+    <router-link to="/admin">管理后台</router-link>
+  </nav>
+  
+  <!-- 路由出口 -->
+  <router-view></router-view>
+  
+  <!-- 路由日志 -->
+  <div style="margin-top:20px;padding:10px;border:1px solid #ccc;background:#f9f9f9">
+    <strong>路由日志:</strong>
+    <ul id="log-list" style="font-size:12px;max-height:120px;overflow:auto">
+      <li v-for="(log, i) in logs" :key="i">{{ log }}</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+// ==================== 模拟权限数据 ====================
+const Role = {
+  GUEST: 'guest',
+  USER: 'user',
+  ADMIN: 'admin'
+};
+
+const currentUser = {
+  name: 'Alice',
+  role: Role.USER // 尝试改为 Role.ADMIN 或 Role.GUEST 测试权限
+};
+
+function log(msg) {
+  app.logs.unshift(`[${new Date().toLocaleTimeString()}] ${msg}`);
+}
+
+// ==================== 组件定义 ====================
+const Home = { template: '<div><h2>首页</h2><p>欢迎来到首页</p></div>' };
+const About = { template: '<div><h2>关于</h2><p>这是一个关于页面</p></div>' };
+const Profile = {
+  template: '<div><h2>个人中心</h2><p>用户名: {{ $route.query.name || "未登录" }}</p></div>',
+  beforeRouteEnter(to, from, next) {
+    log('Profile - beforeRouteEnter');
+    next();
+  }
+};
+const Admin = {
+  template: '<div><h2>管理后台</h2><p>仅管理员可见</p></div>',
+  beforeRouteEnter(to, from, next) {
+    log('Admin - beforeRouteEnter');
+    next();
+  }
+};
+const NotFound = { template: '<div><h2>404</h2><p>页面不存在</p></div>' };
+const Forbidden = { template: '<div><h2>403</h2><p>无权限访问该页面</p></div>' };
+
+// ==================== 路由配置 ====================
+const routes = [
+  { path: '/', redirect: '/home' },
+  { path: '/home', component: Home },
+  { path: '/about', component: About },
+  {
+    path: '/profile',
+    component: Profile,
+    // 路由元信息：访问该路由需要 USER 或更高权限
+    meta: { requiresAuth: true, minRole: Role.USER }
+  },
+  {
+    path: '/admin',
+    component: Admin,
+    // 路由元信息：仅管理员可访问
+    meta: { requiresAuth: true, minRole: Role.ADMIN }
+  },
+  { path: '/forbidden', component: Forbidden },
+  { path: '*', component: NotFound }
+];
+
+// ==================== 路由实例 ====================
+const router = new VueRouter({
+  routes,
+  mode: 'hash' // 使用 hash 模式方便本地文件测试
+});
+
+// ==================== 全局导航守卫 ====================
+
+// 全局前置守卫：每次路由切换前调用
+router.beforeEach((to, from, next) => {
+  log(`全局 beforeEach: ${from.path} -> ${to.path}`);
+  
+  // 检查目标路由是否需要权限
+  if (to.meta.requiresAuth) {
+    const requiredRole = to.meta.minRole || Role.USER;
+    const userRole = currentUser.role;
+    
+    // 角色权限等级
+    const roleLevel = { [Role.GUEST]: 0, [Role.USER]: 1, [Role.ADMIN]: 2 };
+    
+    if (roleLevel[userRole] >= roleLevel[requiredRole]) {
+      log(`✅ 权限校验通过: ${userRole} >= ${requiredRole}`);
+      next(); // 继续导航
+    } else {
+      log(`❌ 权限不足: ${userRole} < ${requiredRole}`);
+      next('/forbidden'); // 跳转到无权限页面
+    }
+  } else {
+    next(); // 公开路由，直接通过
+  }
+});
+
+// 全局解析守卫：在组件路由守卫之后、导航确认之前调用
+router.beforeResolve((to, from, next) => {
+  log(`全局 beforeResolve: ${to.path}`);
+  next();
+});
+
+// 全局后置钩子：导航完成后调用
+router.afterEach((to, from) => {
+  log(`✅ 导航完成: ${to.path}`);
+});
+
+// ==================== 初始化 Vue ====================
+const app = new Vue({
+  router,
+  data() {
+    return {
+      logs: []
+    };
+  },
+  created() {
+    log('Vue 实例创建');
+    log(`当前用户角色: ${currentUser.role}`);
+  }
+}).$mount('#app');
+
+log('路由演示初始化完成');
+</script>
+
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+}
+nav a {
+  padding: 5px 10px;
+  text-decoration: none;
+  color: #42b983;
+}
+nav a.router-link-active {
+  color: #2c3e50;
+  font-weight: bold;
+}
+</style>
