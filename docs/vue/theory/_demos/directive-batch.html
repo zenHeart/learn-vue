@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vue 批量绑定自定义指令 — 交互演示</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;line-height:1.6;min-height:100vh;padding:2rem}
+    h1,h2{color:#f1f5f9}
+    .container{max-width:1100px;margin:0 auto}
+    .header{text-align:center;margin-bottom:3rem}
+    .header h1{font-size:2rem;margin-bottom:0.5rem}
+    .header p{color:#94a3b8}
+    .tabs{display:flex;gap:0.5rem;margin-bottom:2rem;flex-wrap:wrap}
+    .tab-btn{padding:0.6rem 1.2rem;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;cursor:pointer;font-size:0.9rem;transition:all 0.2s}
+    .tab-btn:hover{border-color:#60a5fa;color:#e2e8f0}
+    .tab-btn.active{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
+    .demo-section{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:1.5rem;margin-bottom:2rem}
+    .demo-section h2{font-size:1.2rem;margin-bottom:0.5rem}
+    .demo-section .desc{color:#94a3b8;font-size:0.88rem;margin-bottom:1.2rem}
+    .field-group{display:flex;flex-direction:column;gap:0.8rem;margin-bottom:1rem}
+    .field-label{font-size:0.85rem;color:#94a3b8;margin-bottom:0.3rem}
+    input[type=text],input[type=email],textarea,select{width:100%;padding:0.6rem 0.9rem;background:#0f172a;border:2px solid #334155;border-radius:8px;color:#e2e8f0;font-size:0.95rem;outline:none;transition:border-color 0.2s,box-shadow 0.2s}
+    input:focus,textarea:focus,select:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,0.15)}
+    textarea{resize:vertical;min-height:80px}
+    .btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.6rem 1.2rem;background:#1d4ed8;border:none;border-radius:8px;color:#fff;font-size:0.9rem;cursor:pointer;transition:background 0.2s,transform 0.1s}
+    .btn:hover{background:#1e40af}
+    .btn:active{transform:scale(0.97)}
+    .btn+.btn{margin-left:0.5rem}
+    .btn-secondary{background:#334155}
+    .btn-secondary:hover{background:#475569}
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}
+    .card{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:1rem;transition:border-color 0.2s,transform 0.2s}
+    .card:hover{border-color:#60a5fa;transform:translateY(-2px)}
+    .card-title{font-size:0.95rem;font-weight:600;margin-bottom:0.3rem}
+    .card-body{font-size:0.82rem;color:#94a3b8}
+    .tag{display:inline-block;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.75rem;font-weight:600}
+    .tag-blue{background:rgba(96,165,250,0.15);color:#60a5fa}
+    .tag-green{background:rgba(52,211,153,0.15);color:#34d399}
+    .tag-yellow{background:rgba(251,191,36,0.15);color:#fbbf24}
+    .tag-red{background:rgba(248,113,113,0.15);color:#f87171}
+    .tag-cyan{background:rgba(34,211,238,0.12);color:#22d3ee}
+    .tooltip-wrap{position:relative;display:inline-block}
+    .tooltip-bubble{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#f1f5f9;color:#0f172a;padding:0.4rem 0.8rem;border-radius:6px;font-size:0.8rem;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:100}
+    .tooltip-bubble::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#f1f5f9}
+    .tooltip-wrap:hover .tooltip-bubble{opacity:1}
+    .ripple-container{position:relative;overflow:hidden}
+    .ripple-wave{position:absolute;border-radius:50%;background:rgba(255,255,255,0.3);transform:scale(0);animation:ripple-anim 0.6s ease-out forwards;pointer-events:none}
+    @keyframes ripple-anim{to{transform:scale(4);opacity:0}}
+    .perm-hidden{display:none!important}
+    @keyframes fadeSlideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .anim-item{opacity:0;animation:fadeSlideIn 0.4s ease-out forwards}
+    .debounce-log{display:flex;flex-direction:column;gap:0.4rem;max-height:180px;overflow-y:auto;padding:0.5rem;background:#0f172a;border-radius:8px;border:1px solid #334155}
+    .debounce-log .entry{display:flex;gap:0.5rem;align-items:center;font-size:0.82rem}
+    .debounce-log .entry-time{color:#60a5fa;min-width:80px}
+    .status-bar{display:flex;gap:1.5rem;padding:0.8rem 1rem;background:#0f172a;border:1px solid #334155;border-radius:8px;margin-bottom:1.5rem;flex-wrap:wrap}
+    .status-item{display:flex;align-items:center;gap:0.5rem;font-size:0.85rem}
+    .status-dot{width:8px;height:8px;border-radius:50%}
+    .status-dot.green{background:#34d399}
+    .status-dot.blue{background:#60a5fa}
+    .config-row{display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid #1e293b;flex-wrap:wrap}
+    .config-row:last-child{border-bottom:none}
+    .config-label{font-size:0.85rem;min-width:100px;color:#94a3b8}
+    .config-toggle{display:flex;gap:0.5rem}
+    .toggle-btn{padding:0.3rem 0.8rem;border-radius:6px;border:1px solid #334155;background:transparent;color:#94a3b8;font-size:0.8rem;cursor:pointer;transition:all 0.2s}
+    .toggle-btn.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+    .split-view{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    @media(max-width:768px){.split-view{grid-template-columns:1fr}}
+    .info-box{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);border-radius:8px;padding:0.8rem 1rem;font-size:0.85rem;color:#93c5fd;margin-bottom:1rem}
+    .perm-panel{display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap}
+    pre,code{font-family:'Fira Code','Cascadia Code','Consolas',monospace;font-size:0.85rem}
+    pre{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:1rem;overflow-x:auto}
+    code{color:#a5f3fc}
+    .hl-keyword{color:#c084fc}
+    .hl-string{color:#86efac}
+    .hl-comment{color:#64748b;font-style:italic}
+    .hl-fn{color:#60a5fa}
+  </style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script>
+(function(){
+  'use strict';
+  var Vue = window.Vue;
+  var ref = Vue.ref, reactive = Vue.reactive, computed = Vue.computed, nextTick = Vue.nextTick;
+
+  function makeRipple(el,e){
+    var rect=el.getBoundingClientRect();
+    el.style.position='relative';
+    var r=document.createElement('span');r.className='ripple-wave';
+    var s=Math.max(rect.width,rect.height);
+    r.style.width=r.style.height=s+'px';
+    r.style.left=(e.clientX-rect.left-s/2)+'px';
+    r.style.top=(e.clientY-rect.top-s/2)+'px';
+    el.appendChild(r);setTimeout(function(){r.remove();},600);
+  }
+
+  var dirs={
+    focus:{mounted:function(el){nextTick(function(){el.focus();});}},
+    highlight:{mounted:function(el,b){el.style.transition='background 0.3s';if(b.value)el.style.background=b.value;},updated:function(el,b){if(b.value!==b.oldValue)el.style.background=b.value||'';}},
+    tooltip:{mounted:function(el,b){if(!b.value)return;var w=document.createElement('span');w.className='tooltip-wrap';var bb=document.createElement('span');bb.className='tooltip-bubble';bb.textContent=b.value;w.appendChild(bb);el.parentNode.insertBefore(w,el);w.appendChild(el);}},
+    ripple:{mounted:function(el){el.classList.add('ripple-container');el.addEventListener('click',function(e){makeRipple(el,e);});}},
+    debounce:{mounted:function(el,b){if(!b.value||!b.value.handler)return;var w=b.value.wait||400,h=b.value.handler,t;el.addEventListener('input',function(){clearTimeout(t);t=setTimeout(h,w);});}},
+    enterAnimation:{mounted:function(el,b){var d=(b.value&&b.value.delay)||0;el.style.opacity='0';el.style.transform='translateY(12px)';setTimeout(function(){el.style.transition='opacity 0.4s ease, transform 0.4s ease';el.style.opacity='1';el.style.transform='translateY(0)';},d);}},
+    permissions:{mounted:function(el,b){if(!checkPerm(b.value))el.classList.add('perm-hidden');}}
+  };
+
+  var roleMap={guest:[],user:['user:read','user:write'],admin:['user:read','user:write','user:delete','admin:all']};
+  var currentRole=ref('user');
+  function checkPerm(p){if(!p)return true;var a=roleMap[currentRole.value];return a?a.indexOf(p)!==-1:false;}
+
+  window.switchTab=function(btn,id){
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+    btn.classList.add('active');
+    document.getElementById(id).classList.add('active');
+  };
+
+  var app=Vue.createApp({
+    setup:function(){
+      var localColor=ref('#cce5ff');
+      var localEnabled=reactive({focus:true,highlight:true});
+      var localBatch=computed(function(){var b={};if(localEnabled.focus)b.focus=true;if(localEnabled.highlight)b.highlight=localColor.value;return b;});
+
+      var formColor=ref('#cce5ff');
+      var formEnabled=reactive({focus:true,highlight:true,tooltip:true});
+      var formBatch=computed(function(){var b={};if(formEnabled.focus)b.focus=true;if(formEnabled.highlight)b.highlight=formColor.value;if(formEnabled.tooltip)b.tooltip='表单辅助提示';return b;});
+      var form=reactive({name:'',email:'',bio:''});
+
+      var globalCards=[
+        {id:1,tag:'blue',tagLabel:'v-focus',body:'mounted 时自动聚焦',hasInput:true},
+        {id:2,tag:'cyan',tagLabel:'v-highlight',body:'高亮背景色，响应式更新',hasColors:true},
+        {id:3,tag:'green',tagLabel:'v-tooltip',body:'hover 显示提示气泡',hasButton:true},
+        {id:4,tag:'yellow',tagLabel:'v-ripple',body:'点击时扩散的涟漪动画',hasButtons:true},
+        {id:5,tag:'red',tagLabel:'v-enterAnimation',body:'依次淡入的入场动画',hasItems:true}
+      ];
+
+      var presetMap={normal:{focus:true,highlight:'#cce5ff',tooltip:true},compact:{focus:true,highlight:false,tooltip:false},admin:{focus:true,highlight:'#f8d7da',tooltip:true}};
+      var currentPreset=ref('normal');
+      var dynamicBatch=computed(function(){var p=presetMap[currentPreset.value];var b={};if(p.focus)b.focus=true;if(p.highlight)b.highlight=p.highlight;if(p.tooltip)b.tooltip='管理员提示';return b;});
+
+      var logEntries=ref([]);var logId=0;var searchText=ref('');
+      function doSearch(){var now=new Date();var t=now.toLocaleTimeString('zh-CN',{hour12:false});logEntries.value.push({id:++logId,time:t,text:searchText.value||'(empty)'});if(logEntries.value.length>20)logEntries.value.shift();}
+
+      var funcColors=[
+        {tag:'yellow',color:'#fff3cd',label:'v-hl-yellow'},
+        {tag:'cyan',color:'#cce5ff',label:'v-hl-cyan'},
+        {tag:'green',color:'#d4edda',label:'v-hl-green'},
+        {tag:'red',color:'#f8d7da',label:'v-hl-red'}
+      ];
+
+      var permActions=[
+        {id:'user:read',label:'查看用户',roles:['user','admin']},
+        {id:'user:write',label:'编辑用户',roles:['user','admin']},
+        {id:'user:delete',label:'删除用户',roles:['admin']},
+        {id:'admin:all',label:'管理面板',roles:['admin']}
+      ];
+
+      return{localColor:localColor,localEnabled:localEnabled,localBatch:localBatch,formColor:formColor,formEnabled:formEnabled,formBatch:formBatch,form:form,globalCards:globalCards,currentPreset:currentPreset,dynamicBatch:dynamicBatch,searchText:searchText,doSearch:doSearch,logEntries:logEntries,funcColors:funcColors,permActions:permActions,currentRole:currentRole};
+    },
+    template:'<div>'+
+      '<div class="header"><h1>Vue 批量绑定自定义指令 — 交互演示</h1><p>局部批量绑定 · 全局批量注册 · 动态参数 · 函数式指令 · 权限实战</p></div>'+
+
+      '<div class="status-bar">'+
+        '<div class="status-item"><span class="status-dot green"></span><span>Vue 3 CDN</span></div>'+
+        '<div class="status-item"><span class="status-dot blue"></span><span>focus</span></div>'+
+        '<div class="status-item"><span class="status-dot blue"></span><span>highlight</span></div>'+
+        '<div class="status-item"><span class="status-dot blue"></span><span>tooltip</span></div>'+
+        '<div class="status-item"><span class="status-dot blue"></span><span>ripple</span></div>'+
+        '<div class="status-item"><span class="status-dot blue"></span><span>debounce</span></div>'+
+        '<div class="status-item"><span class="status-dot blue"></span><span>enterAnimation</span></div>'+
+        '<div class="status-item"><span class="status-dot blue"></span><span>permissions</span></div>'+
+      '</div>'+
+
+      '<div class="tabs">'+
+        '<button class="tab-btn active" onclick="switchTab(this,'tab-local')">局部批量绑定</button>'+
+        '<button class="tab-btn" onclick="switchTab(this,'tab-global')">全局批量注册</button>'+
+        '<button class="tab-btn" onclick="switchTab(this,'tab-dynamic')">动态参数绑定</button>'+
+        '<button class="tab-btn" onclick="switchTab(this,'tab-functional')">函数式指令</button>'+
+        '<button class="tab-btn" onclick="switchTab(this,'tab-perm')">权限实战</button>'+
+      '</div>'+
+
+      /* LOCAL */
+      '<div class="tab-panel active" id="tab-local">'+
+        '<div class="demo-section">'+
+          '<h2>1. 逐个绑定 vs v-bind 批量绑定</h2>'+
+          '<div class="desc">v-bind="batch" 集中声明 vs 逐个 v-focus v-highlight</div>'+
+          '<div class="split-view">'+
+            '<div>'+
+              '<pre><code><span class="hl-comment">/* 逐个绑定 */</span>
+&lt;input v-focus v-highlight="color"/>
+&lt;textarea v-focus v-highlight="color"/>
+&lt;select v-focus v-highlight="color"/>
+
+<span class="hl-comment">/* 批量绑定 */</span>
+const batch = computed(()=>({
+  focus: enabled.focus,
+  highlight: enabled.hl ? color : false
+}))
+&lt;input v-bind="batch"/>
+&lt;textarea v-bind="batch"/>
+&lt;select v-bind="batch"/></code></pre>'+
+            '</div>'+
+            '<div>'+
+              '<div class="field-group">'+
+                '<input type="text" v-bind="localBatch" placeholder="姓名"/>'+
+                '<textarea v-bind="localBatch" placeholder="简介"></textarea>'+
+                '<select v-bind="localBatch"><option>前端</option><option>后端</option><option>全栈</option></select>'+
+              '</div>'+
+              '<div style="margin-top:0.5rem;">'+
+                '<div class="field-label">高亮颜色：</div>'+
+                '<select v-model="localColor" style="width:auto;"><option value="#cce5ff">浅蓝</option><option value="#d4edda">浅绿</option><option value="#fff3cd">浅黄</option><option value="#f8d7da">浅红</option></select>'+
+              '</div>'+
+              '<div class="config-row"><span class="config-label">focus</span><div class="config-toggle"><button :class="localEnabled.focus?'toggle-btn on':'toggle-btn'" @click="localEnabled.focus=true">ON</button><button :class="!localEnabled.focus?'toggle-btn on':'toggle-btn'" @click="localEnabled.focus=false">OFF</button></div></div>'+
+              '<div class="config-row"><span class="config-label">highlight</span><div class="config-toggle"><button :class="localEnabled.highlight?'toggle-btn on':'toggle-btn'" @click="localEnabled.highlight=true">ON</button><button :class="!localEnabled.highlight?'toggle-btn on':'toggle-btn'" @click="localEnabled.highlight=false">OFF</button></div></div>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="demo-section">'+
+          '<h2>2. 表单批量绑定完整示例</h2>'+
+          '<div class="desc">v-bind="batch" 一次性应用 focus + highlight + tooltip</div>'+
+          '<div class="field-group">'+
+            '<div><div class="field-label">用户名</div><input type="text" v-bind="formBatch" v-model="form.name" placeholder="输入用户名"/></div>'+
+            '<div><div class="field-label">邮箱</div><input type="email" v-bind="formBatch" v-model="form.email" placeholder="输入邮箱"/></div>'+
+            '<div><div class="field-label">个人简介</div><textarea v-bind="formBatch" v-model="form.bio" placeholder="输入简介..."></textarea></div>'+
+          '</div>'+
+          '<div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">'+
+            '<select v-model="formColor" style="width:auto;"><option value="#cce5ff">浅蓝</option><option value="#d4edda">浅绿</option><option value="#fff3cd">浅黄</option></select>'+
+            '<button v-ripple class="btn">提交</button>'+
+            '<button v-ripple class="btn btn-secondary">取消</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+
+      /* GLOBAL */
+      '<div class="tab-panel" id="tab-global">'+
+        '<div class="demo-section">'+
+          '<h2>3. 全局批量注册 — 6 个指令一次注册</h2>'+
+          '<div class="desc">Object.entries(dirMap).forEach(name=>app.directive(name,def)) 循环注册</div>'+
+          '<div class="info-box">全局注册后，所有组件模板中无需 import，直接使用 v-focus、v-highlight 等</div>'+
+          '<div class="card-grid">'+
+            '<div v-for="card in globalCards" :key="card.id" class="card">'+
+              '<div class="card-title"><span :class="'tag tag-'+card.tag">{{card.tagLabel}}</span></div>'+
+              '<div class="card-body">{{card.body}}</div>'+
+              '<div style="margin-top:0.6rem;">'+
+                '<input v-if="card.hasInput" type="text" v-focus placeholder="自动聚焦~" style="width:100%;"/>'+
+                '<template v-if="card.hasColors">'+
+                  '<div v-highlight="'#cce5ff'" style="padding:0.5rem;border-radius:6px;text-align:center;font-size:0.82rem;">浅蓝</div>'+
+                  '<div v-highlight="'#d4edda'" style="margin-top:0.3rem;padding:0.5rem;border-radius:6px;text-align:center;font-size:0.82rem;">浅绿</div>'+
+                '</template>'+
+                '<button v-if="card.hasButton" v-tooltip="'保存成功！'" v-ripple class="btn" style="width:100%;">hover 我</button>'+
+                '<template v-if="card.hasButtons">'+
+                  '<button v-ripple class="btn" style="flex:1;">主按钮</button>'+
+                  '<button v-ripple class="btn btn-secondary" style="flex:1;">次要</button>'+
+                '</template>'+
+                '<template v-if="card.hasItems">'+
+                  '<div v-enter-animation="{delay:0}"  style="padding:0.35rem;border-radius:4px;background:#1e293b;margin-bottom:0.3rem;font-size:0.82rem;">第 1 项</div>'+
+                  '<div v-enter-animation="{delay:100}" style="padding:0.35rem;border-radius:4px;background:#1e293b;margin-bottom:0.3rem;font-size:0.82rem;">第 2 项</div>'+
+                  '<div v-enter-animation="{delay:200}" style="padding:0.35rem;border-radius:4px;background:#1e293b;font-size:0.82rem;">第 3 项</div>'+
+                '</template>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+
+      /* DYNAMIC */
+      '<div class="tab-panel" id="tab-dynamic">'+
+        '<div class="demo-section">'+
+          '<h2>4. 动态指令集 — 运行时切换</h2>'+
+          '<div class="desc">computed 动态生成 v-bind 对象，根据预设场景切换指令组合</div>'+
+          '<div class="field-group">'+
+            '<div><div class="field-label">用户名（当前预设：{{currentPreset}}）</div><input type="text" v-bind="dynamicBatch" placeholder="根据预设应用不同指令组合"/></div>'+
+          '</div>'+
+          '<div class="perm-panel" style="margin-top:1rem;">'+
+            '<button :class="currentPreset==='normal'?'btn':'btn btn-secondary'" @click="currentPreset='normal'">正常模式</button>'+
+            '<button :class="currentPreset==='compact'?'btn':'btn btn-secondary'" @click="currentPreset='compact'">紧凑模式</button>'+
+            '<button :class="currentPreset==='admin'?'btn':'btn btn-secondary'" @click="currentPreset='admin'">管理员模式</button>'+
+          '</div>'+
+          '<div class="info-box">当前启用的指令：<code>{{JSON.stringify(dynamicBatch)}}</code></div>'+
+        '</div>'+
+        '<div class="demo-section">'+
+          '<h2>5. debounce 防抖指令</h2>'+
+          '<div class="desc">指令级防抖，比 watch 更声明式。输入后等待 400ms 触发日志。</div>'+
+          '<input type="text" v-debounce="{handler:doSearch,wait:400}" v-model="searchText" placeholder="输入内容，等待 400ms 后观察日志..." style="width:100%;margin-top:0.4rem;"/>'+
+          '<div class="debounce-log" style="margin-top:0.8rem;">'+
+            '<div v-for="e in logEntries" :key="e.id" class="entry">'+
+              '<span class="entry-time">{{e.time}}</span>'+
+              '<span class="entry-text">doSearch() -> &quot;{{e.text}}&quot;</span>'+
+            '</div>'+
+            '<div v-if="!logEntries.length" style="color:#64748b;font-size:0.82rem;padding:0.5rem;">输入内容后等待 400ms 触发...</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+
+      /* FUNCTIONAL */
+      '<div class="tab-panel" id="tab-functional">'+
+        '<div class="demo-section">'+
+          '<h2>6. 函数式指令 — 工厂函数批量生成</h2>'+
+          '<div class="desc">(el,binding)=>{} 等效于同时定义 mounted 和 updated</div>'+
+          '<div class="card-grid">'+
+            '<div v-for="fc in funcColors" :key="fc.tag" class="card">'+
+              '<div class="card-title"><span :class="'tag tag-'+fc.tag">{{fc.label}}</span></div>'+
+              '<div class="card-body">makeHighlight(color) 工厂函数</div>'+
+              '<div style="margin-top:0.6rem;">'+
+                '<div :style="{background:fc.color,padding:'0.5rem',borderRadius:'6px',textAlign:'center',fontSize:'0.82rem',color:'#0f172a',fontWeight:600}">颜色：{{fc.color}}</div>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="demo-section">'+
+          '<h2>7. enterAnimation 入场动画指令</h2>'+
+          '<div class="desc">列表渲染时每项依次淡入，函数式指令无需 cleanup</div>'+
+          '<div>'+
+            '<div v-enter-animation="{delay:0}"  style="padding:0.5rem;background:#1e293b;border-radius:6px;margin-bottom:0.4rem;font-size:0.88rem;">第 1 个元素 — delay: 0ms</div>'+
+            '<div v-enter-animation="{delay:120}" style="padding:0.5rem;background:#1e293b;border-radius:6px;margin-bottom:0.4rem;font-size:0.88rem;">第 2 个元素 — delay: 120ms</div>'+
+            '<div v-enter-animation="{delay:240}" style="padding:0.5rem;background:#1e293b;border-radius:6px;font-size:0.88rem;">第 3 个元素 — delay: 240ms</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+
+      /* PERM */
+      '<div class="tab-panel" id="tab-perm">'+
+        '<div class="demo-section">'+
+          '<h2>8. 权限指令 — 批量控制</h2>'+
+          '<div class="desc">v-permissions="entity:action" 根据角色动态隐藏操作按钮</div>'+
+          '<div class="info-box">当前角色：<span v-if="currentRole==='guest'" style="color:#f87171;">游客</span><span v-if="currentRole==='user'" style="color:#34d399;">普通用户</span><span v-if="currentRole==='admin'" style="color:#60a5fa;">管理员</span></div>'+
+          '<div class="perm-panel">'+
+            '<button :class="currentRole==='guest'?'btn':'btn btn-secondary'" @click="currentRole='guest'">游客</button>'+
+            '<button :class="currentRole==='user'?'btn':'btn btn-secondary'" @click="currentRole='user'">普通用户</button>'+
+            '<button :class="currentRole==='admin'?'btn':'btn btn-secondary'" @click="currentRole='admin'">管理员</button>'+
+          '</div>'+
+          '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">'+
+            '<button v-for="action in permActions" :key="action.id" v-permissions="action.id" v-ripple class="btn" style="margin-bottom:0.5rem;">{{action.label}}</button>'+
+          '</div>'+
+          '<div class="info-box" style="margin-top:1rem;">提示：切换角色后，没有对应权限的按钮会被 v-permissions 指令隐藏。</div>'+
+        '</div>'+
+      '</div>'+
+
+    '</div>',
+    mounted:function(){
+      Object.entries(dirs).forEach(function(e){app.directive(e[0],e[1]);});
+    }
+  });
+
+  app.mount('#app');
+})();
+</script>
+</body>
+</html>
