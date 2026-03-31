@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>批量更新机制</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #f7f9fc; }
+  h1 { color: #42b983; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .demo-box { background: #1e1e1e; border-radius: 6px; padding: 16px; margin: 12px 0; color: #d4d4d4; font-family: 'Fira Code', monospace; font-size: 13px; overflow-x: auto; white-space: pre; }
+  .output { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px; margin-top: 12px; }
+  .output .item { padding: 4px 0; border-bottom: 1px solid #e8f5e9; font-size: 13px; }
+  .output .item:last-child { border-bottom: none; }
+  button { background: #42b983; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 4px; font-size: 14px; }
+  button:hover { background: #3aa876; }
+  button.info { background: #3498db; }
+  button.warn { background: #e67e22; }
+  button.danger { background: #e53; }
+  .label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .comment { color: #6a9955; }
+  .keyword { color: #569cd6; }
+  .timeline { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; }
+  .timeline-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+  .tl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+  .tl-dot.sync { background: #e67e22; }
+  .tl-dot.async { background: #42b983; }
+  .tl-dot.batch { background: #3498db; }
+  .tl-dot.flush { background: #9b59b6; }
+  .timeline-label { min-width: 100px; font-weight: bold; }
+  .queue-box { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin: 8px 0; }
+  .queue-item { padding: 3px 8px; margin: 2px 0; background: #f0f4ff; border-radius: 4px; font-size: 13px; font-family: monospace; }
+  .queue-item.pending { background: #fff8e1; }
+  .queue-item.running { background: #e8f5e9; color: #2e7d32; }
+  .queue-item.done { background: #f5f5f5; color: #aaa; text-decoration: line-through; }
+</style>
+</head>
+<body>
+<h1>🔄 批量更新 — 避免重复渲染</h1>
+
+<div class="card">
+  <h3>为什么需要批量更新？</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// 连续修改同一个数据</span>
+<span class="keyword">this</span>.msg = <span class="string">'a'</span>;
+<span class="keyword">this</span>.msg = <span class="string">'b'</span>;
+<span class="keyword">this</span>.msg = <span class="string">'c'</span>;
+
+<span class="comment">// ❌ 无批量：触发 3 次 watcher.update() → 3 次 render</span>
+<span class="comment">// ✅ 有批量：只触发 1 次 render（取最新值 'c'）</span>
+</pre></div>
+</div>
+
+<div class="card">
+  <h3>批量更新流程</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// Vue 2 批量更新实现</span>
+
+<span class="keyword">let</span> flushing = <span class="keyword">false</span>;   <span class="comment">// 是否正在执行队列</span>
+<span class="keyword">let</span> waiting = <span class="keyword">false</span>;    <span class="comment">// 是否等待 nextTick</span>
+<span class="keyword">const</span> queue = [];      <span class="comment">// 待执行的 watcher 队列</span>
+<span class="keyword">const</span> has = {};         <span class="comment">// 去重 Set（id → true）</span>
+
+<span class="keyword">function</span> queueWatcher(watcher) {
+  <span class="keyword">const</span> id = watcher.id;
+
+  <span class="comment">// 1️⃣ 去重：同一 watcher 只入队一次</span>
+  <span class="keyword">if</span> (has[id]) <span class="keyword">return</span>;
+  has[id] = <span class="keyword">true</span>;
+
+  <span class="comment">// 2️⃣ 入队（flushing 时倒序插入）</span>
+  <span class="keyword">if</span> (!flushing) {
+    queue.push(watcher);
+  } <span class="keyword">else</span> {
+    <span class="comment">// 正在 flush，从后往前找正确位置</span>
+    <span class="keyword">let</span> i = queue.length - 1;
+    <span class="keyword">while</span> (i > 0 && queue[i].id > watcher.id) i--;
+    queue.splice(i + 1, 0, watcher);
+  }
+
+  <span class="comment">// 3️⃣ 触发 nextTick</span>
+  <span class="keyword">if</span> (!waiting) {
+    waiting = <span class="keyword">true</span>;
+    Promise.resolve().then(flushSchedulerQueue);
+  }
+}
+
+<span class="keyword">function</span> flushSchedulerQueue() {
+  flushing = <span class="keyword">true</span>;
+  <span class="comment">// 按 id 排序（父先子后）</span>
+  queue.sort((a, b) => a.id - b.id);
+
+  <span class="keyword">while</span> (queue.length) {
+    <span class="keyword">const</span> watcher = queue.shift();
+    has[watcher.id] = <span class="keyword">false</span>;
+    watcher.run();  <span class="comment">// 执行更新</span>
+  }
+
+  flushing = <span class="keyword">false</span>;
+  waiting = <span class="keyword">false</span>;
+}
+</pre></div>
+</div>
+
+<div class="card">
+  <h3>时间线对比：同步 vs 批量</h3>
+  <div class="timeline">
+    <div class="timeline-item"><div class="tl-dot sync"></div><div><b class="timeline-label">同步模式</b> 同一帧内多次修改 → 多次渲染（每次 repaint）</div></div>
+    <div class="timeline-item"><div class="tl-dot batch"></div><div><b class="timeline-label">微任务前</b> watcher 入队，收集所有变更</div></div>
+    <div class="timeline-item"><div class="tl-dot flush"></div><div><b class="timeline-label">微任务执行</b> flushSchedulerQueue 一次性执行队列</div></div>
+    <div class="timeline-item"><div class="tl-dot async"></div><div><b class="timeline-label">结果</b> 同一 tick 内的多次修改，只触发一次 DOM 更新</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>交互演示</h3>
+
+  <div class="queue-box">
+    <div class="label">渲染队列状态：</div>
+    <div id="queueDisplay"></div>
+  </div>
+
+  <div class="output" id="renderDisplay"></div>
+
+  <div class="label">同步模式（无批量）：</div>
+  <button onclick="syncMultiSet()">同步 3 次修改</button>
+
+  <div class="label" style="margin-top:12px">异步批量模式：</div>
+  <button onclick="batchMultiSet()">批量 3 次修改</button>
+  <button onclick="batchMultiTick()">跨 Tick 批量修改</button>
+
+  <div class="label" style="margin-top:12px">控制：</div>
+  <button onclick="forceFlush()">强制立即 Flush</button>
+  <button onclick="clearQueue()">清空队列</button>
+  <button onclick="showTimeline()">查看执行时间线</button>
+
+  <div class="label" style="margin-top:12px">执行日志：</div>
+  <div class="output" id="log" style="max-height:250px;overflow:auto;font-size:13px;"></div>
+</div>
+
+<div class="card">
+  <h3>nextTick 原理</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// nextTick 的实现（优先使用微任务）</span>
+
+<span class="keyword">const</span> callbacks = [];
+<span class="keyword">let</span> pending = <span class="keyword">false</span>;
+
+<span class="keyword">function</span> nextTick(cb) {
+  callbacks.push(cb);
+  <span class="keyword">if</span> (!pending) {
+    pending = <span class="keyword">true</span>;
+    Promise.resolve().then(flushCallbacks);  <span class="comment">// 微任务</span>
+  }
+}
+
+<span class="comment">// 降级策略：</span>
+<span class="comment">// 1. Promise.resolve() [微任务]</span>
+<span class="comment">// 2. MutationObserver [微任务，降级]</span>
+<span class="comment">// 3. setImmediate [宏任务，Node.js]</span>
+<span class="comment">// 4. setTimeout(fn, 0) [宏任务，降级]</span>
+</pre></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// 批量更新模拟
+// ─────────────────────────────────────────
+
+let watcherId = 0;
+let queue = [];
+let has = {};
+let flushing = false;
+let waiting = false;
+let flushStart = 0;
+let logId = 0;
+
+function log(msg) {
+  const el = document.getElementById('log');
+  el.innerHTML = `<div class="item">#${logId++} ${msg}</div>` + (el.innerHTML || '');
+}
+
+function queueWatcher(watcher) {
+  if (has[watcher.id]) {
+    log(`⏭ [Queue] Watcher#${watcher.id} 已存在，跳过（去重）`);
+    return;
+  }
+  has[watcher.id] = true;
+
+  if (!flushing) {
+    queue.push(watcher);
+    log(`📥 [Queue] Watcher#${watcher.id} 入队（队尾）`);
+  } else {
+    // 正在 flush，倒序插入
+    let i = queue.length - 1;
+    while (i >= 0 && queue[i].id > watcher.id) i--;
+    queue.splice(i + 1, 0, watcher);
+    log(`📥 [Queue] Watcher#${watcher.id} 入队（索引${i+1}，flushing中）`);
+  }
+
+  if (!waiting) {
+    waiting = true;
+    log(`⏳ [Queue] 等待 nextTick...`);
+    Promise.resolve().then(flushSchedulerQueue);
+  }
+
+  renderQueue();
+}
+
+function flushSchedulerQueue() {
+  flushStart = performance.now();
+  flushing = true;
+  log(`🚀 [Flush] 开始执行队列（${queue.length} 项）`);
+
+  // 按 id 排序（父先子后）
+  queue.sort((a, b) => a.id - b.id);
+
+  const toRun = queue.slice();
+  queue.length = 0;
+
+  toRun.forEach(watcher => {
+    has[watcher.id] = false;
+    log(`▶️ [Run] Watcher#${watcher.id} 执行 render`);
+    watcher.run();
+  });
+
+  flushing = false;
+  waiting = false;
+
+  const ms = (performance.now() - flushStart).toFixed(2);
+  log(`✅ [Flush] 完成（${ms}ms）`);
+
+  renderQueue();
+  updateDisplay();
+}
+
+function renderQueue() {
+  const el = document.getElementById('queueDisplay');
+  if (queue.length === 0) {
+    el.innerHTML = '<div class="queue-item" style="background:#f5f5f5;color:#aaa">队列为空</div>';
+    return;
+  }
+  el.innerHTML = queue.map(w =>
+    `<div class="queue-item pending">Watcher#${w.id}</div>`
+  ).join('');
+}
+
+// ─────────────────────────────────────────
+// 模拟 Watcher
+// ─────────────────────────────────────────
+
+let renderCount = 0;
+let state = { msg: 'Hello', count: 0 };
+
+function updateDisplay() {
+  document.getElementById('renderDisplay').innerHTML = `
+    <div class="item"><b>renderCount:</b> ${renderCount}</div>
+    <div class="item"><b>state.msg:</b> ${state.msg}</div>
+    <div class="item"><b>state.count:</b> ${state.count}</div>
+  `;
+}
+
+function makeWatcher(name) {
+  return {
+    id: ++watcherId,
+    name,
+    run() {
+      renderCount++;
+      // 模拟 render：读取所有响应式数据
+      const _ = state.msg + state.count;
+      updateDisplay();
+    }
+  };
+}
+
+// ─────────────────────────────────────────
+// 演示操作
+// ─────────────────────────────────────────
+
+async function syncMultiSet() {
+  log(`━━━ [同步模式] 连续修改 3 次 ━━━`);
+  const w = makeWatcher('sync-multi');
+  const t0 = performance.now();
+
+  state.msg = 'A';
+  queueWatcher(w);
+  await delay(50);
+
+  state.msg = 'B';
+  queueWatcher(w);
+  await delay(50);
+
+  state.msg = 'C';
+  queueWatcher(w);
+  await delay(50);
+
+  log(`⏱ 同步模式耗时: ${(performance.now()-t0).toFixed(0)}ms（3次update，1次flush）`);
+}
+
+async function batchMultiSet() {
+  log(`━━━ [批量模式] 同 Tick 修改 3 次 ━━━`);
+  const w = makeWatcher('batch-1');
+  const w2 = makeWatcher('batch-2');
+
+  state.msg = 'X';
+  state.count++;
+  queueWatcher(w);
+  queueWatcher(w2);
+  state.msg = 'Y';
+  state.count++;
+  // 注意：此时 nextTick 已在队列中，不会重复注册
+  // 两次 queueWatcher 只会入队一次（去重）
+  state.msg = 'Z';
+
+  // 等待 flush 完成
+  await delay(200);
+}
+
+async function batchMultiTick() {
+  log(`━━━ [跨 Tick 批量] ━━━`);
+  const w = makeWatcher('multitick');
+
+  state.msg = 'Tick1-A';
+  queueWatcher(w);
+  await delay(150);
+  log(`⏳ 等待 flush 完成...`);
+
+  state.msg = 'Tick2-B';
+  queueWatcher(w);
+  await delay(150);
+  log(`⏳ 等待 flush 完成...`);
+
+  state.msg = 'Tick3-C';
+  queueWatcher(w);
+  await delay(150);
+}
+
+function forceFlush() {
+  log(`⚡ 强制立即 flush`);
+  if (flushing) {
+    log(`  正在 flush 中，跳过`);
+    return;
+  }
+  Promise.resolve().then(flushSchedulerQueue);
+}
+
+function clearQueue() {
+  queue = [];
+  Object.keys(has).forEach(k => delete has[k]);
+  flushing = false;
+  waiting = false;
+  log(`🗑 队列已清空`);
+  renderQueue();
+}
+
+async function showTimeline() {
+  log(`━━━ [时间线演示] ━━━`);
+  const w = makeWatcher('timeline');
+
+  log(`[0ms] state.msg = 'START'`);
+  state.msg = 'START';
+  queueWatcher(w);
+
+  await delay(10);
+  log(`[10ms] state.msg = 'MIDDLE'`);
+  state.msg = 'MIDDLE';
+  queueWatcher(w);
+
+  await delay(10);
+  log(`[20ms] state.msg = 'END'`);
+  state.msg = 'END';
+  queueWatcher(w);
+
+  await delay(100);
+}
+
+function delay(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+renderQueue();
+updateDisplay();
+log(`✅ 批量更新模拟器就绪`);
+</script>
+</body>
+</html>

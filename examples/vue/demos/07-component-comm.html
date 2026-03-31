@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>组件通信方式</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #f7f9fc; }
+  h1 { color: #42b983; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .demo-box { background: #1e1e1e; border-radius: 6px; padding: 16px; margin: 12px 0; color: #d4d4d4; font-family: 'Fira Code', monospace; font-size: 13px; overflow-x: auto; white-space: pre; }
+  .output { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px; margin-top: 12px; }
+  .output .item { padding: 4px 0; border-bottom: 1px solid #e8f5e9; font-size: 13px; }
+  .output .item:last-child { border-bottom: none; }
+  button { background: #42b983; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 4px; font-size: 14px; }
+  button:hover { background: #3aa876; }
+  button.info { background: #3498db; }
+  .label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .comment { color: #6a9955; }
+  .keyword { color: #569cd6; }
+  .string { color: #ce9178; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px; text-align: left; border: 1px solid #e9ecef; }
+  th { background: #f8f9fa; font-weight: 600; }
+  .tree { display: flex; flex-direction: column; gap: 4px; }
+  .node { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 10px 14px; }
+  .node.root { border-color: #42b983; background: #f0fff4; }
+  .node.child { border-color: #3498db; background: #e8f4fd; margin-left: 24px; }
+  .node.grand { border-color: #e67e22; background: #fff8f0; margin-left: 48px; }
+  .node-name { font-weight: bold; color: #333; }
+  .node-data { font-size: 12px; color: #666; margin-top: 4px; }
+  .comm { background: #fff9c4; border-radius: 4px; padding: 2px 6px; font-size: 12px; }
+  .msg-box { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin: 8px 0; }
+</style>
+</head>
+<body>
+<h1>🗣️ 组件通信方式全景图</h1>
+
+<div class="card">
+  <h3>组件树结构</h3>
+  <div class="tree">
+    <div class="node root">
+      <div class="node-name">🟢 Root (App)</div>
+      <div class="node-data">msg, count, user, theme</div>
+      <div class="comm">提供: msg, user, theme</div>
+    </div>
+    <div class="node child">
+      <div class="node-name">🔵 Header</div>
+      <div class="node-data">接收: msg</div>
+      <div class="comm">接收: msg (provide/inject)</div>
+    </div>
+    <div class="node child">
+      <div class="node-name">🔵 Content</div>
+      <div class="node-data">接收: count, onIncrement</div>
+      <div class="comm">接收: count (props) + onIncrement (emit 回调)</div>
+    </div>
+    <div class="node grand">
+      <div class="node-name">🟠 List → Item</div>
+      <div class="node-data">接收: item, onRemove</div>
+      <div class="comm">接收: item (props) + onRemove (emit 回调)</div>
+    </div>
+    <div class="node child">
+      <div class="node-name">🔵 Sidebar</div>
+      <div class="node-data">接收: user, theme</div>
+      <div class="comm">接收: user, theme (provide/inject)</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>通信方式对比</h3>
+  <table>
+    <tr><th>方式</th><th>方向</th><th>使用场景</th><th>代码示例</th></tr>
+    <tr>
+      <td><b>Props / $emit</b></td>
+      <td>父 → 子 / 子 → 父</td>
+      <td>父子直接通信</td>
+      <td><code>:count / emit('update')</code></td>
+    </tr>
+    <tr>
+      <td><b>$refs</b></td>
+      <td>父 → 子组件实例</td>
+      <td>需要调用子组件方法</td>
+      <td><code>this.$refs.child.method()</code></td>
+    </tr>
+    <tr>
+      <td><b>provide / inject</b></td>
+      <td>祖先 → 后代</td>
+      <td>深层传值，避免逐层 prop</td>
+      <td><code>provide('key', val)</code></td>
+    </tr>
+    <tr>
+      <td><b>Vuex / Pinia</b></td>
+      <td>任意组件</td>
+      <td>全局状态管理</td>
+      <td><code>store.state.count</code></td>
+    </tr>
+    <tr>
+      <td><b>EventBus / mitt</b></td>
+      <td>任意组件</td>
+      <td>跨组件通信（简单场景）</td>
+      <td><code>bus.emit('event', data)</code></td>
+    </tr>
+    <tr>
+      <td><b>slot</b></td>
+      <td>父 → 子（传递模板）</td>
+      <td>内容分发，布局组件</td>
+      <td><code>&lt;slot&gt;</code></td>
+    </tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>交互演示 — 模拟组件通信</h3>
+  <div class="msg-box">
+    <div class="label">Root 状态：</div>
+    <div class="output" id="rootState"></div>
+  </div>
+
+  <div class="label">操作（触发不同通信方式）：</div>
+  <button onclick="propsDown()">Props 向下传</button>
+  <button onclick="emitUp()">Emit 向上传</button>
+  <button onclick="injectReceive()">Inject 接收</button>
+  <button onclick="refAccess()">$refs 访问</button>
+  <button onclick="eventBus()">EventBus</button>
+  <button onclick="clearLog()">清空日志</button>
+
+  <div class="label" style="margin-top:12px">通信日志：</div>
+  <div class="output" id="commLog" style="max-height:250px;overflow:auto;"></div>
+</div>
+
+<div class="card">
+  <h3>provide/inject 原理</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// 父组件</span>
+provide() {
+  <span class="keyword">return</span> {
+    theme: <span class="keyword">this</span>.theme,        <span class="comment">// 简单值（不是响应式的！）</span>
+    user: <span class="keyword">this</span>.user          <span class="comment">// 直接提供响应式对象</span>
+  }
+}
+
+<span class="comment">// 子孙组件</span>
+inject: [<span class="string">'theme'</span>, <span class="string">'user'</span>]
+
+<span class="comment">// 或者</span>
+<span class="keyword">const</span> { theme, user } = inject({
+  theme: <span class="string">'defaultTheme'</span>,
+  user: { <span class="keyword">from</span>: <span class="string">'user'</span>, default: {} }
+});
+
+<span class="comment">// ⚠️ 注意：provide 本身不是响应式的</span>
+<span class="comment">// 响应式需要 provide() { return reactive({...}) }</span>
+</pre></div>
+</div>
+
+<div class="card">
+  <h3>$refs 访问</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// 父组件模板中给子组件加 ref 属性</span>
+<span class="keyword">&lt;ChildComponent</span> <span class="keyword">ref</span>=<span class="string">"childRef"</span> /&gt;
+
+<span class="comment">// 父组件中访问</span>
+<span class="keyword">this</span>.$refs.childRef    <span class="comment">// → 子组件实例（Vue 2）</span>
+<span class="keyword">this</span>.$refs.childRef.value  <span class="comment">// → ref 的值（Vue 3 Composition）</span>
+<span class="keyword">this</span>.$refs.childRef.$el   <span class="comment">// → 子组件的根 DOM 元素</span>
+<span class="keyword">this</span>.$refs.childRef.focus() <span class="comment">// → 调用子组件方法</span>
+</pre></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// 模拟组件通信系统
+// ─────────────────────────────────────────
+
+let logId = 0;
+function log(msg, type) {
+  const el = document.getElementById('commLog');
+  const colors = { emit: '#e67e22', props: '#3498db', inject: '#9b59b6', ref: '#42b983', bus: '#e53' };
+  const color = colors[type] || '#333';
+  el.innerHTML = `<div class="item"><span style="color:${color};font-weight:bold">[${type}]</span> #${logId++} ${msg}</div>` + (el.innerHTML || '');
+}
+
+// 模拟 Root
+const Root = {
+  state: { msg: 'Hello World', count: 0, user: { name: '张三' }, theme: 'dark' },
+  child: null,
+  provide() {
+    return {
+      theme: this.state.theme,
+      user: this.state.user
+    };
+  }
+};
+
+// 模拟 Child（Header）
+const Header = {
+  name: 'Header',
+  inject: ['theme', 'user'],
+  mounted() {
+    log(`Header: 通过 inject 接收 theme=${this.theme}, user=${JSON.stringify(this.user)}`, 'inject');
+  }
+};
+
+// 模拟 Child（Content）
+const Content = {
+  name: 'Content',
+  props: ['count', 'onIncrement'],
+  template: '<div>Content: {{ count }}</div>',
+  methods: {
+    handleClick() {
+      this.$emit('increment');
+    }
+  }
+};
+
+// 模拟 $refs
+const refMap = { childRef: { value: 42, focus() { log('childRef.focus() 被调用', 'ref'); return 42; } } };
+
+// 模拟 EventBus
+const eventBus = {
+  handlers: {},
+  on(event, fn) {
+    if (!this.handlers[event]) this.handlers[event] = [];
+    this.handlers[event].push(fn);
+  },
+  emit(event, data) {
+    log(`EventBus.emit('${event}', ${JSON.stringify(data)})`, 'bus');
+    (this.handlers[event] || []).forEach(fn => fn(data));
+  }
+};
+eventBus.on('update', (data) => log(`  → bus 订阅者收到: ${JSON.stringify(data)}`, 'bus'));
+eventBus.on('reload', () => log(`  → bus 订阅者收到 reload 事件`, 'bus'));
+
+function renderRoot() {
+  document.getElementById('rootState').innerHTML = `
+    <div class="item"><b>msg:</b> ${Root.state.msg}</div>
+    <div class="item"><b>count:</b> ${Root.state.count}</div>
+    <div class="item"><b>user:</b> ${JSON.stringify(Root.state.user)}</div>
+    <div class="item"><b>theme:</b> ${Root.state.theme}</div>
+  `;
+}
+
+function propsDown() {
+  log(`[父→子] Props 向下传: count=${Root.state.count}`, 'props');
+  Root.state.count++;
+  renderRoot();
+  log(`  Content 接收 props.count=${Root.state.count - 1}`, 'props');
+}
+
+function emitUp() {
+  Root.state.count++;
+  renderRoot();
+  log(`[子→父] emit('increment'): 父组件 count 增加到 ${Root.state.count}`, 'emit');
+  log(`  Root 处理: count++ → ${Root.state.count}`, 'emit');
+}
+
+function injectReceive() {
+  Root.state.theme = Root.state.theme === 'dark' ? 'light' : 'dark';
+  Root.state.user.name = '李四_' + Date.now().toString().slice(-4);
+  renderRoot();
+  log(`Root provide: theme=${Root.state.theme}, user=${JSON.stringify(Root.state.user)}`, 'inject');
+  log(`  Header/Sidebar inject: 自动接收变化，触发重新渲染`, 'inject');
+}
+
+function refAccess() {
+  log(`this.$refs.childRef.focus() → 返回 ${refMap.childRef.focus()}`, 'ref');
+  log(`this.$refs.childRef.value → ${refMap.childRef.value}`, 'ref');
+}
+
+function eventBusComm() {
+  eventBus.emit('update', { id: 1, action: 'toggle' });
+  eventBus.emit('reload', null);
+}
+
+function clearLog() {
+  document.getElementById('commLog').innerHTML = '';
+  logId = 0;
+}
+
+renderRoot();
+log('✅ 组件通信系统初始化完成', 'props');
+</script>
+</body>
+</html>

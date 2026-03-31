@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>VNode 结构与渲染</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #f7f9fc; }
+  h1 { color: #42b983; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .demo-box { background: #1e1e1e; border-radius: 6px; padding: 16px; margin: 12px 0; color: #d4d4d4; font-family: 'Fira Code', monospace; font-size: 14px; overflow-x: auto; }
+  .output { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px; margin-top: 12px; min-height: 80px; }
+  .output .item { padding: 4px 0; border-bottom: 1px solid #e8f5e9; font-size: 13px; }
+  .output .item:last-child { border-bottom: none; }
+  button { background: #42b983; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 4px; font-size: 14px; }
+  button:hover { background: #3aa876; }
+  button.info { background: #3498db; }
+  button.warn { background: #e67e22; }
+  .label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .comment { color: #6a9955; }
+  .keyword { color: #569cd6; }
+  .string { color: #ce9178; }
+  .real-dom { border: 2px dashed #42b983; border-radius: 6px; padding: 16px; margin-top: 12px; min-height: 80px; background: white; }
+  .vnode-tree { font-size: 13px; line-height: 1.6; }
+  .tag { color: #569cd6; }
+  .key { color: #9cdcfe; }
+  .val { color: #ce9178; }
+</style>
+</head>
+<body>
+<h1>🌲 虚拟 DOM — VNode 结构与渲染</h1>
+
+<div class="card">
+  <h3>为什么需要虚拟 DOM？</h3>
+  <ul style="line-height:1.9">
+    <li>✅ <b>减少直接 DOM 操作</b> — 批量构建后再一次性操作真实 DOM</li>
+    <li>✅ <b>跨平台能力</b> — 同一 VNode 可渲染到 Web/Weex/SSR/Canvas</li>
+    <li>✅ <b>可追溯</b> — VNode 是纯 JS 对象，便于调试和比较</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>VNode 结构</h3>
+  <div class="demo-box"><pre>
+<span class="keyword">const</span> vnode = {
+  <span class="key">type</span>: <span class="string">'div'</span>,       <span class="comment">// 标签名</span>
+  <span class="key">props</span>: {             <span class="comment">// 属性（包含事件）</span>
+    <span class="key">id</span>: <span class="string">'app'</span>,
+    <span class="key">class</span>: <span class="string">'container'</span>,
+    <span class="key">onClick</span>: handler
+  },
+  <span class="key">children</span>: [           <span class="comment">// 子节点数组</span>
+    { <span class="key">type</span>: <span class="string">'span'</span>, <span class="key">props</span>: null, <span class="key">children</span>: <span class="string">'hello'</span> },
+    { <span class="key">type</span>: <span class="string">'p'</span>, <span class="key">props</span>: { <span class="key">className</span>: <span class="string">'text'</span> }, <span class="key">children</span>: <span class="string">'world'</span> }
+  ],
+  <span class="key">key</span>: <span class="string">'unique-key'</span>,   <span class="comment">// diff 优化：同层唯一标识</span>
+  <span class="key">el</span>: null             <span class="comment">// 指向真实 DOM（mount 后填充）</span>
+};
+</pre></div>
+</div>
+
+<div class="card">
+  <h3>渲染函数 h() 实现</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// h('div', props, children)</span>
+<span class="keyword">function</span> <span class="keyword">h</span>(type, props, children) {
+  <span class="keyword">return</span> {
+    vtype: type,
+    props: props || {},
+    children: Array.isArray(children)
+      ? children.map(c => <span class="keyword">typeof</span> c === <span class="string">'string'</span> ? <span class="keyword">h</span>(<span class="string">'text'</span>, null, c) : c)
+      : children
+        ? [<span class="keyword">typeof</span> children === <span class="string">'string'</span> ? <span class="keyword">h</span>(<span class="string">'text'</span>, null, children) : children]
+        : []
+  };
+}
+</pre></div>
+</div>
+
+<div class="card">
+  <h3>交互演示：VNode → 真实 DOM</h3>
+  <div class="label">当前 VNode 树：</div>
+  <div class="demo-box vnode-tree" id="vnodeTree"></div>
+
+  <div class="label">渲染结果（真实 DOM）：</div>
+  <div class="real-dom" id="realDom"></div>
+
+  <div class="label" style="margin-top:12px">操作：</div>
+  <button onclick="renderSimple()">渲染简单 div</button>
+  <button onclick="renderList()">渲染列表</button>
+  <button onclick="renderNested()">渲染嵌套组件</button>
+  <button onclick="rerender()">触发重新渲染</button>
+  <button onclick="toggleTheme()">切换主题</button>
+
+  <div class="label" style="margin-top:12px">渲染日志：</div>
+  <div class="output" id="log" style="max-height:150px;overflow-y:auto;font-size:13px;"></div>
+</div>
+
+<div class="card">
+  <h3>VNode 类型</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <tr style="background:#eee"><th style="padding:8px;text-align:left">类型</th><th style="padding:8px;text-align:left">说明</th><th style="padding:8px;text-align:left">示例</th></tr>
+    <tr><td style="padding:8px">Element</td><td style="padding:8px">普通 HTML 标签</td><td style="padding:8px"><code>{type:'div',...}</code></td></tr>
+    <tr style="background:#f8f8f8"><td style="padding:8px">Text</td><td style="padding:8px">文本节点</td><td style="padding:8px"><code>{type:'text',children:'hello'}</code></td></tr>
+    <tr><td style="padding:8px">Component</td><td style="padding:8px">Vue 组件</td><td style="padding:8px"><code>{type:MyComponent,...}</code></td></tr>
+    <tr style="background:#f8f8f8"><td style="padding:8px">Fragment</td><td style="padding:8px">片段（多根节点）</td><td style="padding:8px">Vue 3 支持</td></tr>
+    <tr><td style="padding:8px">Comment</td><td style="padding:8px">注释节点</td><td style="padding:8px"><code>&lt;!-- --&gt;</code></td></tr>
+  </table>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// 简易 VNode 渲染引擎
+// ─────────────────────────────────────────
+
+let renderCount = 0;
+
+function h(type, props, children) {
+  return {
+    type,
+    props: props || {},
+    children: Array.isArray(children)
+      ? children.map(c => typeof c === 'string' ? { type: 'text', children: c } : c)
+      : children
+        ? [typeof children === 'string' ? { type: 'text', children: children } : children]
+        : []
+  };
+}
+
+function createElement(vnode) {
+  if (!vnode) return document.createComment('empty');
+
+  if (vnode.type === 'text') {
+    return document.createTextNode(vnode.children || '');
+  }
+
+  const el = document.createElement(vnode.type);
+
+  // 设置属性
+  for (let [key, val] of Object.entries(vnode.props || {})) {
+    if (key.startsWith('on') && typeof val === 'function') {
+      el.addEventListener(key.slice(2).toLowerCase(), val);
+    } else if (key === 'className') {
+      el.className = val;
+    } else if (key === 'style' && typeof val === 'object') {
+      Object.assign(el.style, val);
+    } else {
+      el.setAttribute(key, val);
+    }
+  }
+
+  // 递归创建子节点
+  for (let child of vnode.children || []) {
+    el.appendChild(createElement(child));
+  }
+
+  vnode.el = el;
+  return el;
+}
+
+function mount(vnode, container) {
+  container.innerHTML = '';
+  const el = createElement(vnode);
+  container.appendChild(el);
+  return el;
+}
+
+// ─────────────────────────────────────────
+// VNode 可视化
+// ─────────────────────────────────────────
+
+function vnodeToTree(vnode, depth = 0) {
+  if (!vnode) return '<span style="color:#aaa">null</span>';
+  if (vnode.type === 'text') return `<span class="val">"${vnode.children}"</span>`;
+
+  let indent = '  '.repeat(depth);
+  let str = `<span class="tag">&lt;${vnode.type}&gt;</span>`;
+
+  if (vnode.children && vnode.children.length > 0) {
+    const childStrs = vnode.children.map(c => {
+      const prefix = depth === 0 ? '├─ ' : '└─ ';
+      return `<div style="padding-left:${depth*20}px">${prefix}${vnodeToTree(c, depth + 1)}</div>`;
+    }).join('');
+    str += '\n' + childStrs;
+  }
+  return str;
+}
+
+function formatVNode(vnode) {
+  return JSON.stringify(vnode, (k, v) => {
+    if (k === 'el') return undefined;
+    return v;
+  }, 2);
+}
+
+// ─────────────────────────────────────────
+// 演示
+// ─────────────────────────────────────────
+
+let currentVNode = null;
+let theme = 'light';
+
+function log(msg) {
+  const el = document.getElementById('log');
+  el.innerHTML = `<div class="item">${msg}</div>` + (el.innerHTML || '');
+}
+
+function doRender(vnode) {
+  const t0 = performance.now();
+  currentVNode = vnode;
+  const container = document.getElementById('realDom');
+  mount(vnode, container);
+  const ms = (performance.now() - t0).toFixed(2);
+
+  document.getElementById('vnodeTree').innerHTML = vnodeToTree(vnode);
+  log(`✅ 渲染完成 (${ms}ms) — ${++renderCount}次渲染`);
+}
+
+function renderSimple() {
+  const vnode = h('div', { className: 'container', id: 'app' }, [
+    h('h1', { style: { color: '#42b983' } }, 'Hello Virtual DOM'),
+    h('p', null, '这是通过 VNode 渲染出来的真实 DOM'),
+    h('button', {
+      className: 'btn',
+      onClick: () => alert('点击事件！')
+    }, '点击我')
+  ]);
+  doRender(vnode);
+}
+
+function renderList() {
+  const items = ['苹果', '香蕉', '樱桃', '葡萄'];
+  const vnode = h('div', { className: 'list-demo' }, [
+    h('h2', null, `水果列表 (${items.length} 项)`),
+    h('ul', null, items.map((item, i) =>
+      h('li', { key: i }, item)
+    )),
+    h('p', { style: { color: '#888', fontSize: '13px' } }, '← 点击按钮可触发重新渲染，VNode 会重新生成')
+  ]);
+  doRender(vnode);
+}
+
+function renderNested() {
+  const vnode = h('div', { className: 'card ' + theme }, [
+    h('div', { className: 'card-header' }, '组件卡片'),
+    h('div', { className: 'card-body' }, [
+      h('span', { style: { color: '#666' } }, '当前主题：'),
+      h('b', { style: { color: theme === 'light' ? '#42b983' : '#e67e22' } }, theme),
+    ]),
+    h('div', { className: 'card-footer' }, [
+      h('button', { className: 'btn-sm', onClick: () => { theme = 'light'; rerender(); } }, '浅色'),
+      h('button', { className: 'btn-sm', onClick: () => { theme = 'dark'; rerender(); } }, '深色'),
+    ])
+  ]);
+  doRender(vnode);
+}
+
+function rerender() {
+  if (currentVNode) {
+    log(`🔄 重新渲染（VNode 树不变，内容一致）`);
+    const container = document.getElementById('realDom');
+    mount(currentVNode, container);
+    renderCount++;
+    log(`✅ 重新渲染完成 — ${renderCount}次渲染`);
+  } else {
+    log(`⚠️ 先选择一个渲染场景`);
+  }
+}
+
+function toggleTheme() {
+  theme = theme === 'light' ? 'dark' : 'light';
+  renderNested();
+  log(`🎨 主题切换 → ${theme}`);
+}
+
+// 默认渲染
+renderNested();
+</script>
+</body>
+</html>

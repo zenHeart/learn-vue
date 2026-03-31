@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Diff 算法演示</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #f7f9fc; }
+  h1 { color: #42b983; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .demo-box { background: #1e1e1e; border-radius: 6px; padding: 16px; margin: 12px 0; color: #d4d4d4; font-family: 'Fira Code', monospace; font-size: 13px; overflow-x: auto; white-space: pre; }
+  .output { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px; margin-top: 12px; }
+  .output .item { padding: 4px 0; border-bottom: 1px solid #e8f5e9; font-size: 13px; }
+  .output .item:last-child { border-bottom: none; }
+  button { background: #42b983; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 4px; font-size: 14px; }
+  button:hover { background: #3aa876; }
+  button.info { background: #3498db; }
+  button.warn { background: #e67e22; }
+  .label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .comment { color: #6a9955; }
+  .keyword { color: #569cd6; }
+  .diff-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0; }
+  .diff-box { border: 2px solid #ddd; border-radius: 6px; padding: 12px; background: white; }
+  .diff-box h4 { margin: 0 0 8px 0; color: #333; }
+  .diff-box.old { border-color: #e53; }
+  .diff-box.new { border-color: #42b983; }
+  .node-item { padding: 4px 8px; margin: 2px 0; border-radius: 4px; font-size: 13px; font-family: monospace; }
+  .node-item.kept { background: #e8f5e9; border-left: 3px solid #42b983; }
+  .node-item.added { background: #fff3cd; border-left: 3px solid #ffc107; }
+  .node-item.removed { background: #fde8e8; border-left: 3px solid #e53; text-decoration: line-through; }
+  .node-item.moved { background: #e3f2fd; border-left: 3px solid #3498db; }
+  .seq-display { font-family: monospace; font-size: 13px; background: #1e1e1e; color: #d4d4d4; padding: 8px; border-radius: 4px; margin: 4px 0; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 8px 0; font-size: 13px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<h1>🔀 Diff 算法 — 最小化 DOM 更新</h1>
+
+<div class="card">
+  <h3>核心原则：同层比较</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// Vue 的 Diff 永远只比较同层节点，不跨层移动</span>
+
+<span class="keyword">旧 VNode</span>          <span class="keyword">新 VNode</span>
+   div                 div
+  / | \               / | \
+ a  b  c             a  d  b
+
+<span class="comment">// 比较策略：</span>
+<span class="comment">// 1. a → a (相同，复用)</span>
+<span class="comment">// 2. b → b (相同，复用，但位置变了)</span>
+<span class="comment">// 3. c → (空) (删除 c)</span>
+<span class="comment">// 4. (空) → d (创建 d)</span>
+</pre></div>
+</div>
+
+<div class="card">
+  <h3>Vue 2: 双端比较（O(n)）</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// 同时从新旧 children 的两端向中间遍历</span>
+
+旧: [A, B, C, D, E]
+新: [A, B, F, C, D]
+
+<span class="comment">// 1. oldStart vs newStart → A vs A，命中</span>
+<span class="comment">// 2. oldEnd vs newEnd   → E vs D，不匹配</span>
+<span class="comment">// 3. oldEnd vs newStart → E vs F，不匹配</span>
+<span class="comment">// 4. oldStart vs newEnd → A vs D，不匹配</span>
+<span class="comment">// 5. 移动/创建/删除 ...</span>
+</pre></div>
+</div>
+
+<div class="card">
+  <h3>Vue 3: 最长递增子序列（O(n)）</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// 核心思想：找到最长递增子序列，最小化移动</span>
+
+旧 children:  [A, B, C, D, E]  (索引: 0,1,2,3,4)
+新 children:  [A, D, B, C, E]  (D在索引3,B在索引1,C在索引2,E在索引4)
+
+<span class="keyword">Step 1:</span> 建立 newIndex → oldIndex 映射
+  newIndex 0 → oldIndex 0  (A)
+  newIndex 1 → oldIndex 3  (D)
+  newIndex 2 → oldIndex 1  (B)
+  newIndex 3 → oldIndex 2  (C)
+  newIndex 4 → oldIndex 4  (E)
+
+<span class="keyword">Step 2:</span> 求最长递增子序列 → [0, 2, 4] = [A, C, E]
+  这三个节点不需要移动
+
+<span class="keyword">Step 3:</span> 只需移动 D、B 到正确位置
+</pre></div>
+</div>
+
+<div class="card">
+  <h3>交互演示</h3>
+  <div class="diff-panel">
+    <div class="diff-box old">
+      <h4>🟥 旧 VNode 列表</h4>
+      <div id="oldList"></div>
+    </div>
+    <div class="diff-box new">
+      <h4>🟩 新 VNode 列表</h4>
+      <div id="newList"></div>
+    </div>
+  </div>
+
+  <div class="label">Diff 操作日志：</div>
+  <div class="output" id="diffLog" style="max-height:200px;overflow:auto;"></div>
+
+  <div class="label" style="margin-top:12px">预设场景：</div>
+  <button onclick="scenario1()">追加节点</button>
+  <button onclick="scenario2()">头部插入</button>
+  <button onclick="scenario3()">中间插入</button>
+  <button onclick="scenario4()">删除节点</button>
+  <button onclick="scenario5()">完全重排</button>
+  <button onclick="scenario6()">移动 + 新增</button>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#e8f5e9;border:1px solid #42b983"></div> 复用（kept）</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fff3cd;border:1px solid #ffc107"></div> 新增（added）</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fde8e8;border:1px solid #e53"></div> 删除（removed）</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e3f2fd;border:1px solid #3498db"></div> 移动（moved）</div>
+  </div>
+
+  <div class="demo-box" style="margin-top:12px" id="diffAlgoCode"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// Diff 算法演示
+// ─────────────────────────────────────────
+
+function h(type, key, label) {
+  return { type, key, label };
+}
+
+function renderList(list, containerId, label) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = list.map(v =>
+    `<div class="node-item kept"><b>${v.key}</b>: ${v.label}</div>`
+  ).join('');
+}
+
+function simpleDiff(oldList, newList) {
+  const ops = [];
+  const oldKeys = oldList.map(v => v.key);
+  const newKeys = newList.map(v => v.key);
+  const oldSet = new Set(oldKeys);
+  const newSet = new Set(newKeys);
+
+  // Find removed
+  oldList.forEach(v => {
+    if (!newSet.has(v.key)) {
+      ops.push({ op: 'REMOVE', vnode: v });
+    }
+  });
+
+  // Find added
+  newList.forEach(v => {
+    if (!oldSet.has(v.key)) {
+      ops.push({ op: 'ADD', vnode: v });
+    }
+  });
+
+  // Find moved (same key, different position)
+  newList.forEach((v, newIdx) => {
+    const oldIdx = oldKeys.indexOf(v.key);
+    if (oldIdx !== -1 && oldIdx !== newIdx) {
+      ops.push({ op: 'MOVE', vnode: v, from: oldIdx, to: newIdx });
+    }
+  });
+
+  // Kept
+  newList.forEach((v, newIdx) => {
+    const oldIdx = oldKeys.indexOf(v.key);
+    if (oldIdx !== -1 && oldIdx === newIdx) {
+      ops.push({ op: 'KEPT', vnode: v });
+    }
+  });
+
+  return ops;
+}
+
+function lis(sequence) {
+  if (sequence.length === 0) return [];
+  const tails = [];
+  const positions = [];
+
+  for (let i = 0; i < sequence.length; i++) {
+    const num = sequence[i];
+    let lo = 0, hi = tails.length - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (tails[mid] < num) lo = mid + 1;
+      else hi = mid - 1;
+    }
+    tails[lo] = num;
+    positions[lo] = i;
+    if (lo === tails.length - 1) {
+      // extend
+    }
+  }
+
+  // Rebuild sequence
+  const result = [];
+  let last = tails.length > 0 ? tails[tails.length - 1] : -1;
+  for (let i = positions.length - 1; i >= 0; i--) {
+    if (sequence[i] <= last) {
+      result.unshift(i);
+      last = sequence[i];
+    }
+  }
+  return result;
+}
+
+function vue3Diff(oldList, newList) {
+  const ops = [];
+  const oldKeys = oldList.map(v => v.key);
+  const newKeys = newList.map(v => v.key);
+
+  // 建立 newIndex → oldIndex 映射
+  const newToOldMap = {};
+  newList.forEach((v, i) => { newToOldMap[v.key] = i; });
+
+  const seq = newList.map((v, i) => {
+    return oldKeys.includes(v.key) ? oldKeys.indexOf(v.key) : -1;
+  });
+
+  // 最长递增子序列
+  const lisIndices = lis(seq.filter(i => i !== -1));
+  const lisValues = lisIndices.map(i => seq.indexOf(seq[i]));
+
+  const lisSet = new Set(lisIndices);
+
+  newList.forEach((v, newIdx) => {
+    const oldIdx = oldKeys.indexOf(v.key);
+    if (oldIdx === -1) {
+      ops.push({ op: 'ADD', vnode: v, newIdx });
+    } else if (lisSet.has(newIdx)) {
+      ops.push({ op: 'KEPT', vnode: v, newIdx, oldIdx });
+    } else {
+      ops.push({ op: 'MOVE', vnode: v, newIdx, oldIdx });
+    }
+  });
+
+  // removed
+  oldList.forEach((v, i) => {
+    if (!newKeys.includes(v.key)) {
+      ops.push({ op: 'REMOVE', vnode: v, oldIdx: i });
+    }
+  });
+
+  return { ops, seq };
+}
+
+function displayDiff(ops, type) {
+  const oldEl = document.getElementById('oldList');
+  const newEl = document.getElementById('newList');
+  const logEl = document.getElementById('diffLog');
+
+  oldEl.innerHTML = '';
+  newEl.innerHTML = '';
+  logEl.innerHTML = '';
+
+  ops.forEach(o => {
+    const cls = o.op === 'ADD' ? 'added'
+      : o.op === 'REMOVE' ? 'removed'
+      : o.op === 'MOVE' ? 'moved' : 'kept';
+    const label = o.op === 'ADD' ? `➕ ADD ${o.vnode.key}`
+      : o.op === 'REMOVE' ? `➖ REMOVE ${o.vnode.key}`
+      : o.op === 'MOVE' ? `🔄 MOVE ${o.vnode.key} (${o.oldIdx}→${o.newIdx})`
+      : `✅ KEPT ${o.vnode.key} (位置不变)`;
+    logEl.innerHTML += `<div class="item"><span class="node-item ${cls}">${label}</span></div>`;
+  });
+
+  if (type === 'vue3') {
+    const { seq } = vue3Diff.__lastResult || {};
+    if (seq) {
+      document.getElementById('diffAlgoCode').innerHTML =
+`<span class="comment">// newIndex → oldIndex 序列: [${seq.join(', ')}]</span>
+<span class="comment">// LIS (最长递增子序列): [${lis(seq.filter(i=>i!==-1)).join(', ')}]</span>
+<span class="comment">// LIS 索引位置的节点不需要移动，其他节点移动到正确位置</span>`;
+    }
+  }
+}
+
+// ─────────────────────────────────────────
+// 预设场景
+// ─────────────────────────────────────────
+
+let scenario = 0;
+const scenarios = [
+  { name: '追加节点', old: ['A','B','C'], new: ['A','B','C','D','E'] },
+  { name: '头部插入', old: ['A','B','C'], new: ['X','Y','A','B','C'] },
+  { name: '中间插入', old: ['A','B','C'], new: ['A','X','B','C'] },
+  { name: '删除节点', old: ['A','B','C','D'], new: ['A','C'] },
+  { name: '完全重排', old: ['A','B','C','D'], new: ['D','C','B','A'] },
+  { name: '移动+新增', old: ['A','B','C'], new: ['B','D','A','E'] },
+];
+
+function makeList(keys) {
+  return keys.map(k => h('li', k, `节点 ${k}`));
+}
+
+function showScenario(s) {
+  const oldList = makeList(s.old);
+  const newList = makeList(s.new);
+
+  document.getElementById('oldList').innerHTML = s.old.map(k =>
+    `<div class="node-item" style="background:#fde8e8;border-left:3px solid #e53">${k}</div>`
+  ).join('');
+  document.getElementById('newList').innerHTML = s.new.map(k =>
+    `<div class="node-item" style="background:#fff3cd;border-left:3px solid #ffc107">${k}</div>`
+  ).join('');
+
+  const ops = simpleDiff(oldList, newList);
+  displayDiff(ops, 'vue2');
+
+  // Also run vue3
+  const vue3result = vue3Diff(oldList, newList);
+  vue3Diff.__lastResult = vue3result;
+  displayDiff(vue3result.ops, 'vue3');
+}
+
+function scenario1() { showScenario(scenarios[0]); }
+function scenario2() { showScenario(scenarios[1]); }
+function scenario3() { showScenario(scenarios[2]); }
+function scenario4() { showScenario(scenarios[3]); }
+function scenario5() { showScenario(scenarios[4]); }
+function scenario6() { showScenario(scenarios[5]); }
+
+// Default
+scenario1();
+
+document.getElementById('diffAlgoCode').innerHTML = `<span class="comment">// Vue 3 Diff: 通过最长递增子序列 (LIS) 最小化移动</span>
+<span class="comment">// Vue 2 Diff: 双端比较，依次遍历</span>`;
+</script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Vue 2 响应式原理 - defineProperty</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #f7f9fc; }
+  h1 { color: #42b983; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .demo-box { background: #1e1e1e; border-radius: 6px; padding: 16px; margin: 12px 0; color: #d4d4d4; font-family: 'Fira Code', monospace; font-size: 14px; overflow-x: auto; }
+  .output { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px; margin-top: 12px; min-height: 60px; }
+  .output .item { padding: 4px 0; border-bottom: 1px solid #e8f5e9; }
+  .output .item:last-child { border-bottom: none; }
+  button { background: #42b983; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 4px; font-size: 14px; }
+  button:hover { background: #3aa876; }
+  button.danger { background: #e53; }
+  button.info { background: #3498db; }
+  .label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  input { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; width: 200px; }
+  .comment { color: #6a9955; }
+</style>
+</head>
+<body>
+<h1>🌿 Vue 2 响应式原理 — Object.defineProperty</h1>
+
+<div class="card">
+  <h3>核心原理</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// 在 get 中收集依赖，在 set 中触发通知</span>
+Object.defineProperty(obj, 'count', {
+  get() {
+    <span class="comment">// 依赖收集：将当前 Watcher 记录到 dep.subs</span>
+    dep.depend();
+    return val;
+  },
+  set(newVal) {
+    if (val === newVal) return;
+    val = newVal;
+    <span class="comment">// 通知所有依赖的 Watcher 更新</span>
+    dep.notify();
+  }
+});
+  </pre></div>
+</div>
+
+<div class="card">
+  <h3>简易响应式系统实现</h3>
+  <div class="demo-box"><pre id="code1"></pre></div>
+</div>
+
+<div class="card">
+  <h3>交互演示</h3>
+  <div class="label">当前状态：</div>
+  <div class="output" id="stateDisplay"></div>
+
+  <div class="label" style="margin-top:12px">操作：</div>
+  <button onclick="changeCount()">count++</button>
+  <button onclick="changeCountOnce()">count = 100</button>
+  <button onclick="addProp()">添加新属性 name</button>
+  <button onclick="deleteProp()">删除 count</button>
+  <button onclick="changeArray()">修改数组 [1,2,3]</button>
+  <button onclick="arrayPush()">arr.push(4)</button>
+  <button onclick="logSubs()">查看依赖列表</button>
+
+  <div class="label" style="margin-top:12px">控制台日志：</div>
+  <div class="output" id="log" style="max-height:200px;overflow-y:auto;font-size:13px;"></div>
+</div>
+
+<div class="card">
+  <h3>defineProperty 的局限</h3>
+  <ul style="line-height:1.8">
+    <li>❌ <b>新增属性</b>：直接 `obj.newKey = val` 不会触发响应式（需要 Vue.set）</li>
+    <li>❌ <b>删除属性</b>：`delete obj.key` 不会触发更新（需要 Vue.delete）</li>
+    <li>❌ <b>数组下标</b>：`arr[0] = x` 在 Vue 2 中默认不触发（通过 Vue.set）</li>
+    <li>✅ <b>Vue 3 Proxy</b> 解决了以上所有问题</li>
+  </ul>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// 简易响应式系统
+// ─────────────────────────────────────────
+
+let Dep = null;
+class Dep {
+  constructor() {
+    this.subs = [];
+    this.id = Dep.uid++;
+  }
+  addSub(watcher) {
+    this.subs.push(watcher);
+  }
+  depend() {
+    if (Dep.target) {
+      Dep.target.addDep(this);
+    }
+  }
+  notify() {
+    log(`📢 [Dep#${this.id}] 触发通知，${this.subs.length} 个 Watcher 将更新`);
+    const subs = this.subs.slice();
+    subs.forEach(w => w.update());
+  }
+}
+Dep.uid = 0;
+Dep.target = null;
+
+class Watcher {
+  constructor(fn) {
+    this.fn = fn;
+    this.deps = [];
+    this.id = Watcher.uid++;
+    this.get();
+  }
+  get() {
+    Dep.target = this;
+    try {
+      this.fn();
+    } finally {
+      Dep.target = null;
+    }
+  }
+  addDep(dep) {
+    if (!this.deps.includes(dep)) {
+      this.deps.push(dep);
+      dep.addSub(this);
+    }
+  }
+  update() {
+    log(`🟢 [Watcher#${this.id}] update() 被调用`);
+    this.get();
+  }
+}
+Watcher.uid = 0;
+
+// 简易 observe
+function defineReactive(obj, key, val) {
+  const dep = new Dep();
+  Object.defineProperty(obj, key, {
+    enumerable: true,
+    configurable: true,
+    get() {
+      dep.depend();
+      return val;
+    },
+    set(newVal) {
+      if (val === newVal) return;
+      const old = val;
+      val = newVal;
+      log(`  set ${key}: ${old} → ${newVal}`);
+      dep.notify();
+    }
+  });
+  return dep;
+}
+
+function observe(obj) {
+  if (!obj || typeof obj !== 'object') return;
+  for (let key of Object.keys(obj)) {
+    defineReactive(obj, key, obj[key]);
+  }
+}
+
+// ─────────────────────────────────────────
+// 演示状态
+// ─────────────────────────────────────────
+
+const state = { count: 0 };
+observe(state);
+
+// 渲染 Watcher（模拟视图更新）
+new Watcher(() => {
+  renderState();
+});
+
+let nameDep = null;
+let arrayDep = null;
+
+function renderState() {
+  const el = document.getElementById('stateDisplay');
+  el.innerHTML = `
+    <div class="item"><b>count:</b> ${state.count}</div>
+    <div class="item"><b>name:</b> ${state.name !== undefined ? state.name : '<i style="color:#aaa">(未定义)</i>'}</div>
+    <div class="item"><b>arr:</b> ${JSON.stringify(state.arr || [])}</div>
+  `;
+}
+
+function log(msg) {
+  const el = document.getElementById('log');
+  const time = new Date().toLocaleTimeString();
+  el.innerHTML = `<div class="item"><span style="color:#888">[${time}]</span> ${msg}</div>` + el.innerHTML;
+  console.log(msg);
+}
+
+function changeCount() {
+  state.count++;
+}
+function changeCountOnce() {
+  state.count = 100;
+}
+function addProp() {
+  // 演示 Vue.set 的必要性：直接赋值不会触发响应式
+  state.name = '张三';
+  log('⚠️ 直接添加 name="张三"（defineProperty 无法检测新增属性）');
+  // 实际上在上面手动触发更新
+  renderState();
+}
+function deleteProp() {
+  delete state.count;
+  log('⚠️ delete 删除属性，响应式系统无法追踪');
+  renderState();
+}
+function changeArray() {
+  state.arr = [1, 2, 3];
+  observe(state.arr); // 让数组也变成响应式
+  arrayDep = new Dep();
+  log('📦 设置 arr = [1,2,3]');
+}
+function arrayPush() {
+  if (state.arr) {
+    state.arr.push(4);
+    log('⚠️ arr.push(4) - defineProperty 无法拦截数组方法添加的元素');
+  } else {
+    state.arr = [4];
+    observe(state.arr);
+    log('📦 arr = [4]');
+  }
+}
+function logSubs() {
+  log(`📋 count 属性 Dep#1 subs: ${Dep.instance && Dep.instance.subs.length || '见上方日志'}`);
+}
+
+// 显示代码
+document.getElementById('code1').innerHTML = `<span class="comment">// 响应式实现（简化版）</span>
+<span class="comment">// 完整代码见本页 &lt;script&gt; 区块</span>
+
+<span class="comment">// 1. 每个响应式属性有一个 Dep（发布者）</span>
+<span class="comment">// 2. 读取属性时，Dep.depend() 收集当前 Watcher</span>
+<span class="comment">// 3. 写入属性时，Dep.notify() 触发所有 Watcher 更新</span>
+
+<span class="comment">// 缺陷演示：</span>
+<span class="comment">// state.name = 'new'  → 不会触发 set/get！</span>
+<span class="comment">// 需要: Vue.set(state, 'name', 'new')</span>`;
+
+renderState();
+</script>
+</body>
+</html>

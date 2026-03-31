@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Vue 3 响应式原理 - Proxy</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #f7f9fc; }
+  h1 { color: #42b983; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .demo-box { background: #1e1e1e; border-radius: 6px; padding: 16px; margin: 12px 0; color: #d4d4d4; font-family: 'Fira Code', monospace; font-size: 14px; overflow-x: auto; }
+  .output { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px; margin-top: 12px; min-height: 60px; }
+  .output .item { padding: 4px 0; border-bottom: 1px solid #e8f5e9; font-size: 13px; }
+  .output .item:last-child { border-bottom: none; }
+  button { background: #42b983; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 4px; font-size: 14px; }
+  button:hover { background: #3aa876; }
+  .label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .comment { color: #6a9955; }
+  .keyword { color: #569cd6; }
+  .string { color: #ce9178; }
+  .advantage { background: #e8f5e9; border-radius: 4px; padding: 12px; margin: 8px 0; }
+</style>
+</head>
+<body>
+<h1>⚡ Vue 3 响应式原理 — Proxy</h1>
+
+<div class="card">
+  <h3>核心原理</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// Proxy 代理整个对象，而非一个个属性</span>
+<span class="keyword">const</span> proxy = <span class="keyword">new</span> Proxy(obj, {
+  <span class="keyword">get</span>(target, key, receiver) {
+    <span class="comment">// track(target, key) → 收集依赖</span>
+    <span class="keyword">const</span> res = Reflect.get(target, key, receiver);
+    <span class="comment">// 懒代理：如果是对象，继续递归代理</span>
+    <span class="keyword">return</span> isObject(res) ? reactive(res) : res;
+  },
+  <span class="keyword">set</span>(target, key, value, receiver) {
+    <span class="keyword">const</span> old = target[key];
+    <span class="keyword">const</span> res = Reflect.set(target, key, value, receiver);
+    <span class="comment">// trigger(target, key) → 触发更新</span>
+    if (old !== value) trigger(target, key);
+    <span class="keyword">return</span> res;
+  },
+  <span class="keyword">deleteProperty</span>(target, key) { <span class="comment">/* 可检测到 delete */</span> },
+  <span class="keyword">has</span>(target, key) { <span class="comment">/* 可检测到 in */</span> }
+});
+  </pre></div>
+</div>
+
+<div class="card">
+  <h3>Proxy vs defineProperty 对比</h3>
+  <div class="advantage">
+    <b>✅ Proxy 的优势：</b>
+    <ul style="margin:8px 0 0 0;line-height:1.9">
+      <li>只需代理一次，无需遍历所有属性（懒代理）</li>
+      <li>支持检测 <code>in</code> 操作符</li>
+      <li>支持检测对象<b>新增</b>属性</li>
+      <li>支持检测对象<b>删除</b>属性</li>
+      <li>支持数组下标变化检测</li>
+      <li>支持 Map/Set/WeakMap/WeakSet</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <h3>交互演示</h3>
+  <div class="label">原始对象：</div>
+  <div class="demo-box"><pre>const raw = { count: 0, user: { name: '张三', age: 25 }, tags: ['a', 'b'] }</pre></div>
+
+  <div class="label">响应式代理：</div>
+  <div class="output" id="stateDisplay"></div>
+
+  <div class="label" style="margin-top:12px">操作（全部自动响应式！）：</div>
+  <button onclick="incCount()">count++</button>
+  <button onclick="addField()">添加新属性 score</button>
+  <button onclick="deleteField()">删除 count</button>
+  <button onclick="changeNested()">修改 user.name</button>
+  <button onclick="changeArrayIdx()">arr[0] = 'x'</button>
+  <button onclick="arrPush()">arr.push('c')</button>
+  <button onclick="checkIn()">'score' in proxy</button>
+  <button onclick="logAll()">完整日志</button>
+
+  <div class="label" style="margin-top:12px">日志：</div>
+  <div class="output" id="log" style="max-height:220px;overflow-y:auto;font-size:13px;"></div>
+</div>
+
+<div class="card">
+  <h3>effect 追踪</h3>
+  <div class="demo-box"><pre>
+<span class="keyword">function</span> effect(fn) {
+  <span class="comment">// 包装函数，自动追踪所有读操作</span>
+  <span class="keyword">const</span> runner = () => {
+    activeEffect = fn;
+    fn();  <span class="comment">// 执行时读取属性，触发 proxy getter → track</span>
+    activeEffect = null;
+  };
+  runner();
+  <span class="keyword">return</span> runner;
+}
+
+<span class="comment">// 读取 proxy.count → track(target, 'count', activeEffect)</span>
+<span class="comment">// 设置 proxy.count → trigger(target, 'count')</span>
+</pre></div>
+  <div style="margin-top:8px">
+    <button onclick="runEffect()">运行 effect()</button>
+    <button onclick="stopEffect()">停止 effect()</button>
+  </div>
+  <div class="output" id="effectLog"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// Vue 3 风格响应式实现（简化版）
+// ─────────────────────────────────────────
+
+const targetMap = new WeakMap(); // target → key → deps[]
+let activeEffect = null;
+
+function track(target, key) {
+  if (activeEffect) {
+    let depsMap = targetMap.get(target);
+    if (!depsMap) targetMap.set(target, depsMap = {});
+    let dep = depsMap[key];
+    if (!dep) depsMap[key] = dep = [];
+    if (!dep.includes(activeEffect)) {
+      dep.push(activeEffect);
+      log(`🔍 track: 收集依赖 [${key}] → effect#${activeEffect.id}`);
+    }
+  }
+}
+
+function trigger(target, key, type) {
+  const depsMap = targetMap.get(target);
+  if (!depsMap) return;
+  const dep = depsMap[key];
+  if (dep) {
+    log(`📢 trigger: [${key}] 变化，通知 ${dep.length} 个 effect`);
+    dep.forEach(effect => effect.run());
+  }
+}
+
+// isObject
+function isObject(val) {
+  return val !== null && typeof val === 'object';
+}
+
+// reactive — 懒代理
+function reactive(raw) {
+  return new Proxy(raw, {
+    get(target, key, receiver) {
+      const res = Reflect.get(target, key, receiver);
+      track(target, key);
+      // 懒代理：嵌套对象继续代理
+      return isObject(res) ? reactive(res) : res;
+    },
+    set(target, key, value, receiver) {
+      const old = target[key];
+      const res = Reflect.set(target, key, value, receiver);
+      if (old !== value) {
+        trigger(target, key);
+      }
+      return res;
+    },
+    deleteProperty(target, key) {
+      const old = target[key];
+      const res = Reflect.deleteProperty(target, key);
+      if (res) trigger(target, key);
+      return res;
+    },
+    has(target, key) {
+      track(target, key); // 支持 in 操作符追踪
+      return Reflect.has(target, key);
+    }
+  });
+}
+
+// ref
+let uid = 0;
+class Vue3Ref {
+  constructor(value) {
+    this._value = value;
+    this.dep = [];
+    this.id = uid++;
+  }
+  get value() {
+    trackRef(this);
+    return this._value;
+  }
+  set value(newVal) {
+    if (this._value !== newVal) {
+      this._value = newVal;
+      this.dep.forEach(e => e.run());
+    }
+  }
+}
+function ref(value) { return new Vue3Ref(value); }
+
+function trackRef(ref) {
+  if (activeEffect) ref.dep.push(activeEffect);
+}
+
+// Effect 类
+class Vue3Effect {
+  constructor(fn) {
+    this.fn = fn;
+    this.run = () => {
+      activeEffect = this;
+      try {
+        this.fn();
+      } finally {
+        activeEffect = null;
+      }
+    };
+    this.id = uid++;
+    this.active = true;
+  }
+  run() {
+    if (this.active) {
+      logEffect(`🟢 effect#${this.id} 执行`);
+      this.run();
+    }
+  }
+  stop() {
+    this.active = false;
+    logEffect(`⏹ effect#${this.id} 已停止`);
+  }
+}
+
+function effect(fn) {
+  const e = new Vue3Effect(fn);
+  e.run();
+  return e;
+}
+
+// ─────────────────────────────────────────
+// 演示
+// ─────────────────────────────────────────
+
+const raw = { count: 0, user: { name: '张三', age: 25 }, tags: ['a', 'b'] };
+const proxy = reactive(raw);
+
+// 自动渲染 effect
+effect(() => {
+  document.getElementById('stateDisplay').innerHTML = `
+    <div class="item"><b>count:</b> ${proxy.count}</div>
+    <div class="item"><b>user.name:</b> ${proxy.user.name}</div>
+    <div class="item"><b>user.age:</b> ${proxy.user.age}</div>
+    <div class="item"><b>tags:</b> ${JSON.stringify(proxy.tags)}</div>
+    <div class="item"><b>score:</b> ${proxy.score !== undefined ? proxy.score : '<i style="color:#aaa">(未定义)</i>'}</div>
+  `;
+});
+
+let allLog = [];
+
+function log(msg) {
+  allLog.unshift(msg);
+  const el = document.getElementById('log');
+  el.innerHTML = allLog.slice(0, 30).map(l => `<div class="item">${l}</div>`).join('');
+}
+
+function logEffect(msg) {
+  const el = document.getElementById('effectLog');
+  el.innerHTML = `<div class="item">${msg}</div>` + (el.innerHTML || '');
+}
+
+function incCount() { proxy.count++; }
+function addField() { proxy.score = 95; }
+function deleteField() { delete proxy.count; }
+function changeNested() { proxy.user.name = '李四'; }
+function changeArrayIdx() { proxy.tags[0] = 'x'; }
+function arrPush() { proxy.tags.push('c'); }
+function checkIn() { const r = 'score' in proxy; log(`ℹ️ 'score' in proxy = ${r}`); }
+function logAll() { allLog.forEach(l => console.log(l)); }
+
+// 当前活跃 effect（用于停止）
+let currentEffectRef = null;
+function runEffect() {
+  currentEffectRef = effect(() => {
+    logEffect(`📊 effect 读取: count=${proxy.count}, score=${proxy.score || 'N/A'}`);
+  });
+}
+function stopEffect() {
+  if (currentEffectRef) {
+    currentEffectRef.stop();
+    currentEffectRef = null;
+  } else {
+    logEffect('⚠️ 没有正在运行的 effect');
+  }
+}
+</script>
+</body>
+</html>

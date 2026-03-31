@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Dep 订阅者模式</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #f7f9fc; }
+  h1 { color: #42b983; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .demo-box { background: #1e1e1e; border-radius: 6px; padding: 16px; margin: 12px 0; color: #d4d4d4; font-family: 'Fira Code', monospace; font-size: 14px; overflow-x: auto; }
+  .output { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px; margin-top: 12px; min-height: 80px; }
+  .output .item { padding: 4px 0; border-bottom: 1px solid #e8f5e9; font-size: 13px; }
+  .output .item:last-child { border-bottom: none; }
+  button { background: #42b983; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 4px; font-size: 14px; }
+  button:hover { background: #3aa876; }
+  button.red { background: #e53; }
+  .label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .comment { color: #6a9955; }
+  .keyword { color: #569cd6; }
+  .diagram { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 16px; margin: 12px 0; text-align: center; font-size: 14px; line-height: 2; }
+  .sub-card { background: #f8f9fa; border-radius: 6px; padding: 12px; margin: 8px 0; }
+</style>
+</head>
+<body>
+<h1>📡 Dep 订阅者模式 — 响应式的核心</h1>
+
+<div class="card">
+  <h3>发布-订阅模式架构</h3>
+  <div class="diagram">
+    <b>响应式数据 state.count</b><br>
+    ↓ setter 触发<br>
+    <b>Dep.notify()</b> — 通知所有订阅者<br>
+    ↓ 遍历 subs[]<br>
+    <b>Watcher.update()</b> → 重新执行 render 函数<br>
+    ↓<br>
+    <b>DOM 更新完成</b>
+  </div>
+</div>
+
+<div class="card">
+  <h3>核心实现</h3>
+  <div class="demo-box"><pre>
+<span class="keyword">class</span> <span class="keyword">Dep</span> {
+  constructor() {
+    this.subs = [];  <span class="comment">// 订阅者列表</span>
+  }
+  addSub(watcher) {
+    this.subs.push(watcher);
+  }
+  notify() {
+    <span class="comment">// 通知所有订阅者</span>
+    this.subs.forEach(w => w.update());
+  }
+}
+Dep.target = null;  <span class="comment">// 当前正在计算的 Watcher</span>
+
+<span class="keyword">class</span> <span class="keyword">Watcher</span> {
+  constructor(fn) {
+    this.fn = fn;
+    this.get();  <span class="comment">// 执行时读取响应式属性，建立依赖</span>
+  }
+  get() {
+    Dep.target = this;
+    this.fn();   <span class="comment">// 读取 obj.count → get 陷阱 → dep.depend()</span>
+    Dep.target = null;
+  }
+  update() {
+    this.get();  <span class="comment">// 重新执行 → 视图更新</span>
+  }
+}
+  </pre></div>
+</div>
+
+<div class="card">
+  <h3>依赖追踪流程</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// 渲染 Watcher 执行 render()</span>
+<span class="keyword">new</span> Watcher(() => {
+  <span class="comment">// 1. 读取 name  → nameDep.addSub(watcher)</span>
+  <span class="comment">// 2. 读取 count → countDep.addSub(watcher)</span>
+  <span class="comment">// 3. 读取 msg   → msgDep.addSub(watcher)</span>
+  <span class="keyword">return</span> `${name} 你好，计数器：${count}，${msg}`;
+});
+
+<span class="comment">// 任何响应式属性变化 → 对应 Dep.notify() → 触发 watcher.get()</span>
+<span class="comment">// → 重新执行 render() → 生成新 VNode → diff → 更新 DOM</span>
+  </pre></div>
+</div>
+
+<div class="card">
+  <h3>交互演示</h3>
+  <div class="sub-card">
+    <b>多 Watcher 场景</b> — 同一个响应式属性被多个 Watcher 依赖
+  </div>
+  <div class="output" id="output"></div>
+
+  <div class="label" style="margin-top:12px">操作：</div>
+  <button onclick="changeCount()">count++</button>
+  <button onclick="changeName()">改 name</button>
+  <button onclick="changeMsg()">改 msg</button>
+  <button onclick="addWatcher()">+新增 Watcher</button>
+  <button onclick="removeWatcher()">-移除 Watcher</button>
+  <button onclick="showDeps()">查看订阅关系</button>
+  <button onclick="clearLog()">清空日志</button>
+
+  <div class="label" style="margin-top:12px">日志（按时间倒序）：</div>
+  <div class="output" id="log" style="max-height:250px;overflow-y:auto;font-size:13px;"></div>
+</div>
+
+<div class="card">
+  <h3>Vue 中的 Dep 应用</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <tr style="background:#eee"><th style="padding:8px;text-align:left">模块</th><th style="padding:8px;text-align:left">Watcher 类型</th><th style="padding:8px;text-align:left">依赖</th></tr>
+    <tr><td style="padding:8px">视图渲染</td><td style="padding:8px">render Watcher</td><td style="padding:8px">模板中所有响应式属性</td></tr>
+    <tr style="background:#f8f8f8"><td style="padding:8px">计算属性</td><td style="padding:8px">computed Watcher</td><td style="padding:8px">computed 依赖的响应式属性</td></tr>
+    <tr><td style="padding:8px">侦听器</td><td style="padding:8px">user Watcher</td><td style="padding:8px">watch 选项中的属性</td></tr>
+  </table>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// Dep 订阅者模式实现
+// ─────────────────────────────────────────
+
+let DepId = 0;
+
+class Dep {
+  constructor(key) {
+    this.id = DepId++;
+    this.key = key;
+    this.subs = [];
+  }
+  addSub(watcher) {
+    if (!this.subs.includes(watcher)) {
+      this.subs.push(watcher);
+    }
+  }
+  removeSub(watcher) {
+    const idx = this.subs.indexOf(watcher);
+    if (idx !== -1) this.subs.splice(idx, 1);
+  }
+  depend() {
+    if (Dep.target) {
+      Dep.target.addDep(this);
+    }
+  }
+  notify() {
+    log(`📢 Dep#${this.id} [${this.key}] notify → ${this.subs.length} subscribers`);
+    this.subs.forEach(w => w.update());
+  }
+}
+Dep.target = null;
+
+let WatcherId = 0;
+class Watcher {
+  constructor(name, fn) {
+    this.id = WatcherId++;
+    this.name = name;
+    this.fn = fn;
+    this.deps = [];
+    log(`🔧 Watcher#${this.id} [${this.name}] 创建`);
+    this.get();
+  }
+  get() {
+    Dep.target = this;
+    try {
+      this.fn();
+    } finally {
+      Dep.target = null;
+    }
+  }
+  addDep(dep) {
+    if (!this.deps.includes(dep)) {
+      this.deps.push(dep);
+      dep.addSub(this);
+    }
+  }
+  update() {
+    log(`🟢 Watcher#${this.id} [${this.name}] update 触发，重新执行`);
+    this.get();
+    renderOutput();
+  }
+}
+
+// ─────────────────────────────────────────
+// 响应式对象
+// ─────────────────────────────────────────
+
+function defineReactive(obj, key, val) {
+  const dep = new Dep(key);
+  Object.defineProperty(obj, key, {
+    enumerable: true,
+    configurable: true,
+    get() {
+      dep.depend();
+      return val;
+    },
+    set(newVal) {
+      if (val === newVal) return;
+      const old = val;
+      val = newVal;
+      log(`  💾 set ${key}: ${old} → ${newVal}`);
+      dep.notify();
+    }
+  });
+  return dep;
+}
+
+const data = {};
+defineReactive(data, 'count', 0);
+defineReactive(data, 'name', '张三');
+defineReactive(data, 'msg', '欢迎学习');
+
+// ─────────────────────────────────────────
+// Watcher 实例
+// ─────────────────────────────────────────
+
+let watchers = [];
+
+function createWatchers() {
+  watchers = [];
+
+  const w1 = new Watcher('渲染计数器', () => {
+    const _ = data.count; // 依赖 count
+    const _ = data.name;
+  });
+
+  const w2 = new Watcher('渲染摘要', () => {
+    const _ = data.name;
+    const _ = data.msg;
+  });
+
+  const w3 = new Watcher('全量渲染', () => {
+    const _ = data.count;
+    const _ = data.name;
+    const _ = data.msg;
+  });
+
+  return [w1, w2, w3];
+}
+
+watchers = createWatchers();
+
+function renderOutput() {
+  document.getElementById('output').innerHTML = `
+    <div class="item">📊 count = ${data.count}</div>
+    <div class="item">👤 name = ${data.name}</div>
+    <div class="item">💬 msg = ${data.msg}</div>
+    <div class="item" style="margin-top:8px;color:#888">共 ${watchers.length} 个活跃 Watcher</div>
+  `;
+}
+
+let logId = 0;
+function log(msg) {
+  const el = document.getElementById('log');
+  const div = document.createElement('div');
+  div.className = 'item';
+  div.innerHTML = `<span style="color:#888">#${logId++}</span> ${msg}`;
+  el.insertBefore(div, el.firstChild);
+}
+
+function changeCount() { data.count++; }
+function changeName() { data.name = '李四_' + Date.now(); }
+function changeMsg() { data.msg = '消息_' + Date.now(); }
+
+function addWatcher() {
+  const id = watchers.length + 1;
+  const w = new Watcher(`动态Watcher#${id}`, () => {
+    const _ = data.count;
+  });
+  watchers.push(w);
+  renderOutput();
+  log(`➕ 新增 Watcher#${w.id}`);
+}
+
+function removeWatcher() {
+  if (watchers.length === 0) { log('⚠️ 没有 Watcher 可移除'); return; }
+  const w = watchers.pop();
+  w.deps.forEach(dep => dep.removeSub(w));
+  log(`➖ 移除 Watcher#${w.id}，其订阅的 Dep 同步移除`);
+  renderOutput();
+}
+
+function showDeps() {
+  const depMap = {};
+  watchers.forEach(w => {
+    w.deps.forEach(d => {
+      if (!depMap[d.key]) depMap[d.key] = [];
+      depMap[d.key].push(`Watcher#${w.id}[${w.name}]`);
+    });
+  });
+  let msg = '📋 订阅关系：';
+  for (let [key, subs] of Object.entries(depMap)) {
+    msg += `\n  ${key} → ${subs.join(', ')}`;
+  }
+  log(msg.replace(/\n/g, ' | '));
+}
+
+function clearLog() {
+  document.getElementById('log').innerHTML = '';
+  logId = 0;
+}
+
+renderOutput();
+</script>
+</body>
+</html>

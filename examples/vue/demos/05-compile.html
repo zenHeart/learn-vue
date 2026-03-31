@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>模板编译流程</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #f7f9fc; }
+  h1 { color: #42b983; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .demo-box { background: #1e1e1e; border-radius: 6px; padding: 16px; margin: 12px 0; color: #d4d4d4; font-family: 'Fira Code', monospace; font-size: 13px; overflow-x: auto; white-space: pre; }
+  .output { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px; margin-top: 12px; }
+  .output .item { padding: 4px 0; border-bottom: 1px solid #e8f5e9; font-size: 13px; }
+  .output .item:last-child { border-bottom: none; }
+  button { background: #42b983; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 4px; font-size: 14px; }
+  button:hover { background: #3aa876; }
+  button.info { background: #3498db; }
+  .label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .comment { color: #6a9955; }
+  .keyword { color: #569cd6; }
+  .string { color: #ce9178; }
+  .fn { color: #dcdcaa; }
+  .flow { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 16px; margin: 12px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .flow-step { background: #42b983; color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; }
+  .flow-arrow { color: #aaa; font-size: 18px; }
+  textarea { width: 100%; min-height: 100px; border: 1px solid #ddd; border-radius: 6px; padding: 12px; font-family: 'Fira Code', monospace; font-size: 13px; resize: vertical; }
+</style>
+</head>
+<body>
+<h1>🔧 模板编译 — 模板 → 渲染函数</h1>
+
+<div class="card">
+  <h3>编译三阶段</h3>
+  <div class="flow">
+    <div class="flow-step">📝 Template</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">🔨 Parser</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">🌳 AST</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">⚙️ Generate</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">📜 Render Function</div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>流程详解</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// 1️⃣ parser(template) → AST</span>
+<span class="comment">// 递归解析 HTML 标签，生成抽象语法树</span>
+<span class="comment">// AST 节点: { type, tag, attrs, children }</span>
+
+<span class="comment">// 2️⃣ transform(AST) → 优化</span>
+<span class="comment">// Vue 3: 静态节点标记、静态提升</span>
+
+<span class="comment">// 3️⃣ generate(AST) → 渲染函数字符串</span>
+<span class="comment">// 输出: "with(this){return _c('div',...)}"</span>
+<span class="comment">// _c = createElement (创建 VNode)</span>
+<span class="comment">// _v = createTextVNode</span>
+<span class="comment">// _s = toString</span>
+  </pre></div>
+</div>
+
+<div class="card">
+  <h3>交互演示：实时编译</h3>
+  <div class="label">输入模板（编辑后点击「编译」）：</div>
+  <textarea id="templateInput"><div id="app">
+  <h1>{{ title }}</h1>
+  <p :class="status">{{ message }}</p>
+  <button @click="handleClick">点击</button>
+  <ul>
+    <li v-for="item in list" :key="item.id">
+      {{ item.name }}
+    </li>
+  </ul>
+</div></textarea>
+  <button onclick="compile()" style="margin-top:8px">⚡ 编译</button>
+  <button onclick="compileVue2()">Vue 2 输出</button>
+  <button onclick="compileVue3()">Vue 3 输出</button>
+
+  <div class="label" style="margin-top:16px">编译结果（渲染函数）：</div>
+  <div class="demo-box" id="outputCode" style="min-height:200px;white-space:pre-wrap;font-size:12px;"></div>
+
+  <div class="label">AST 可视化：</div>
+  <div class="output" id="astOutput" style="max-height:300px;overflow:auto;font-size:12px;"></div>
+</div>
+
+<div class="card">
+  <h3>Vue 2 vs Vue 3 编译差异</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <tr style="background:#eee"><th>特性</th><th>Vue 2</th><th>Vue 3</th></tr>
+    <tr><td style="padding:8px">编译模式</td><td style="padding:8px">仅运行时常量</td><td style="padding:8px">构建时 + 运行时常量</td></tr>
+    <tr style="background:#f8f8f8"><td style="padding:8px">静态提升</td><td style="padding:8px">❌ 无</td><td style="padding:8px">✅ hoistStatic</td></tr>
+    <tr><td style="padding:8px">Patch Flag</td><td style="padding:8px">❌ 无</td><td style="padding:8px">✅ 动态节点标记</td></tr>
+    <tr style="background:#f8f8f8"><td style="padding:8px">缓存事件</td><td style="padding:8px">❌ 无</td><td style="padding:8px">✅ cacheHandlers</td></tr>
+    <tr><td style="padding:8px">Tree-shaking</td><td style="padding:8px">❌ 不支持</td><td style="padding:8px">✅ 支持</td></tr>
+    <tr style="background:#f8f8f8"><td style="padding:8px">Fragment 多根</td><td style="padding:8px">❌ 需要额外标签</td><td style="padding:8px">✅ 原生支持</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>编译输出示例</h3>
+  <div class="demo-box"><pre>
+<span class="comment">// Vue 2 编译输出</span>
+<span class="keyword">with</span>(this) {
+  <span class="keyword">return</span> _c(
+    <span class="string">'div'</span>,
+    { attrs: { <span class="string">"id"</span>: <span class="string">"app"</span> } },
+    [
+      _c(<span class="string">'h1'</span>, [_v(_s(title))]),
+      _c(<span class="string">'p'</span>, { class: status }, [_v(_s(message))]),
+      _c(<span class="string">'button'</span>, { on: { click: handleClick } }, [_v(<span class="string">"点击"</span>)]),
+      _l((list), (item) =>
+        _c(<span class="string">'li'</span>, { key: item.id }, [_v(_s(item.name))])
+      )
+    ]
+  )
+}
+<span class="comment">// _c = createElement  _v = createTextVNode</span>
+<span class="comment">// _s = toString  _l = renderList</span>
+  </pre></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// 简易模板解析器（演示用）
+// ─────────────────────────────────────────
+
+function parse(template) {
+  const tokens = [];
+  let i = 0;
+
+  // 简单 tokenizer
+  function skipSpaces() {
+    while (i < template.length && /\s/.test(template[i])) i++;
+  }
+
+  function matchStr(end) {
+    let result = '';
+    i++; // skip start char
+    while (i < template.length && template[i] !== end) {
+      if (template[i] === '\\') { i++; }
+      result += template[i++];
+    }
+    i++; // skip end char
+    return result;
+  }
+
+  function parseNode() {
+    skipSpaces();
+    if (template[i] === '<') {
+      if (template[i + 1] === '!') {
+        // HTML comment
+        const end = template.indexOf('-->', i);
+        i = end + 3;
+        return null;
+      }
+      i++; // skip <
+      skipSpaces();
+      const tag = parseTagName();
+      skipSpaces();
+      const props = {};
+
+      // 属性解析
+      while (i < template.length && template[i] !== '>' && template[i] !== '/') {
+        skipSpaces();
+        if (template[i] === '>' || template[i] === '/') break;
+        const attrName = parseTagName();
+        if (template[i] === '=') {
+          i++;
+          const ch = template[i];
+          let val;
+          if (ch === '"' || ch === "'") {
+            val = matchStr(ch);
+          } else {
+            let v = '';
+            while (i < template.length && !/\s|>/.test(template[i])) v += template[i++];
+            val = v;
+          }
+          props[':' + attrName] = val; // mark as binding
+        } else {
+          props['@' + attrName] = true;
+        }
+        skipSpaces();
+      }
+
+      const selfClose = template[i - 1] === '/' || template[i] === '/';
+      if (template[i] === '/') i++;
+      if (template[i] === '>') i++;
+
+      if (selfClose) return { type: tag, props, children: [] };
+
+      const children = [];
+      skipSpaces();
+      while (i < template.length && template.slice(i, i + 2) !== '</') {
+        skipSpaces();
+        if (template.slice(i, i + 4) === '<!-') {
+          const end = template.indexOf('-->', i);
+          i = end + 3;
+          continue;
+        }
+        if (template[i] === '<') {
+          const child = parseNode();
+          if (child) children.push(child);
+        } else {
+          // text node
+          let text = '';
+          while (i < template.length && template[i] !== '<') text += template[i++];
+          text = text.trim();
+          if (text) children.push({ type: 'text', children: text });
+        }
+        skipSpaces();
+      }
+
+      // closing tag
+      if (template.slice(i, i + 2) === '</') {
+        i += 2;
+        skipSpaces();
+        parseTagName(); // consume closing tag name
+        skipSpaces();
+        if (template[i] === '>') i++;
+      }
+
+      return { type: tag, props, children };
+    }
+    return null;
+  }
+
+  function parseTagName() {
+    let name = '';
+    while (i < template.length && /[\w-]/.test(template[i])) name += template[i++];
+    return name;
+  }
+
+  const ast = parseNode();
+  return ast;
+}
+
+function parseTagName() {
+  let name = '';
+  const t = template.trim();
+  let i = 0;
+  while (i < t.length && /[\w-]/.test(t[i])) name += t[i++];
+  return name;
+}
+
+function generate(ast, indent = '') {
+  if (!ast) return '';
+
+  if (ast.type === 'text') {
+    return `_v("${ast.children}")`;
+  }
+
+  const tag = `'${ast.type}'`;
+  const data = [];
+
+  for (let [k, v] of Object.entries(ast.props || {})) {
+    if (k.startsWith(':')) {
+      data.push(`${k.slice(1)}: ${v}`);
+    } else if (k.startsWith('@')) {
+      data.push(`on: { ${k.slice(1)}: ${v} }`);
+    } else {
+      data.push(`attrs: { ${k}: "${v}" }`);
+    }
+  }
+
+  const dataStr = data.length > 0 ? `{ ${data.join(', ')} }` : 'undefined';
+  const children = ast.children || [];
+
+  if (children.length === 0) {
+    return `_c(${tag}, ${dataStr})`;
+  }
+
+  const childCodes = children.map(c => {
+    if (c.type === 'text') {
+      return `  ${indent}_v("${c.children}")`;
+    }
+    const childCode = generate(c, indent + '  ');
+    return `  ${indent}${childCode}`;
+  });
+
+  if (childCodes.length === 1 && ast.children[0].type === 'text') {
+    return `_c(${tag}, ${dataStr}, [${childCodes[0]}])`;
+  }
+
+  return `_c(${tag}, ${dataStr}, [\n${childCodes.join(',\n')}\n${indent}])`;
+}
+
+function compileTemplate(templateStr) {
+  const ast = parse(templateStr);
+  const renderCode = `with(this) { return ${generate(ast)}; }`;
+  return { ast, renderCode };
+}
+
+let template = document.getElementById('templateInput').value;
+
+function compile() {
+  const t = document.getElementById('templateInput').value;
+  try {
+    const { ast, renderCode } = compileTemplate(t);
+    document.getElementById('outputCode').textContent = renderCode;
+    document.getElementById('astOutput').innerHTML = `
+      <div class="item"><b>AST 树结构：</b></div>
+      <div class="item" style="font-family:monospace;white-space:pre">${formatAST(ast, 0)}</div>
+    `;
+  } catch(e) {
+    document.getElementById('outputCode').textContent = '⚠️ 解析错误: ' + e.message;
+  }
+}
+
+function formatAST(node, depth) {
+  if (!node) return '';
+  const indent = '  '.repeat(depth);
+  let s = `${indent}<span style="color:#569cd6">${node.type}</span>`;
+  if (node.props && Object.keys(node.props).length > 0) {
+    s += ` ${JSON.stringify(node.props)}`;
+  }
+  if (node.children) {
+    for (let c of node.children) {
+      s += '\n' + formatAST(c, depth + 1);
+    }
+  }
+  return s;
+}
+
+function compileVue2() {
+  document.getElementById('outputCode').innerHTML = `<span class="comment">// Vue 2 template-explorer 输出示例（请访问）</span>
+<span class="comment">// https://template-explorer.vuejs.org/</span>
+
+<span class="keyword">with</span>(this) {
+  <span class="keyword">return</span> _c(
+    <span class="string">'div'</span>,
+    { attrs: { <span class="string">"id"</span>: <span class="string">"app"</span> } },
+    [
+      _c(<span class="string">'h1'</span>, [_v(<span class="string">"_"</span>+_s(title)+<span class="string">""</span>)]),
+      _c(<span class="string">'p'</span>,
+        { class: status },
+        [_v(<span class="string">"_"</span>+_s(message)+<span class="string">""</span>)]
+      ),
+      _c(<span class="string">'button'</span>,
+        { on: { click: handleClick } },
+        [_v(<span class="string">"点击"</span>)]
+      ),
+      _c(<span class="string">'ul'</span>, {},
+        _l(list, (item) =>
+          _c(<span class="string">'li'</span>,
+            { key: item.id },
+            [_v(<span class="string">"_"</span>+_s(item.name)+<span class="string">""</span>)]
+          )
+        )
+      )
+    ]
+  )
+}`;
+}
+
+function compileVue3() {
+  document.getElementById('outputCode').innerHTML = `<span class="comment">// Vue 3 compile output with Patch Flags</span>
+<span class="comment">// https://vue-next-template-explorer.netlify.app/</span>
+
+<span class="keyword">const</span> { createElementVNode: _createElementVNode } = Vue;
+
+<span class="keyword">return</span> <span class="keyword">function</span> render(_ctx, _cache) {
+  <span class="keyword">return</span> _createElementVNode(
+    <span class="string">'div'</span>,
+    { id: <span class="string">'app'</span> },
+    [
+      _createElementVNode(<span class="string">'h1'</span>, <span class="keyword">null</span>, <span class="string">" "</span>+_toDisplayString(_ctx.title), <span class="comment">/* TEXT */</span>),
+      _createElementVNode(
+        <span class="string">'p'</span>,
+        { class: _ctx.status },
+        <span class="comment">/* TEXT */</span>
+      ),
+      _createElementVNode(<span class="string">'button'</span>, {
+        onClick: _ctx.handleClick
+        <span class="comment">/* cached: 0 */</span>
+      }, <span class="string">"点击"</span>),
+      _renderList(_ctx.list, (item) =>
+        _createElementVNode(<span class="string">'li'</span>, {
+          key: item.id
+          <span class="comment">/* KEYED */</span>
+        }, <span class="string">" "</span>+_toDisplayString(item.name), <span class="comment">/* TEXT */</span>)
+      )
+    ]
+  )
+};`;
+}
+
+// Auto compile on textarea change
+document.getElementById('templateInput').addEventListener('input', () => {
+  compile();
+});
+
+compile();
+</script>
+</body>
+</html>
