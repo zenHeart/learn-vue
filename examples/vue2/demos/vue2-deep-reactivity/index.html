@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vue2 深层对象修改与数组更新检测</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f7fa; color: #2c3e50; padding: 24px; }
+    h1 { font-size: 22px; margin-bottom: 20px; color: #42b983; }
+    h2 { font-size: 16px; margin: 24px 0 12px; color: #2c3e50; border-left: 4px solid #42b983; padding-left: 8px; }
+    .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .card h3 { font-size: 14px; color: #42b983; margin-bottom: 10px; }
+    .status { font-size: 12px; margin-bottom: 8px; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+    .status.ok { background: #d4edda; color: #155724; }
+    .status.fail { background: #f8d7da; color: #721c24; }
+    .info { font-size: 12px; color: #6c757d; margin-bottom: 10px; }
+    pre { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 10px; font-size: 12px; overflow-x: auto; margin-bottom: 10px; line-height: 1.6; }
+    button { background: #42b983; color: #fff; border: none; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; margin-right: 6px; margin-bottom: 6px; transition: background .2s; }
+    button:hover { background: #359268; }
+    button.danger { background: #e74c3c; }
+    button.danger:hover { background: #c0392b; }
+    button.info-btn { background: #3498db; }
+    button.info-btn:hover { background: #2980b9; }
+    .value-display { font-family: 'Courier New', monospace; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 6px 10px; font-size: 13px; display: inline-block; min-width: 120px; }
+    .log { max-height: 160px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 6px; padding: 8px; background: #1e1e1e; color: #d4d4d4; font-size: 12px; font-family: 'Courier New', monospace; }
+    .log-entry { padding: 2px 0; border-bottom: 1px solid #333; }
+    .log-entry:last-child { border-bottom: none; }
+    .log-entry.ok { color: #4ec9b0; }
+    .log-entry.fail { color: #f48771; }
+    .log-entry.info { color: #9cdcfe; }
+    .items-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .item-tag { background: #e8f5e9; color: #2e7d32; border-radius: 12px; padding: 3px 10px; font-size: 12px; }
+    .item-tag.gray { background: #f5f5f5; color: #9e9e9e; text-decoration: line-through; }
+    .obj-display { font-family: 'Courier New', monospace; font-size: 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 8px; }
+    .obj-display .key { color: #905; }
+    .obj-display .str { color: #a31515; }
+  </style>
+</head>
+<body>
+  <h1>🌿 Vue2 深层对象修改与数组更新检测</h1>
+
+  <!-- 数组更新检测 -->
+  <h2>1. 数组更新检测 — 索引直接修改</h2>
+  <div class="demo-grid">
+    <div class="card">
+      <h3>❌ 错误方式：直接索引赋值</h3>
+      <div class="info">items[0] = 'x' — 不会触发响应式更新</div>
+      <div class="status fail" id="status-fail">未更新</div>
+      <div class="items-list" id="items-list-fail">
+        <span class="item-tag" id="item-0-fail">a</span>
+        <span class="item-tag" id="item-1-fail">b</span>
+        <span class="item-tag" id="item-2-fail">c</span>
+      </div>
+      <pre>// ❌ 不响应
+items[0] = 'x'
+render() // 视图未更新</pre>
+      <button class="danger" onclick="wrongArrayUpdate()">执行 items[0] = 'x'</button>
+    </div>
+    <div class="card">
+      <h3>✅ 正确方式：splice / Vue.set</h3>
+      <div class="info">items.splice(0, 1, 'x') — 触发更新</div>
+      <div class="status fail" id="status-ok">未更新</div>
+      <div class="items-list" id="items-list-ok">
+        <span class="item-tag" id="item-0-ok">a</span>
+        <span class="item-tag" id="item-1-ok">b</span>
+        <span class="item-tag" id="item-2-ok">c</span>
+      </div>
+      <pre>// ✅ 响应
+Vue.set(items, 0, 'x')
+// 或
+items.splice(0, 1, 'x')</pre>
+      <button class="info-btn" onclick="rightArrayUpdate()">执行 splice(0,1,'x')</button>
+    </div>
+  </div>
+
+  <!-- 对象属性增删 -->
+  <h2>2. 对象属性增删 — $set / $delete</h2>
+  <div class="demo-grid">
+    <div class="card">
+      <h3>❌ 错误方式：直接赋值新增属性</h3>
+      <div class="info">user.newProp = value — 不触发响应</div>
+      <div class="obj-display" id="obj-display-fail">{ name: "Alice" }</div>
+      <pre>// ❌ 不响应
+user.age = 18
+render() // 视图未更新</pre>
+      <button class="danger" onclick="wrongObjAdd()">执行 user.age = 18</button>
+    </div>
+    <div class="card">
+      <h3>✅ 正确方式：this.$set</h3>
+      <div class="info">this.$set(user, 'age', 18) — 触发更新</div>
+      <div class="obj-display" id="obj-display-ok">{ name: "Alice" }</div>
+      <pre>// ✅ 响应
+this.$set(user, 'age', 18)
+render() // 视图立即更新</pre>
+      <button class="info-btn" onclick="rightObjAdd()">执行 $set(user,'age',18)</button>
+    </div>
+  </div>
+
+  <!-- 深层嵌套 -->
+  <h2>3. 深层嵌套对象 — 整体替换</h2>
+  <div class="card">
+    <h3>深层新增属性 — 整体替换 vs 直接赋值</h3>
+    <div class="info">profile.address.city = 'Beijing' — 深层新增属性不响应（Object.defineProperty 只能监听已有属性）</div>
+    <div style="display:flex;gap:16px;align-items:flex-start;margin-top:10px;">
+      <div>
+        <div class="obj-display" id="deep-obj-display">{ name: "Alice" }</div>
+        <button class="danger" onclick="wrongDeepUpdate()">直接赋值深层</button>
+        <button class="info-btn" onclick="rightDeepUpdate()">整体替换</button>
+      </div>
+      <div class="log" id="deep-log"></div>
+    </div>
+  </div>
+
+  <!-- 日志 -->
+  <h2>操作日志</h2>
+  <div class="log" id="main-log" style="max-height:200px;"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
+  <script>
+    // 模拟 Vue2 响应式行为
+    function wrapArray(arr) {
+      // Vue2 会拦截 push/pop/shift/unshift/splice/sort/reverse
+      const methods = ['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse']
+      methods.forEach(method => {
+        const original = arr[method]
+        arr[method] = function(...args) {
+          const result = original.apply(this, args)
+          log(`✅ [${method}] 触发响应式更新`, 'ok')
+          return result
+        }
+      })
+      return arr
+    }
+
+    let itemsFail = wrapArray(['a', 'b', 'c'])
+    let itemsOk   = wrapArray(['a', 'b', 'c'])
+    let userFail  = { name: 'Alice' }
+    let userOk    = { name: 'Alice' }
+    let profile   = { name: 'Alice' }
+
+    // 简单模拟 Vue.set
+    function vueSet(obj, key, value) {
+      obj[key] = value
+      log(`✅ Vue.set 触发: ${key} = ${value}`, 'ok')
+      return obj
+    }
+
+    function log(msg, type = 'info') {
+      const el = document.getElementById('main-log')
+      const entry = document.createElement('div')
+      entry.className = `log-entry ${type}`
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`
+      el.insertBefore(entry, el.firstChild)
+    }
+
+    function deepLog(msg, type = 'info') {
+      const el = document.getElementById('deep-log')
+      const entry = document.createElement('div')
+      entry.className = `log-entry ${type}`
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`
+      el.insertBefore(entry, el.firstChild)
+    }
+
+    // 1. 错误数组更新
+    function wrongArrayUpdate() {
+      itemsFail[0] = 'x' // 不触发 splice interceptor
+      log(`❌ 执行: itemsFail[0] = 'x' — 视图未更新（直接赋值不走 Vue 拦截）`, 'fail')
+      document.getElementById('item-0-fail').textContent = 'x'
+      document.getElementById('status-fail').textContent = '❌ 未触发更新（DOM强制改了但非响应式）'
+      document.getElementById('status-fail').className = 'status fail'
+    }
+
+    // 1. 正确数组更新
+    function rightArrayUpdate() {
+      itemsOk.splice(0, 1, 'x') // 触发 splice interceptor
+      document.getElementById('item-0-ok').textContent = 'x'
+      document.getElementById('status-ok').textContent = '✅ 已更新'
+      document.getElementById('status-ok').className = 'status ok'
+    }
+
+    // 2. 错误对象添加
+    function wrongObjAdd() {
+      userFail.age = 18
+      log(`❌ 执行: userFail.age = 18 — 视图未更新（新增属性无 getter/setter）`, 'fail')
+      document.getElementById('obj-display-fail').textContent = JSON.stringify(userFail, null, 2)
+    }
+
+    // 2. 正确对象添加
+    function rightObjAdd() {
+      vueSet(userOk, 'age', 18)
+      document.getElementById('obj-display-ok').textContent = JSON.stringify(userOk, null, 2)
+      document.getElementById('status-ok').textContent = '✅ 已更新'
+    }
+
+    // 3. 深层对象
+    function wrongDeepUpdate() {
+      profile.address = profile.address || {}
+      profile.address.city = 'Beijing' // 假设有 observe，但新属性不响应
+      deepLog(`❌ profile.address.city = 'Beijing' — 无响应式`, 'fail')
+      document.getElementById('deep-obj-display').textContent = JSON.stringify(profile, null, 2)
+    }
+
+    function rightDeepUpdate() {
+      profile = { ...profile, address: { city: 'Beijing' } }
+      deepLog(`✅ 整体替换 profile — 触发响应式`, 'ok')
+      document.getElementById('deep-obj-display').textContent = JSON.stringify(profile, null, 2)
+    }
+
+    log('页面加载完成，请点击按钮体验 Vue2 响应式边界行为', 'info')
+    deepLog('初始状态: { name: "Alice" }', 'info')
+  </script>
+</body>
+</html>
