@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue Class Component 对比演示</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    body { font-family: -apple-system, sans-serif; padding: 24px; background: #f8f9fa; }
+    h2 { margin-bottom: 16px; color: #333; }
+    .demo-section { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .tag { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+    .tag-legacy { background: #fde8e8; color: #e74c3c; }
+    .tag-modern { background: #e8f8f0; color: #27ae60; }
+    .counter { display: flex; align-items: center; gap: 16px; margin: 12px 0; }
+    .counter button { background: #3498db; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 16px; }
+    .counter button:hover { background: #2980b9; }
+    .counter span { font-size: 24px; font-weight: 700; min-width: 60px; text-align: center; }
+    .code-block { background: #2c3e50; color: #ecf0f1; padding: 16px; border-radius: 6px; font-family: 'Monaco', monospace; font-size: 13px; overflow-x: auto; margin: 12px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { border: 1px solid #dee2e6; padding: 10px 12px; text-align: left; font-size: 14px; }
+    th { background: #f8f9fa; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <h2>Vue Class Component vs Composition API</h2>
+
+  <div class="demo-section">
+    <span class="tag tag-legacy">Class Component（Vue 2 遗留）</span>
+    <p>使用 TypeScript Class + @Options 装饰器，逻辑分散在各个选项中。</p>
+    <div class="code-block">
+<pre>// ❌ 已废弃写法（仅 Vue 2 支持）
+@Component({ props: ['initialCount'] })
+export default class Counter extends Vue {
+  count = this.initialCount
+  get doubleCount() { return this.count * 2 }
+
+  @Watch('count')
+  onChange() { console.log(this.count) }
+
+  increment() { this.count++ }
+  decrement() { this.count-- }
+}</pre>
+    </div>
+  </div>
+
+  <div class="demo-section">
+    <span class="tag tag-modern">Composition API（Vue 3 官方推荐）</span>
+    <p>逻辑通过 Composition Functions 组织，相关逻辑集中管理。</p>
+    <div class="code-block">
+<pre>// ✅ 推荐写法
+&lt;script setup lang="ts"&gt;
+const props = defineProps&lt;{ initialCount: number }&gt;()
+const count = ref(props.initialCount)
+const doubleCount = computed(() => count.value * 2)
+
+watch(count, (newVal) => {
+  console.log(newVal)
+})
+
+function increment() { count.value++ }
+function decrement() { count.value-- }
+&lt;/script&gt;</pre>
+    </div>
+  </div>
+
+  <div class="demo-section">
+    <h3>对比表</h3>
+    <table>
+      <thead>
+        <tr><th>特性</th><th>Class Component</th><th>Composition API</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>逻辑复用</td><td>Mixins（易冲突）</td><td>Composables（无冲突）</td></tr>
+        <tr><td>类型推断</td><td>天然支持</td><td>需 defineProps</td></tr>
+        <tr><td>打包体积</td><td>较大（装饰器开销）</td><td>更小</td></tr>
+        <tr><td>未来维护</td><td>停止维护</td><td>官方活跃开发</td></tr>
+        <tr><td>SSR 支持</td><td>有限</td><td>完整支持</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="demo-section">
+    <h3>交互演示</h3>
+    <div class="counter">
+      <button @click="decrement">-</button>
+      <span>{{ count }}</span>
+      <button @click="increment">+</button>
+      <span style="font-size:14px; color:#666;">double: {{ doubleCount }}</span>
+    </div>
+    <p style="font-size:13px; color:#666;">Vue 3 Composition API 示例</p>
+  </div>
+
+</div>
+
+<script>
+const { createApp, ref, computed } = Vue
+
+createApp({
+  setup() {
+    const count = ref(0)
+    const doubleCount = computed(() => count.value * 2)
+    function increment() { count.value++ }
+    function decrement() { count.value-- }
+    return { count, doubleCount, increment, decrement }
+  }
+}).mount('#app')
+</script>
+
+</body>
+</html>
