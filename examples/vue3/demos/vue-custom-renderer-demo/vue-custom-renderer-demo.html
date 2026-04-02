@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue3 自定义渲染器 交互演示</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    
+    .tabs { display: flex; gap: 4px; background: #e0e0e0; border-radius: 8px; padding: 4px; margin-bottom: 20px; }
+    .tab { padding: 8px 16px; border: none; background: transparent; cursor: pointer; border-radius: 6px; font-size: 14px; }
+    .tab.active { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    
+    .panel { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: none; }
+    .panel.active { display: block; }
+    
+    .code-block { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; font-family: 'Fira Code', monospace; font-size: 13px; overflow-x: auto; white-space: pre; }
+    .code-block .keyword { color: #569cd6; }
+    .code-block .string { color: #ce9178; }
+    .code-block .comment { color: #6a9955; }
+    .code-block .function { color: #dcdcaa; }
+    
+    /* 终端演示 */
+    .terminal { background: #1e1e1e; color: #0f0; padding: 16px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 14px; min-height: 200px; }
+    .terminal .line { padding: 2px 0; }
+    .terminal .prompt { color: #569cd6; }
+    .terminal .output { color: #d4d4d4; }
+    .terminal .error { color: #f44747; }
+    
+    /* Canvas 演示 */
+    .canvas-container { position: relative; background: white; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    canvas { display: block; width: 100%; }
+    .canvas-controls { padding: 12px; background: #fafafa; border-top: 1px solid #e0e0e0; display: flex; gap: 8px; flex-wrap: wrap; }
+    .canvas-controls button { padding: 6px 12px; background: #42b883; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .canvas-controls button:hover { background: #3aa876; }
+    
+    /* 概念表格 */
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+    th { background: #fafafa; }
+    
+    h2 { margin-bottom: 16px; }
+    h3 { margin: 20px 0 12px; }
+    p { line-height: 1.6; color: #555; margin: 12px 0; }
+    
+    .demo-box { border: 2px dashed #42b883; border-radius: 8px; padding: 20px; margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 style="margin-bottom:20px;">Vue 3 自定义渲染器 交互演示</h1>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('overview')">📚 概念总览</button>
+      <button class="tab" onclick="showTab('api')">🔧 渲染器 API</button>
+      <button class="tab" onclick="showTab('terminal')">🖥️ 终端渲染器</button>
+      <button class="tab" onclick="showTab('canvas')">🎨 Canvas 渲染器</canvas></button>
+      <button class="tab" onclick="showTab('scenario')">🎯 应用场景</button>
+    </div>
+    
+    <!-- 概念总览 -->
+    <div id="overview" class="panel active">
+      <h2>什么是自定义渲染器？</h2>
+      
+      <p>Vue 3 的核心渲染引擎是<strong>平台无关</strong>的。通过自定义渲染器，你可以将 Vue 的响应式系统扩展到任何渲染目标。</p>
+      
+      <h3>标准 Vue vs 自定义渲染器</h3>
+      <table>
+        <tr><th>维度</th><th>标准 Vue（Web）</th><th>自定义渲染器</th></tr>
+        <tr><td>createElement</td><td>创建 DOM 元素</td><td>创建任意节点（Canvas、终端、Native）</td></tr>
+        <tr><td>insert</td><td>DOM.appendChild()</td><td>自定义插入逻辑</td></tr>
+        <tr><td>patchProp</td><td>设置 DOM 属性</td><td>设置任意属性（Canvas 样式、终端属性）</td></tr>
+        <tr><td>输出</td><td>HTML 页面</td><td>Canvas/WebGL/终端/图片/PDF...</td></tr>
+      </table>
+      
+      <h3>createRenderer 基本结构</h3>
+      <div class="code-block"><span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'vue'</span>
+
+<span class="keyword">const</span> { render, createApp } = createRenderer({
+  createElement(type) {
+    <span class="comment">// 创建节点</span>
+    <span class="keyword">return</span> { type, props: {}, children: [] }
+  },
+  
+  insert(child, parent, anchor) {
+    <span class="comment">// 插入节点</span>
+    parent.children.push(child)
+    child.parent = parent
+  },
+  
+  patchProp(node, key, prev, next) {
+    <span class="comment">// 更新属性</span>
+    node.props[key] = next
+  },
+  
+  <span class="comment">// ... 其他 API</span>
+})</div>
+      
+      <h3>为什么需要自定义渲染器？</h3>
+      <ul style="margin:12px 0;padding-left:24px;line-height:1.8;">
+        <li>在终端中渲染 Vue 组件（Ink 之于 React）</li>
+        <li>Canvas/WebGL 游戏或可视化</li>
+        <li>跨平台 Native 应用</li>
+        <li>服务端生成 PDF/图片</li>
+        <li>AR/VR 界面</li>
+      </ul>
+    </div>
+    
+    <!-- 渲染器 API -->
+    <div id="api" class="panel">
+      <h2>渲染器 API 详解</h2>
+      
+      <h3>完整 API 列表</h3>
+      <table>
+        <tr><th>API</th><th>说明</th></tr>
+        <tr><td>createElement</td><td>创建元素节点</td></tr>
+        <tr><td>createText</td><td>创建文本节点</td></tr>
+        <tr><td>createComment</td><td>创建注释节点</td></tr>
+        <tr><td>insert</td><td>插入子节点</td></tr>
+        <tr><td>remove</td><td>移除节点</td></tr>
+        <tr><td>patchProp</td><td>更新元素属性</td></tr>
+        <tr><td>mount</td><td>挂载到容器</td></tr>
+        <tr><td>update</td><td>更新元素</td></tr>
+        <tr><td>unmount</td><td>卸载元素</td></tr>
+        <tr><td>parentNode</td><td>获取父节点</td></tr>
+        <tr><td>nextSibling</td><td>获取下一个兄弟节点</td></tr>
+        <tr><td>setElementText</td><td>设置元素文本</td></tr>
+        <tr><td>setText</td><td>设置文本节点内容</td></tr>
+      </table>
+      
+      <h3>createElement 详解</h3>
+      <div class="code-block"><span class="keyword">const</span> nodeOps = {
+  createElement(type, { style, class: cls, onClick, ...props }, children) {
+    <span class="comment">// type: 元素类型，如 'div', 'button', 'circle'</span>
+    <span class="comment">// props: 属性对象（包含 style, class, 事件等）</span>
+    <span class="comment">// children: 子节点数组</span>
+    
+    <span class="keyword">return</span> {
+      type,
+      props: { style, class: cls, onClick, ...props },
+      children: children.flat(),
+      el: <span class="keyword">null</span>  <span class="comment">// 自定义渲染器自行管理</span>
+    }
+  }
+}</div>
+      
+      <h3>patchProp 详解</h3>
+      <div class="code-block">patchProp(node, key, prevValue, nextValue) {
+  <span class="keyword">if</span> (key === <span class="string">'style'</span>) {
+    <span class="comment">// 处理行内样式</span>
+    node.props.style = { ...node.props.style, ...nextValue }
+  } <span class="keyword">else if</span> (key === <span class="string">'class'</span>) {
+    <span class="comment">// 处理 class</span>
+    node.props.class = nextValue
+  } <span class="keyword">else if</span> (key.startsWith(<span class="string">'on'</span>)) {
+    <span class="comment">// 处理事件（如 onClick）</span>
+    node.props[key] = nextValue
+  } <span class="keyword">else</span> {
+    <span class="comment">// 其他属性</span>
+    node.props[key] = nextValue
+  }
+}</div>
+    </div>
+    
+    <!-- 终端渲染器 -->
+    <div id="terminal" class="panel">
+      <h2>终端渲染器演示</h2>
+      
+      <p>模拟 Vue 响应式系统在终端中渲染 UI 的效果：</p>
+      
+      <div class="demo-box">
+        <h4>交互式计数器（终端风格）</h4>
+        <div class="terminal" id="terminalOutput">
+          <div class="line"><span class="prompt">$</span> <span class="output">Vue Terminal Renderer Demo</span></div>
+          <div class="line"><span class="prompt">$</span> <span class="output">━".format("━" * 40)</span></div>
+          <div class="line" id="counterLine"><span class="prompt">$</span> <span class="output">Counter: 0</span></div>
+          <div class="line"><span class="prompt">$</span> <span class="output">[Increment] [Decrement] [Reset]</span></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button onclick="termIncrement()" style="padding:8px 16px;background:#42b883;color:white;border:none;border-radius:4px;cursor:pointer;">+ Increment</button>
+          <button onclick="termDecrement()" style="padding:8px 16px;background:#ff6b6b;color:white;border:none;border-radius:4px;cursor:pointer;">- Decrement</button>
+          <button onclick="termReset()" style="padding:8px 16px;background:#666;color:white;border:none;border-radius:4px;cursor:pointer;">Reset</button>
+        </div>
+      </div>
+      
+      <h3>终端渲染器原理</h3>
+      <div class="code-block"><span class="comment">// 终端渲染器核心概念</span>
+<span class="keyword">const</span> nodeOps = {
+  createElement(type, { style, onClick, ...props }, children) {
+    <span class="keyword">return</span> { type, props: { style, onClick, ...props }, children }
+  },
+  
+  insert(child, parent) {
+    parent.children = parent.children || []
+    parent.children.push(child)
+    child.parent = parent
+    <span class="function">renderNode</span>(child)  <span class="comment">// 渲染到终端</span>
+  },
+  
+  patchProp(node, key, _, nextValue) {
+    node.props[key] = nextValue
+    <span class="function">renderNode</span>(node)  <span class="comment">// 重新渲染</span>
+  }
+}</div>
+    </div>
+    
+    <!-- Canvas 渲染器 -->
+    <div id="canvas" class="panel">
+      <h2>Canvas 渲染器演示</h2>
+      
+      <p>模拟 Vue 响应式系统在 Canvas 上渲染图形：</p>
+      
+      <div class="canvas-container">
+        <canvas id="myCanvas" width="600" height="300"></canvas>
+        <div class="canvas-controls">
+          <button onclick="canvasAddCircle()">添加圆形</button>
+          <button onclick="canvasAddRect()">添加矩形</button>
+          <button onclick="canvasClear()">清空</button>
+          <button onclick="canvasAnimate()">动画演示</button>
+        </div>
+      </div>
+      
+      <h3>Canvas 渲染器核心概念</h3>
+      <div class="code-block"><span class="keyword">const</span> nodeOps = {
+  createElement(type) {
+    <span class="keyword">return</span> { type, props: {}, children: [] }
+  },
+  
+  insert(child, parent) {
+    parent.children.push(child)
+    child.parent = parent
+  },
+  
+  patchProp(node, key, _, nextValue) {
+    node.props[key] = nextValue
+  }
+}
+
+<span class="keyword">function</span> <span class="function">renderTree</span>(node, ctx) {
+  <span class="keyword">switch</span>(node.type) {
+    <span class="keyword">case</span> <span class="string">'circle'</span>:
+      ctx.beginPath()
+      ctx.arc(node.props.cx, node.props.cy, node.props.r, 0, Math.PI * 2)
+      ctx.fillStyle = node.props.fill || <span class="string">'black'</span>
+      ctx.fill()
+      <span class="keyword">break</span>
+    <span class="keyword">case</span> <span class="string">'rect'</span>:
+      ctx.fillStyle = node.props.fill || <span class="string">'black'</span>
+      ctx.fillRect(node.props.x, node.props.y, node.props.w, node.props.h)
+      <span class="keyword">break</span>
+  }
+  node.children.forEach(child => <span class="function">renderTree</span>(child, ctx))
+}</div>
+    </div>
+    
+    <!-- 应用场景 -->
+    <div id="scenario" class="panel">
+      <h2>实际应用场景</h2>
+      
+      <h3>1. 终端应用（Vue + CLI）</h3>
+      <div class="demo-box">
+        <p>类似 React 的 Ink，Vue 可以渲染终端 UI：</p>
+        <div class="code-block" style="font-size:12px;"><span class="comment">// ink-vue 示例</span>
+<span class="keyword">import</span> { render } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">import</span> { createTerminalRenderer } <span class="keyword">from</span> <span class="string">'ink-vue'</span>
+
+<span class="keyword">const</span> Counter = {
+  setup() {
+    <span class="keyword">const</span> { count, inc, dec } = <span class="function">useCounter</span>()
+    <span class="keyword">return</span> () => <span class="function">h</span>(<span class="string">'div'</span>, {}, [
+      <span class="function">h</span>(<span class="string">'Box'</span>, {}, <span class="string">`Count: </span>${count.value}<span class="string">`</span>),
+      <span class="function">h</span>(<span class="string">'Button'</span>, { onClick: inc }, <span class="string">'+'</span>),
+      <span class="function">h</span>(<span class="string">'Button'</span>, { onClick: dec }, <span class="string">'-'</span>)
+    ])
+  }
+}</div>
+      </div>
+      
+      <h3>2. Canvas/WebGL 可视化</h3>
+      <div class="demo-box">
+        <p>将 Vue 响应式系统用于游戏或数据可视化：</p>
+        <ul style="margin:8px 0;padding-left:20px;line-height:1.8;">
+          <li>响应式绑定 Canvas 图形属性</li>
+          <li>computed 计算派生图形</li>
+          <li>watchEffect 监听变化自动重绘</li>
+        </ul>
+      </div>
+      
+      <h3>3. PDF/图片生成</h3>
+      <div class="demo-box">
+        <p>服务端使用 Vue 模板 + 自定义渲染器生成 PDF：</p>
+        <div class="code-block" style="font-size:12px;"><span class="keyword">import</span> { render } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">import</span> { createPDFRenderer } <span class="keyword">from</span> <span class="string">'vue-to-pdf'</span>
+
+<span class="keyword">const</span> Invoice = { props: [<span class="string">'items'</span>], <span class="comment">/* ... */</span> }
+<span class="function">render</span>(<span class="function">h</span>(Invoice, { items }), pdfContext)</div>
+      </div>
+      
+      <h3>4. 跨平台 Native UI</h3>
+      <p>结合 Native 渲染引擎（如 Skia、CoreGraphics），用 Vue 构建 Native 应用界面。</p>
+    </div>
+  </div>
+  
+  <script>
+    let counter = 0;
+    let shapes = [];
+    let animationId = null;
+    
+    function showTab(id) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      event.target.classList.add('active');
+    }
+    
+    // 终端计数器
+    function termIncrement() {
+      counter++;
+      updateTerminalCounter();
+    }
+    
+    function termDecrement() {
+      counter--;
+      updateTerminalCounter();
+    }
+    
+    function termReset() {
+      counter = 0;
+      updateTerminalCounter();
+    }
+    
+    function updateTerminalCounter() {
+      const line = document.getElementById('counterLine');
+      line.innerHTML = `<span class="prompt">$</span> <span class="output">Counter: ${counter}</span>`;
+    }
+    
+    // Canvas 渲染器
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    function renderCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // 背景
+      ctx.fillStyle = '#fafafa';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 渲染所有图形
+      shapes.forEach(shape => {
+        ctx.beginPath();
+        if (shape.type === 'circle') {
+          ctx.arc(shape.cx, shape.cy, shape.r, 0, Math.PI * 2);
+          ctx.fillStyle = shape.fill || '#42b883';
+          ctx.fill();
+          ctx.strokeStyle = '#333';
+          ctx.stroke();
+        } else if (shape.type === 'rect') {
+          ctx.fillStyle = shape.fill || '#ff6b6b';
+          ctx.fillRect(shape.x, shape.y, shape.w, shape.h);
+          ctx.strokeStyle = '#333';
+          ctx.strokeRect(shape.x, shape.y, shape.w, shape.h);
+        }
+        
+        // 标签
+        if (shape.label) {
+          ctx.fillStyle = '#333';
+          ctx.font = '12px sans-serif';
+          ctx.fillText(shape.label, shape.cx || shape.x, (shape.cy || shape.y) - (shape.r || 0) - 5);
+        }
+      });
+      
+      if (shapes.length === 0) {
+        ctx.fillStyle = '#999';
+        ctx.font = '14px sans-serif';
+        ctx.fillText('点击按钮添加图形', canvas.width / 2 - 80, canvas.height / 2);
+      }
+    }
+    
+    function canvasAddCircle() {
+      const r = 20 + Math.random() * 30;
+      shapes.push({
+        type: 'circle',
+        cx: 50 + Math.random() * (canvas.width - 100),
+        cy: 50 + Math.random() * (canvas.height - 100),
+        r: r,
+        fill: `hsl(${Math.random() * 360}, 70%, 60%)`,
+        label: `r=${Math.round(r)}`
+      });
+      renderCanvas();
+    }
+    
+    function canvasAddRect() {
+      const w = 40 + Math.random() * 80;
+      const h = 40 + Math.random() * 60;
+      shapes.push({
+        type: 'rect',
+        x: 50 + Math.random() * (canvas.width - 100),
+        y: 50 + Math.random() * (canvas.height - 100),
+        w: w,
+        h: h,
+        fill: `hsl(${Math.random() * 360}, 70%, 60%)`,
+        label: `${Math.round(w)}x${Math.round(h)}`
+      });
+      renderCanvas();
+    }
+    
+    function canvasClear() {
+      shapes = [];
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      renderCanvas();
+    }
+    
+    function canvasAnimate() {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+        return;
+      }
+      
+      shapes = [
+        { type: 'circle', cx: 300, cy: 150, r: 50, fill: '#42b883' },
+        { type: 'circle', cx: 200, cy: 100, r: 30, fill: '#ff6b6b' },
+        { type: 'circle', cx: 400, cy: 100, r: 30, fill: '#ffd93d' },
+        { type: 'rect', x: 250, y: 180, w: 100, h: 50, fill: '#6bcb77' }
+      ];
+      
+      let angle = 0;
+      function animate() {
+        angle += 0.02;
+        shapes[0].cx = 300 + Math.cos(angle) * 100;
+        shapes[0].cy = 150 + Math.sin(angle) * 60;
+        
+        shapes[1].cy = 100 + Math.sin(angle * 2) * 20;
+        shapes[2].cy = 100 + Math.cos(angle * 2) * 20;
+        
+        renderCanvas();
+        animationId = requestAnimationFrame(animate);
+      }
+      animate();
+    }
+    
+    // 初始化
+    renderCanvas();
+  </script>
+</body>
+</html>

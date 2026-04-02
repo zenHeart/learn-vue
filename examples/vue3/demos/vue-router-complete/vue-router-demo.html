@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue Router 完整演示</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    
+    /* Tab 导航 */
+    .tabs { display: flex; gap: 2px; background: #e0e0e0; border-radius: 8px; padding: 4px; margin-bottom: 20px; }
+    .tab { padding: 8px 16px; border: none; background: transparent; cursor: pointer; border-radius: 6px; font-size: 14px; transition: all 0.2s; }
+    .tab:hover { background: rgba(255,255,255,0.5); }
+    .tab.active { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    
+    /* 面板 */
+    .panel { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: none; }
+    .panel.active { display: block; }
+    
+    /* 路由演示 */
+    .router-demo { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .router-nav { display: flex; gap: 8px; padding: 12px; background: #fafafa; border-bottom: 1px solid #e0e0e0; }
+    .router-nav a { padding: 6px 12px; border-radius: 4px; text-decoration: none; color: #333; font-size: 14px; transition: all 0.2s; }
+    .router-nav a:hover { background: #f0f0f0; }
+    .router-nav a.router-link-active { background: #42b883; color: white; }
+    .router-view { padding: 20px; min-height: 200px; }
+    .route-info { background: #f8f8f8; padding: 12px; border-radius: 4px; margin-top: 12px; font-family: monospace; font-size: 13px; }
+    
+    /* 导航守卫演示 */
+    .guard-log { background: #1a1a2e; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+    .guard-log .entry { padding: 4px 0; border-bottom: 1px solid #333; }
+    .guard-log .entry:last-child { border: none; }
+    .guard-log .before { color: #ff6b6b; }
+    .guard-log .resolve { color: #ffd93d; }
+    .guard-log .after { color: #6bcb77; }
+    
+    /* 动态路由演示 */
+    .dynamic-demo input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; width: 200px; margin-right: 8px; }
+    .dynamic-demo button { padding: 8px 16px; background: #42b883; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    
+    /* 代码展示 */
+    .code-block { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; font-family: 'Fira Code', monospace; font-size: 13px; overflow-x: auto; white-space: pre; }
+    .code-block .keyword { color: #569cd6; }
+    .code-block .string { color: #ce9178; }
+    .code-block .comment { color: #6a9955; }
+    .code-block .function { color: #dcdcaa; }
+    
+    /* 表格 */
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+    th { background: #fafafa; font-weight: 600; }
+    
+    h2 { margin-bottom: 16px; color: #333; }
+    h3 { margin: 20px 0 12px; color: #555; }
+    p { line-height: 1.6; color: #555; margin: 12px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 style="margin-bottom:20px;">Vue Router 完整演示</h1>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('overview')">📚 基础概述</button>
+      <button class="tab" onclick="showTab('dynamic')">🔗 动态路由</button>
+      <button class="tab" onclick="showTab('guards')">🛡️ 导航守卫</button>
+      <button class="tab" onclick="showTab('nested')">🔀 嵌套路由</button>
+      <button class="tab" onclick="showTab('meta')">📋 路由元信息</button>
+      <button class="tab" onclick="showTab('quiz')">📝 自测题</button>
+    </div>
+    
+    <!-- 基础概述 -->
+    <div id="overview" class="panel active">
+      <h2>Vue Router 基础概念</h2>
+      
+      <h3>核心组件</h3>
+      <table>
+        <tr><th>组件</th><th>说明</th></tr>
+        <tr><td>&lt;router-link&gt;</td><td>声明式导航，生成 &lt;a&gt; 标签</td></tr>
+        <tr><td>&lt;router-view&gt;</td><td>路由出口，渲染匹配组件</td></tr>
+      </table>
+      
+      <h3>路由模式对比</h3>
+      <table>
+        <tr><th>模式</th><th>API</th><th>URL 格式</th></tr>
+        <tr><td>History</td><td>createWebHistory()</td><td>/home</td></tr>
+        <tr><td>Hash</td><td>createWebHashHistory()</td><td>/#/home</td></tr>
+        <tr><td>Memory</td><td>createMemoryHistory()</td><td>无 URL</td></tr>
+      </table>
+      
+      <h3>基本使用</h3>
+      <div class="code-block"><span class="keyword">import</span> { createApp } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">import</span> { createRouter, createWebHistory } <span class="keyword">from</span> <span class="string">'vue-router'</span>
+
+<span class="keyword">const</span> router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    { path: <span class="string">'/'</span>, component: Home },
+    { path: <span class="string">'/about'</span>, component: About }
+  ]
+})
+
+<span class="keyword">const</span> app = createApp(App)
+app.use(router)
+app.mount(<span class="string">'#app'</span>)</div>
+      
+      <h3>🎮 交互演示</h3>
+      <div class="router-demo">
+        <div class="router-nav">
+          <a href="#/home" onclick="navigate(event, '/home')">首页</a>
+          <a href="#/about" onclick="navigate(event, '/about')">关于</a>
+          <a href="#/user/1" onclick="navigate(event, '/user/1')">用户1</a>
+          <a href="#/user/2" onclick="navigate(event, '/user/2')">用户2</a>
+        </div>
+        <div class="router-view" id="routerView">
+          <h3>首页</h3>
+          <p>欢迎来到 Vue Router 演示</p>
+        </div>
+      </div>
+      
+      <div class="route-info" id="routeInfo">
+        <strong>当前路由信息：</strong><br>
+        path: /home<br>
+        params: {}<br>
+        query: {}
+      </div>
+    </div>
+    
+    <!-- 动态路由 -->
+    <div id="dynamic" class="panel">
+      <h2>动态路由与参数</h2>
+      
+      <h3>路由参数</h3>
+      <p>使用 <code>:paramName</code> 语法定义动态路由参数。</p>
+      
+      <div class="code-block"><span class="comment">// 定义动态路由</span>
+{ path: <span class="string">'/user/:id'</span>, component: User }
+{ path: <span class="string">'/article/:category/:id'</span>, component: Article }
+
+<span class="comment">// 获取参数</span>
+<span class="keyword">const</span> route = useRoute()
+route.params.id      <span class="comment">// 获取 :id</span>
+route.params.category <span class="comment">// 获取 :category</span>
+route.query.q        <span class="comment">// 获取 URL 查询参数</span></div>
+      
+      <h3>🎮 交互演示</h3>
+      <div class="dynamic-demo">
+        <input type="text" id="userIdInput" placeholder="输入用户ID" value="123">
+        <button onclick="goToUser()">导航到用户</button>
+      </div>
+      <div class="route-info" id="dynamicRouteInfo">
+        暂无数据
+      </div>
+      
+      <h3>props 解耦</h3>
+      <div class="code-block"><span class="comment">// 布尔值：将 params 作为 props</span>
+{ path: <span class="string">'/user/:id'</span>, component: User, props: <span class="keyword">true</span> }
+
+<span class="comment">// props 可以是函数</span>
+{ 
+  path: <span class="string">'/user/:id'</span>, 
+  component: User, 
+  props: route => ({ id: route.params.id, name: route.query.name })
+}</div>
+    </div>
+    
+    <!-- 导航守卫 -->
+    <div id="guards" class="panel">
+      <h2>导航守卫</h2>
+      
+      <h3>守卫类型</h3>
+      <table>
+        <tr><th>守卫</th><th>说明</th></tr>
+        <tr><td>beforeEach</td><td>全局前置守卫，路由切换前</td></tr>
+        <tr><td>beforeResolve</td><td>全局解析守卫，确认前</td></tr>
+        <tr><td>afterEach</td><td>全局后置守卫，切换后</td></tr>
+        <tr><td>beforeEnter</td><td>路由独享守卫</td></tr>
+        <tr><td>beforeRouteEnter</td><td>组件内守卫，渲染前</td></tr>
+        <tr><td>beforeRouteUpdate</td><td>组件内守卫，参数变化</td></tr>
+        <tr><td>beforeRouteLeave</td><td>组件内守卫，离开前</td></tr>
+      </table>
+      
+      <h3>守卫参数</h3>
+      <div class="code-block">router.beforeEach((to, from, next) => {
+  <span class="comment">// to: 目标路由</span>
+  <span class="comment">// from: 当前路由</span>
+  <span class="comment">// next: 解析回调</span>
+  
+  <span class="keyword">if</span> (to.meta.requiresAuth && !isLoggedIn) {
+    next(<span class="string">'/login'</span>)  <span class="comment">// 重定向</span>
+  } <span class="keyword">else</span> {
+    next()  <span class="comment">// 确认导航</span>
+  }
+})</div>
+      
+      <h3>🎮 守卫日志</h3>
+      <div class="guard-log" id="guardLog">
+        <div class="entry">点击上方导航按钮查看守卫执行顺序...</div>
+      </div>
+      <button onclick="clearGuardLog()" style="margin-top:8px;">清空日志</button>
+    </div>
+    
+    <!-- 嵌套路由 -->
+    <div id="nested" class="panel">
+      <h2>嵌套路由</h2>
+      
+      <div class="code-block"><span class="keyword">const</span> routes = [
+  {
+    path: <span class="string">'/user/:id'</span>,
+    component: User,
+    children: [
+      { path: <span class="string">'profile'</span>, component: UserProfile },
+      { path: <span class="string">'posts'</span>, component: UserPosts }
+    ]
+  }
+]</div>
+      
+      <h3>🎮 交互演示</h3>
+      <div class="router-demo">
+        <div class="router-nav">
+          <a href="#/user/1/profile" onclick="navigate(event, '/user/1/profile')">用户1-资料</a>
+          <a href="#/user/1/posts" onclick="navigate(event, '/user/1/posts')">用户1-帖子</a>
+          <a href="#/user/2/profile" onclick="navigate(event, '/user/2/profile')">用户2-资料</a>
+        </div>
+        <div class="router-view" id="nestedView">
+          <p>选择一个子路由查看</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 路由元信息 -->
+    <div id="meta" class="panel">
+      <h2>路由元信息 (meta)</h2>
+      
+      <p>使用 <code>meta</code> 属性为路由附加自定义数据，如权限、标题等。</p>
+      
+      <div class="code-block"><span class="keyword">const</span> routes = [
+  {
+    path: <span class="string">'/admin'</span>,
+    component: Admin,
+    meta: { requiresAuth: <span class="keyword">true</span>, role: <span class="string">'admin'</span> }
+  },
+  {
+    path: <span class="string">'/profile'</span>,
+    component: Profile,
+    meta: { title: <span class="string">'用户资料'</span> }
+  }
+]
+
+<span class="comment">// 访问 meta</span>
+router.beforeEach((to, from, next) => {
+  <span class="keyword">if</span> (to.meta.requiresAuth && !isLoggedIn) {
+    next(<span class="string">'/login'</span>)
+  }
+  document.title = to.meta.title || <span class="string">'默认标题'</span>
+  next()
+})</div>
+      
+      <h3>常见 meta 用法</h3>
+      <table>
+        <tr><th>字段</th><th>用途</th></tr>
+        <tr><td>requiresAuth</td><td>是否需要登录</td></tr>
+        <tr><td>role</td><td>权限角色</td></tr>
+        <tr><td>title</td><td>页面标题</td></tr>
+        <tr><td>keepAlive</td><td>是否缓存组件</td></tr>
+        <tr><td>breadcrumb</td><td>面包屑数据</td></tr>
+      </table>
+    </div>
+    
+    <!-- 自测题 -->
+    <div id="quiz" class="panel">
+      <h2>自测题</h2>
+      
+      <div id="quizContainer">
+        <div class="quiz-question" data-correct="1">
+          <p><strong>1. Vue Router 中，用于声明式导航的组件是？</strong></p>
+          <label><input type="radio" name="q1" value="0"> &lt;router&gt;</label><br>
+          <label><input type="radio" name="q1" value="1"> &lt;router-link&gt;</label><br>
+          <label><input type="radio" name="q1" value="2"> &lt;route-view&gt;</label>
+        </div>
+        
+        <div class="quiz-question" data-correct="2">
+          <p style="margin-top:16px;"><strong>2. 以下哪个不是 Vue Router 的导航守卫？</strong></p>
+          <label><input type="radio" name="q2" value="0"> beforeEach</label><br>
+          <label><input type="radio" name="q2" value="1"> beforeRouteEnter</label><br>
+          <label><input type="radio" name="q2" value="2"> beforeComponentLoad</label>
+        </div>
+        
+        <div class="quiz-question" data-correct="0">
+          <p style="margin-top:16px;"><strong>3. 如何在路由中定义动态参数？</strong></p>
+          <label><input type="radio" name="q3" value="0"> /user/:id</label><br>
+          <label><input type="radio" name="q3" value="1"> /user/{id}</label><br>
+          <label><input type="radio" name="q3" value="2"> /user?id=</label>
+        </div>
+        
+        <button onclick="checkAnswers()" style="margin-top:20px;padding:10px 20px;background:#42b883;color:white;border:none;border-radius:4px;cursor:pointer;">提交答案</button>
+        <div id="quizResult" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script>
+    // 简单路由模拟
+    const routes = {
+      '/home': { name: '首页', component: 'Home', params: {}, query: {} },
+      '/about': { name: '关于', component: 'About', params: {}, query: {} },
+      '/user/:id/profile': { name: '用户资料', component: 'UserProfile', params: {}, query: {} },
+      '/user/:id/posts': { name: '用户帖子', component: 'UserPosts', params: {}, query: {} }
+    };
+    
+    let currentPath = '/home';
+    let guardCount = 0;
+    
+    function parseRoute(path) {
+      // 简单解析
+      for (const pattern of Object.keys(routes)) {
+        const regex = new RegExp('^' + pattern.replace(/:(\w+)/g, '([^/]+)') + '$');
+        const match = path.match(regex);
+        if (match) {
+          const route = routes[pattern];
+          const paramNames = (pattern.match(/:(\w+)/g) || []).map(m => m.slice(1));
+          const params = {};
+          paramNames.forEach((name, i) => params[name] = match[i + 1]);
+          return { ...route, params };
+        }
+      }
+      return { name: '未知', component: 'Unknown', params: {}, query: {} };
+    }
+    
+    function navigate(event, path) {
+      event && event.preventDefault();
+      currentPath = path;
+      const route = parseRoute(path);
+      
+      // 模拟守卫日志
+      guardCount++;
+      const log = document.getElementById('guardLog');
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+      entry.innerHTML = `<span class="before">[${guardCount}] beforeEach →</span> 导航到 ${path}`;
+      log.appendChild(entry);
+      
+      setTimeout(() => {
+        const entry2 = document.createElement('div');
+        entry2.className = 'entry';
+        entry2.innerHTML = `<span class="resolve">[${guardCount}] beforeResolve →</span> 路由确认`;
+        log.appendChild(entry2);
+      }, 50);
+      
+      setTimeout(() => {
+        const entry3 = document.createElement('div');
+        entry3.className = 'entry';
+        entry3.innerHTML = `<span class="after">[${guardCount}] afterEach →</span> 导航完成`;
+        log.appendChild(entry3);
+      }, 100);
+      
+      // 更新视图
+      const view = document.getElementById('routerView') || document.getElementById('nestedView');
+      if (view.id === 'nestedView' && path.startsWith('/user/')) {
+        view.innerHTML = `<h3>${route.name}</h3><p>用户ID: ${route.params.id}</p><p>这是 ${route.component} 组件</p>`;
+      } else {
+        view.innerHTML = `<h3>${route.name}</h3><p>组件: ${route.component}</p>`;
+      }
+      
+      // 更新路由信息
+      const info = document.getElementById('routeInfo') || document.getElementById('dynamicRouteInfo');
+      if (info) {
+        info.innerHTML = `<strong>当前路由信息：</strong><br>path: ${path}<br>params: ${JSON.stringify(route.params)}<br>query: ${JSON.stringify(route.query)}`;
+      }
+      
+      // 更新链接高亮
+      document.querySelectorAll('.router-nav a').forEach(a => {
+        a.classList.toggle('router-link-active', a.getAttribute('href') === '#' + path);
+      });
+    }
+    
+    function showTab(id) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      event.target.classList.add('active');
+    }
+    
+    function goToUser() {
+      const id = document.getElementById('userIdInput').value;
+      navigate(null, '/user/' + id);
+    }
+    
+    function clearGuardLog() {
+      document.getElementById('guardLog').innerHTML = '<div class="entry">日志已清空</div>';
+    }
+    
+    function checkAnswers() {
+      const questions = document.querySelectorAll('.quiz-question');
+      let correct = 0;
+      questions.forEach((q, i) => {
+        const selected = q.querySelector('input[name="q' + (i+1) + '"]:checked');
+        const correctAnswer = q.dataset.correct;
+        if (selected && selected.value === correctAnswer) {
+          correct++;
+          q.style.color = 'green';
+        } else {
+          q.style.color = 'red';
+        }
+      });
+      document.getElementById('quizResult').innerHTML = 
+        `答对 ${correct}/${questions.length} 题`;
+    }
+    
+    // 初始化
+    navigate(null, '/home');
+  </script>
+</body>
+</html>

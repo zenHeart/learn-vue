@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue keep-alive 交互演示</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    
+    .tabs { display: flex; gap: 4px; background: #e0e0e0; border-radius: 8px; padding: 4px; margin-bottom: 20px; }
+    .tab { padding: 8px 16px; border: none; background: transparent; cursor: pointer; border-radius: 6px; font-size: 14px; }
+    .tab:hover { background: rgba(255,255,255,0.5); }
+    .tab.active { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    
+    .panel { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: none; }
+    .panel.active { display: block; }
+    
+    .demo-box { border: 2px dashed #42b883; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    .demo-box h4 { margin-bottom: 12px; color: #42b883; }
+    
+    .lifecycle-log { background: #1a1a2e; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+    .lifecycle-log .created { color: #569cd6; }
+    .lifecycle-log .mounted { color: #4ec9b0; }
+    .lifecycle-log .activated { color: #6bcb77; }
+    .lifecycle-log .deactivated { color: #ffd93d; }
+    .lifecycle-log .unmounted { color: #ff6b6b; }
+    
+    .tab-switcher { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab-switcher button { padding: 8px 16px; background: #42b883; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .tab-switcher button:hover { background: #3aa876; }
+    .tab-switcher button.active { background: #2d8659; }
+    
+    .component-view { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 4px; padding: 16px; min-height: 150px; }
+    
+    .counter-display { font-size: 48px; text-align: center; color: #42b883; font-weight: bold; margin: 20px 0; }
+    
+    .code-block { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; font-family: 'Fira Code', monospace; font-size: 13px; overflow-x: auto; white-space: pre; }
+    .code-block .keyword { color: #569cd6; }
+    .code-block .string { color: #ce9178; }
+    .code-block .comment { color: #6a9955; }
+    
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+    th { background: #fafafa; }
+    
+    h2 { margin-bottom: 16px; }
+    h3 { margin: 20px 0 12px; }
+    p { line-height: 1.6; color: #555; margin: 12px 0; }
+    
+    .highlight { background: #e8f5e9; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 style="margin-bottom:20px;">Vue keep-alive 交互演示</h1>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('overview')">📚 概念概述</button>
+      <button class="tab" onclick="showTab('lifecycle')">🔄 生命周期</button>
+      <button class="tab" onclick="showTab('include')">🎯 include/exclude</button>
+      <button class="tab" onclick="showTab('max')">📊 max 限制</button>
+      <button class="tab" onclick="showTab('scenario')">🎮 场景演示</button>
+    </div>
+    
+    <!-- 概念概述 -->
+    <div id="overview" class="panel active">
+      <h2>keep-alive 核心概念</h2>
+      
+      <h3>缓存 vs 不缓存对比</h3>
+      <table>
+        <tr><th>行为</th><th>无 keep-alive</th><th>有 keep-alive</th></tr>
+        <tr><td>首次渲染</td><td>created → mounted</td><td>created → mounted</td></tr>
+        <tr><td>切换离开</td><td>beforeUnmount → unmounted</td><td><span class="highlight">deactivated</span></td></tr>
+        <tr><td>切换回来</td><td>created → mounted</td><td><span class="highlight">activated</span></td></tr>
+        <tr><td>状态保留</td><td>❌ 丢失</td><td>✅ 保留</td></tr>
+      </table>
+      
+      <h3>基本语法</h3>
+      <div class="code-block"><span class="comment">&lt;!-- 缓存单个组件 --&gt;</span>
+&lt;keep-alive&gt;
+  &lt;MyComponent /&gt;
+&lt;/keep-alive&gt;
+
+<span class="comment">&lt;!-- 缓存多个动态组件 --&gt;</span>
+&lt;keep-alive&gt;
+  &lt;component :is=<span class="string">"currentComponent"</span> /&gt;
+&lt;/keep-alive&gt;
+
+<span class="comment">&lt;!-- 使用 include/exclude --&gt;</span>
+&lt;keep-alive include=<span class="string">"Home,About"</span> exclude=<span class="string">"User"</span> :max=<span class="string">"10"</span>&gt;
+  &lt;component :is=<span class="string">"currentComponent"</span> /&gt;
+&lt;/keep-alive&gt;</div>
+      
+      <h3>activated / deactivated 使用场景</h3>
+      <div class="code-block"><span class="keyword">export default</span> {
+  activated() {
+    <span class="comment">// 从缓存恢复时调用</span>
+    <span class="comment">// 适合：重启定时器、刷新数据</span>
+    <span class="keyword">this</span>.startTimer()
+    <span class="keyword">this</span>.fetchData()
+  },
+  
+  deactivated() {
+    <span class="comment">// 被放入缓存时调用</span>
+    <span class="comment">// 适合：暂停定时器、保存状态</span>
+    <span class="keyword">this</span>.stopTimer()
+    <span class="keyword">this</span>.saveState()
+  }
+}</div>
+    </div>
+    
+    <!-- 生命周期 -->
+    <div id="lifecycle" class="panel">
+      <h2>生命周期详解</h2>
+      
+      <h3>🎮 交互演示</h3>
+      <div class="tab-switcher">
+        <button onclick="switchTab('tabA')" id="btnTabA" class="active">组件 A</button>
+        <button onclick="switchTab('tabB')" id="btnTabB">组件 B</button>
+        <button onclick="switchTab('tabC')" id="btnTabC">组件 C</button>
+      </div>
+      
+      <div class="component-view" id="componentView">
+        <!-- 动态渲染组件 -->
+      </div>
+      
+      <h4 style="margin-top:16px;">生命周期日志：</h4>
+      <div class="lifecycle-log" id="lifecycleLog">
+        <div class="entry">切换组件查看生命周期...</div>
+      </div>
+      
+      <button onclick="clearLog()" style="margin-top:8px;padding:6px 12px;background:#666;color:white;border:none;border-radius:4px;cursor:pointer;">清空日志</button>
+      
+      <h3>生命周期执行顺序</h3>
+      <div class="code-block"><span class="comment">// 首次挂载 ComponentA</span>
+created      <span class="comment">// ← A 创建</span>
+mounted      <span class="comment">// ← A 挂载</span>
+
+<span class="comment">// 切换到 ComponentB</span>
+deactivated  <span class="comment">// ← A 停用（被缓存）</span>
+created      <span class="comment">// ← B 创建</span>
+mounted      <span class="comment">// ← B 挂载</span>
+
+<span class="comment">// 切换回 ComponentA</span>
+activated    <span class="comment">// ← A 激活（从缓存恢复）</span>
+deactivated  <span class="comment">// ← B 停用</span>
+
+<span class="comment">// 真正销毁时</span>
+beforeUnmount <span class="comment">// ← A 即将销毁</span>
+unmounted    <span class="comment">// ← A 销毁</span></div>
+    </div>
+    
+    <!-- include/exclude -->
+    <div id="include" class="panel">
+      <h2>include / exclude</h2>
+      
+      <h3>匹配方式</h3>
+      <table>
+        <tr><th>方式</th><th>示例</th><th>说明</th></tr>
+        <tr><td>字符串</td><td>include="Home,About"</td><td>逗号分隔的组件名</td></tr>
+        <tr><td>数组</td><td>:include="['Home','About']"</td><td>数组形式</td></tr>
+        <tr><td>正则</td><td>:include="/Home|About/"</td><td>正则表达式</td></tr>
+      </table>
+      
+      <h3>🎮 交互演示</h3>
+      <p>切换组件，观察哪些会被缓存：</p>
+      <div class="demo-box">
+        <h4>当前缓存策略：include="ComponentA,ComponentB"</h4>
+        <div class="tab-switcher">
+          <button onclick="switchTabInc('tabA')">组件 A</button>
+          <button onclick="switchTabInc('tabB')">组件 B</button>
+          <button onclick="switchTabInc('tabC')">组件 C</button>
+        </div>
+        <div class="component-view" id="includeView"></div>
+        <p style="margin-top:12px;font-size:13px;color:#666;">
+          <strong>说明：</strong>组件 A 和 B 会被缓存（include），组件 C 不会被缓存（切换后销毁重建）
+        </p>
+      </div>
+      
+      <h3>组件名称设置</h3>
+      <div class="code-block"><span class="comment">// 选项式 API</span>
+<span class="keyword">export default</span> {
+  name: <span class="string">'MyComponent'</span>  <span class="comment">// ← 必须设置 name</span>
+}
+
+<span class="comment">// 组合式 API</span>
+<span class="keyword">import</span> { defineComponent } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">export default</span> defineComponent({
+  name: <span class="string">'MyComponent'</span>  <span class="comment">// ← 组合式中需显式定义</span>
+})</div>
+    </div>
+    
+    <!-- max 限制 -->
+    <div id="max" class="panel">
+      <h2>max 缓存限制</h2>
+      
+      <p>使用 <code>:max</code> 属性限制最大缓存实例数量，超出后移除最久未激活的实例（LRU 策略）。</p>
+      
+      <div class="code-block"><span class="comment">// 最多缓存 3 个组件实例</span>
+&lt;keep-alive :max=<span class="string">"3"</span>&gt;
+  &lt;component :is=<span class="string">"currentView"</span> /&gt;
+&lt;/keep-alive&gt;</div>
+      
+      <h3>🎮 LRU 策略演示</h3>
+      <p>max=3 时，切换顺序：A → B → C → A → B → D</p>
+      <div style="margin:16px 0;">
+        <button onclick="lruDemo()">开始演示</button>
+        <div id="lruSteps" style="margin-top:12px;"></div>
+      </div>
+      
+      <h3>LRU 策略说明</h3>
+      <table>
+        <tr><th>步骤</th><th>缓存状态</th><th>说明</th></tr>
+        <tr><td>1. 访问 A</td><td>[A]</td><td>A 被缓存</td></tr>
+        <tr><td>2. 访问 B</td><td>[A, B]</td><td>B 被缓存</td></tr>
+        <tr><td>3. 访问 C</td><td>[A, B, C]</td><td>C 被缓存，已满</td></tr>
+        <tr><td>4. 访问 A</td><td>[B, C, A]</td><td>A 已存在，更新为最新</td></tr>
+        <tr><td>5. 访问 D</td><td>[C, A, D]</td><td>移除最旧的 B（L R U）</td></tr>
+      </table>
+    </div>
+    
+    <!-- 场景演示 -->
+    <div id="scenario" class="panel">
+      <h2>典型场景演示</h2>
+      
+      <h3>🎮 Tab 切换（缓存所有 Tab）</h3>
+      <div class="demo-box">
+        <h4>表单数据在切换后保留</h4>
+        <div class="tab-switcher">
+          <button onclick="switchFormTab('formA')" id="btnFormA" class="active">表单 A</button>
+          <button onclick="switchFormTab('formB')" id="btnFormB">表单 B</button>
+        </div>
+        <div id="formContainer">
+          <label>用户名：<input type="text" id="formInput" placeholder="输入一些内容" style="padding:8px;border:1px solid #ddd;border-radius:4px;width:200px;"></label>
+          <p style="margin-top:8px;font-size:13px;color:#666;">切换 Tab 后，输入的内容会保留（因为被缓存了）</p>
+        </div>
+      </div>
+      
+      <h3>计数器演示</h3>
+      <div class="demo-box">
+        <div class="counter-display" id="counterDisplay">0</div>
+        <div style="text-align:center;">
+          <button onclick="incrementCounter()" style="padding:10px 20px;background:#42b883;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:8px;">+1</button>
+          <button onclick="switchCounterTab()" style="padding:10px 20px;background:#666;color:white;border:none;border-radius:4px;cursor:pointer;">切换视图</button>
+        </div>
+        <p style="margin-top:12px;font-size:13px;color:#666;">
+          在 TabA 点击 +1，然后切换到 TabB，再切换回 TabA，计数器会保留（被缓存）
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 状态
+    let currentTab = 'tabA';
+    let tabCounts = { tabA: 0, tabB: 0, tabC: 0 };
+    let logEntries = [];
+    let counterTab = 'counterA';
+    let counterA = 0;
+    let counterB = 0;
+    
+    // 简单组件渲染
+    function renderComponent(name, containerId, showLog = true) {
+      const container = document.getElementById(containerId);
+      const count = tabCounts[name] || 0;
+      
+      container.innerHTML = `
+        <div style="padding:16px;">
+          <h4 style="color:#42b883;">${name.toUpperCase()} 组件</h4>
+          <p>渲染次数: <strong>${count + 1}</strong></p>
+          <p style="font-size:13px;color:#666;">组件数据: ${Math.random().toString(36).slice(2, 8)}</p>
+        </div>
+      `;
+      
+      if (showLog) {
+        logLifecycle(name, count === 0 ? 'mounted' : 'activated');
+      }
+    }
+    
+    function logLifecycle(component, phase) {
+      const log = document.getElementById('lifecycleLog');
+      const entry = document.createElement('div');
+      entry.className = 'entry ' + phase;
+      const time = new Date().toLocaleTimeString();
+      entry.textContent = `[${time}] ${component}: ${phase}`;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+    
+    function switchTab(name) {
+      const prev = currentTab;
+      if (prev !== name) {
+        logLifecycle(prev, 'deactivated');
+        currentTab = name;
+        tabCounts[name] = (tabCounts[name] || 0) + 1;
+        renderComponent(name, 'componentView');
+        
+        // 更新按钮状态
+        document.querySelectorAll('.tab-switcher button').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+      }
+    }
+    
+    function switchTabInc(name) {
+      currentTab = name;
+      tabCounts[name] = (tabCounts[name] || 0) + 1;
+      renderComponent(name, 'includeView');
+      
+      document.querySelectorAll('#include .tab-switcher button').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+    }
+    
+    function clearLog() {
+      document.getElementById('lifecycleLog').innerHTML = '<div class="entry">日志已清空</div>';
+      tabCounts = { tabA: 0, tabB: 0, tabC: 0 };
+      currentTab = 'tabA';
+    }
+    
+    // LRU 演示
+    function lruDemo() {
+      const steps = [
+        { action: '访问 A', cache: ['A'], desc: 'A 入缓存' },
+        { action: '访问 B', cache: ['A', 'B'], desc: 'B 入缓存' },
+        { action: '访问 C', cache: ['A', 'B', 'C'], desc: 'C 入缓存，已满' },
+        { action: '访问 A', cache: ['B', 'C', 'A'], desc: 'A 已存在，移到最新' },
+        { action: '访问 B', cache: ['C', 'A', 'B'], desc: 'B 已存在，移到最新' },
+        { action: '访问 D', cache: ['A', 'B', 'D'], desc: '移除最旧的 C（L最久未使用）' }
+      ];
+      
+      const container = document.getElementById('lruSteps');
+      container.innerHTML = '';
+      
+      let delay = 0;
+      steps.forEach((step, i) => {
+        setTimeout(() => {
+          const div = document.createElement('div');
+          div.style.cssText = 'padding:8px;margin:4px 0;background:#e8f5e9;border-radius:4px;';
+          div.innerHTML = `<strong>${i + 1}. ${step.action}</strong> → 缓存: [${step.cache.join(', ')}] <span style="color:#666;">${step.desc}</span>`;
+          container.appendChild(div);
+        }, delay);
+        delay += 600;
+      });
+    }
+    
+    // 表单 Tab
+    function switchFormTab(name) {
+      document.querySelectorAll('#scenario .tab-switcher button').forEach(b => b.classList.remove('active'));
+      document.getElementById('btnForm' + name.slice(-1).toUpperCase()).classList.add('active');
+    }
+    
+    // 计数器
+    function incrementCounter() {
+      if (counterTab === 'counterA') {
+        counterA++;
+      } else {
+        counterB++;
+      }
+      document.getElementById('counterDisplay').textContent = counterTab === 'counterA' ? counterA : counterB;
+    }
+    
+    function switchCounterTab() {
+      counterTab = counterTab === 'counterA' ? 'counterB' : 'counterA';
+      document.getElementById('counterDisplay').textContent = counterTab === 'counterA' ? counterA : counterB;
+    }
+    
+    function showTab(id) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      event.target.classList.add('active');
+    }
+    
+    // 初始化
+    renderComponent('tabA', 'componentView', false);
+    renderComponent('tabA', 'includeView', false);
+  </script>
+</body>
+</html>

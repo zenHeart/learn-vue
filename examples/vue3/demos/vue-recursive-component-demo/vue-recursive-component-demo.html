@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 递归组件 交互演示</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    
+    .tabs { display: flex; gap: 4px; background: #e0e0e0; border-radius: 8px; padding: 4px; margin-bottom: 20px; }
+    .tab { padding: 8px 16px; border: none; background: transparent; cursor: pointer; border-radius: 6px; font-size: 14px; }
+    .tab.active { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    
+    .panel { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: none; }
+    .panel.active { display: block; }
+    
+    .code-block { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; font-family: 'Fira Code', monospace; font-size: 13px; overflow-x: auto; white-space: pre; }
+    .code-block .keyword { color: #569cd6; }
+    .code-block .string { color: #ce9178; }
+    .code-block .comment { color: #6a9955; }
+    
+    /* 树形组件样式 */
+    .tree-node { margin-left: 20px; }
+    .tree-node:first-child { margin-left: 0; }
+    .node-content { padding: 8px 12px; margin: 4px 0; background: #f8f8f8; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s; }
+    .node-content:hover { background: #e8f8f4; }
+    .node-content.selected { background: #42b883; color: white; }
+    .arrow { font-size: 10px; color: #999; transition: transform 0.2s; }
+    .node-content.selected .arrow { color: white; }
+    .arrow.open { transform: rotate(90deg); }
+    .node-label { font-size: 14px; }
+    .node-actions { margin-left: auto; display: flex; gap: 4px; }
+    .node-actions button { padding: 2px 6px; font-size: 11px; background: #fff; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; }
+    .node-content.selected .node-actions button { background: white; }
+    
+    /* 评论组件样式 */
+    .comment-item { margin: 12px 0; }
+    .comment-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .comment-avatar { width: 32px; height: 32px; border-radius: 50%; background: #42b883; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .comment-meta { font-size: 13px; color: #666; }
+    .comment-body { background: #f8f8f8; padding: 12px; border-radius: 8px; margin-left: 40px; }
+    .comment-actions { margin-top: 8px; font-size: 12px; color: #999; }
+    .comment-actions span { cursor: pointer; margin-right: 12px; }
+    .comment-actions span:hover { color: #42b883; }
+    
+    /* 菜单组件样式 */
+    .menu-item { padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+    .menu-item:hover { background: #e8f8f4; }
+    .menu-item.active { background: #42b883; color: white; }
+    .menu-children { margin-left: 20px; border-left: 1px dashed #ddd; padding-left: 12px; }
+    
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+    th { background: #fafafa; }
+    
+    h2 { margin-bottom: 16px; }
+    h3 { margin: 20px 0 12px; }
+    p { line-height: 1.6; color: #555; margin: 12px 0; }
+    
+    .demo-box { border: 2px dashed #42b883; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    .demo-box h4 { margin-bottom: 12px; color: #42b883; }
+    
+    .log-display { background: #1e1e1e; color: #0f0; padding: 12px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 150px; overflow-y: auto; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 style="margin-bottom:20px;">Vue 递归组件 交互演示</h1>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('overview')">📚 概念总览</button>
+      <button class="tab" onclick="showTab('tree')">🌲 树形组件</button>
+      <button class="tab" onclick="showTab('comment')">💬 评论组件</button>
+      <button class="tab" onclick="showTab('menu')">📋 菜单组件</button>
+      <button class="tab" onclick="showTab('best')">⭐ 最佳实践</button>
+    </div>
+    
+    <!-- 概念总览 -->
+    <div id="overview" class="panel active">
+      <h2>递归组件核心概念</h2>
+      
+      <h3>什么是递归组件？</h3>
+      <p>递归组件是指在组件的模板中<strong>调用自身</strong>的组件。</p>
+      
+      <div class="code-block"><span class="comment">// TreeNode.vue - 递归调用自身</span>
+&lt;template&gt;
+  &lt;div class=<span class="string">"tree-node"</span>&gt;
+    &lt;div&gt;{{ node.label }}&lt;/div&gt;
+    <span class="comment">&lt;!-- 递归调用 --&gt;</span>
+    &lt;TreeNode 
+      v-for=<span class="string">"child in node.children"</span>
+      :key=<span class="string">"child.id"</span>
+      :node=<span class="string">"child"</span>
+    /&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+<span class="keyword">export default</span> {
+  name: <span class="string">'TreeNode'</span>  <span class="comment">// ← 必须有 name 才能递归</span>
+}</div>
+      
+      <h3>递归组件的必要条件</h3>
+      <table>
+        <tr><th>条件</th><th>说明</th></tr>
+        <tr><td>组件必须有 name</td><td>组件模板中引用自身需要通过 name</td></tr>
+        <tr><td>必须有终止条件</td><td>否则无限递归导致栈溢出</td></tr>
+        <tr><td>数据必须能收敛</td><td>子节点数量/深度有限</td></tr>
+      </table>
+      
+      <h3>数据传递方式</h3>
+      <table>
+        <tr><th>方式</th><th>适用场景</th></tr>
+        <tr><td>Props 逐层传递</td><td>层级不深（&lt; 3层）</td></tr>
+        <tr><td>provide/inject</td><td>层级较深，避免逐层透传</td></tr>
+        <tr><td>事件向上传递</td><td>子组件需要通知父组件</td></tr>
+        <tr><td>Pinia/Vuex</td><td>复杂状态管理</td></tr>
+      </table>
+    </div>
+    
+    <!-- 树形组件 -->
+    <div id="tree" class="panel">
+      <h2>树形组件演示</h2>
+      
+      <div class="demo-box">
+        <h4>文件目录树（可展开/折叠）</h4>
+        <div id="treeContainer">
+          <!-- 树形结构由 JS 渲染 -->
+        </div>
+        <div style="margin-top:12px;">
+          <button onclick="toggleAll(true)" style="padding:6px 12px;background:#42b883;color:white;border:none;border-radius:4px;cursor:pointer;">展开全部</button>
+          <button onclick="toggleAll(false)" style="padding:6px 12px;background:#666;color:white;border:none;border-radius:4px;cursor:pointer;margin-left:8px;">折叠全部</button>
+        </div>
+      </div>
+      
+      <h3>组件核心代码</h3>
+      <div class="code-block"><span class="keyword">export default</span> {
+  name: <span class="string">'TreeNode'</span>,
+  
+  props: {
+    node: { type: Object, required: <span class="keyword">true</span> },
+    depth: { type: Number, default: 0 },
+    maxDepth: { type: Number, default: 10 }  <span class="comment">// 防止无限递归</span>
+  },
+  
+  <span class="function">data</span>() {
+    <span class="keyword">return</span> { isOpen: <span class="keyword">false</span> }
+  },
+  
+  computed: {
+    hasChildren() {
+      <span class="keyword">return</span> <span class="keyword">this</span>.node.children?.length > 0
+    }
+  },
+  
+  methods: {
+    toggle() {
+      <span class="keyword">this</span>.isOpen = !<span class="keyword">this</span>.isOpen
+      <span class="keyword">this</span>.$emit(<span class="string">'node-click'</span>, <span class="keyword">this</span>.node)
+    }
+  }
+}</div>
+    </div>
+    
+    <!-- 评论组件 -->
+    <div id="comment" class="panel">
+      <h2>评论组件演示</h2>
+      
+      <p>多级嵌套评论，典型的递归组件场景：</p>
+      
+      <div class="demo-box">
+        <h4>评论列表（可回复）</h4>
+        <div id="commentContainer">
+          <!-- 评论由 JS 渲染 -->
+        </div>
+        <div style="margin-top:12px;">
+          <input type="text" id="newComment" placeholder="添加新评论..." style="padding:8px;border:1px solid #ddd;border-radius:4px;width:300px;">
+          <button onclick="addComment()" style="padding:8px 16px;background:#42b883;color:white;border:none;border-radius:4px;cursor:pointer;margin-left:8px;">发送</button>
+        </div>
+      </div>
+      
+      <h3>事件流设计</h3>
+      <div class="code-block"><span class="comment">// 向上传递事件 + 当前节点信息</span>
+<span class="keyword">this</span>.$emit(<span class="string">'reply'</span>, {
+  parentId: <span class="keyword">this</span>.comment.id,
+  depth: <span class="keyword">this</span>.depth
+})
+
+<span class="comment">// 父组件监听</span>
+&lt;CommentItem 
+  v-for=<span class="string">"comment in comments"</span>
+  :comment=<span class="string">"comment"</span>
+  :depth=<span class="string">"0"</span>
+  @reply=<span class="string">"handleReply"</span>
+/&gt;</div>
+    </div>
+    
+    <!-- 菜单组件 -->
+    <div id="menu" class="panel">
+      <h2>菜单组件演示</h2>
+      
+      <div class="demo-box">
+        <h4>多级导航菜单</h4>
+        <div id="menuContainer">
+          <!-- 菜单由 JS 渲染 -->
+        </div>
+      </div>
+      
+      <h3>菜单数据示例</h3>
+      <div class="code-block"><span class="keyword">const</span> menuData = [
+  {
+    label: <span class="string">'首页'</span>,
+    path: <span class="string">'/'</span>
+  },
+  {
+    label: <span class="string">'产品'</span>,
+    children: [
+      { label: <span class="string">'Web'</span>, path: <span class="string">'/web'</span> },
+      { label: <span class="string">'移动端'</span>, children: [
+        { label: <span class="string">'iOS'</span>, path: <span class="string">'/ios'</span> },
+        { label: <span class="string">'Android'</span>, path: <span class="string">'/android'</span> }
+      ]}
+    ]
+  },
+  {
+    label: <span class="string">'关于'</span>,
+    path: <span class="string">'/about'</span>
+  }
+]</div>
+    </div>
+    
+    <!-- 最佳实践 -->
+    <div id="best" class="panel">
+      <h2>最佳实践</h2>
+      
+      <h3>1. 必须设置终止条件</h3>
+      <div class="code-block"><span class="comment">// ❌ 错误：没有终止条件</span>
+&lt;TreeNode :node=<span class="string">"node.child"</span> /&gt;
+
+<span class="comment">// ✅ 正确：检查终止条件</span>
+&lt;TreeNode 
+  v-if=<span class="string">"node.children?.length"</span>
+  :node=<span class="string">"node.children[0]"</span>
+/&gt;</div>
+      
+      <h3>2. 设置最大深度限制</h3>
+      <div class="code-block"><span class="keyword">props</span>: {
+  maxDepth: { type: Number, default: 10 }  <span class="comment">// 防止栈溢出</span>
+}
+
+watch(() => props.depth, (newDepth) => {
+  <span class="keyword">if</span> (newDepth >= props.maxDepth) {
+    console.<span class="function">warn</span>(<span class="string">`超过最大深度 </span>${props.maxDepth}<span class="string">`</span>)
+  }
+})</div>
+      
+      <h3>3. 使用唯一 key</h3>
+      <div class="code-block"><span class="comment">// 必须提供唯一的 :key</span>
+&lt;TreeNode
+  v-for=<span class="string">"child in node.children"</span>
+  :key=<span class="string">"child.id"</span>  <span class="comment">// ← 必须</span>
+  :node=<span class="string">"child"</span>
+/&gt;</div>
+      
+      <h3>4. provide/inject 跨层级传值</h3>
+      <div class="code-block"><span class="comment">// 祖先组件 provide</span>
+<span class="function">provide</span>(<span class="string">'tree'</span>, {
+  selectedId: ref(<span class="keyword">null</span>),
+  expandedIds: ref(<span class="keyword">new</span> Set()),
+  selectNode: (id) => selectedId.value = id
+})
+
+<span class="comment">// 后代组件 inject</span>
+<span class="keyword">const</span> { selectedId, expandedIds, selectNode } = <span class="function">inject</span>(<span class="string">'tree'</span>)</div>
+      
+      <h3>5. 处理循环引用</h3>
+      <div class="code-block"><span class="comment">// 数据可能出现 A → B → A 循环</span>
+computed: {
+  safeChildren() {
+    <span class="keyword">return</span> <span class="keyword">this</span>.node.children?.filter(
+      child => !<span class="keyword">this</span>.visitedIds.includes(child.id)
+    ) || []
+  }
+}</div>
+      
+      <h3>🎮 事件日志</h3>
+      <div class="log-display" id="eventLog">点击树节点查看事件传递...</div>
+      <button onclick="clearEventLog()" style="margin-top:8px;padding:6px 12px;background:#666;color:white;border:none;border-radius:4px;cursor:pointer;">清空</button>
+    </div>
+  </div>
+  
+  <script>
+    // 树形数据
+    const treeData = {
+      id: 1,
+      label: 'src',
+      type: 'folder',
+      children: [
+        { id: 2, label: 'components', type: 'folder', children: [
+          { id: 5, label: 'TreeNode.vue', type: 'file' },
+          { id: 6, label: 'Menu.vue', type: 'file' },
+          { id: 7, label: 'Comment.vue', type: 'file', children: [
+            { id: 8, label: 'CommentItem.vue', type: 'file' },
+            { id: 9, label: 'CommentList.vue', type: 'file' }
+          ]}
+        ]},
+        { id: 3, label: 'views', type: 'folder', children: [
+          { id: 10, label: 'Home.vue', type: 'file' },
+          { id: 11, label: 'About.vue', type: 'file' }
+        ]},
+        { id: 4, label: 'main.js', type: 'file' }
+      ]
+    };
+    
+    // 评论数据
+    const commentsData = [
+      {
+        id: 1,
+        user: '张三',
+        avatar: 'Z',
+        content: '这是第一层评论',
+        time: '2小时前',
+        children: [
+          { id: 2, user: '李四', avatar: 'L', content: '这是回复第一层评论的二级评论', time: '1小时前', children: [] },
+          { id: 3, user: '王五', avatar: 'W', content: '同意楼上观点', time: '30分钟前', children: [
+            { id: 4, user: '赵六', avatar: 'Z', content: '我也同意', time: '10分钟前', children: [] }
+          ]}
+        ]
+      },
+      {
+        id: 5,
+        user: '孙七',
+        avatar: 'S',
+        content: '这是一条新评论',
+        time: '5分钟前',
+        children: []
+      }
+    ];
+    
+    // 菜单数据
+    const menuData = [
+      { label: '首页', path: '/', icon: '🏠' },
+      { label: '产品', path: '/products', icon: '📦', children: [
+        { label: 'Web 应用', path: '/web', icon: '🌐' },
+        { label: '移动端', path: '/mobile', icon: '📱', children: [
+          { label: 'iOS', path: '/ios', icon: '🍎' },
+          { label: 'Android', path: '/android', icon: '🤖' }
+        ]},
+        { label: '桌面端', path: '/desktop', icon: '💻' }
+      ]},
+      { label: '关于', path: '/about', icon: 'ℹ️' }
+    ];
+    
+    // 状态
+    let expandedIds = new Set([1, 2]);
+    let selectedNodeId = null;
+    
+    function showTab(id) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      event.target.classList.add('active');
+    }
+    
+    // 渲染树形组件
+    function renderTree(node, depth = 0) {
+      const hasChildren = node.children && node.children.length > 0;
+      const isOpen = expandedIds.has(node.id);
+      const isSelected = selectedNodeId === node.id;
+      const icon = node.type === 'folder' ? (isOpen ? '📂' : '📁') : '📄';
+      
+      let html = `
+        <div class="tree-node" style="margin-left:${depth * 20}px;">
+          <div class="node-content ${isSelected ? 'selected' : ''}" onclick="selectNode(${node.id})">
+            ${hasChildren ? `<span class="arrow ${isOpen ? 'open' : ''}" onclick="toggleNode(event, ${node.id})">▶</span>` : '<span style="width:18px;display:inline-block;"></span>'}
+            <span>${icon}</span>
+            <span class="node-label">${node.label}</span>
+            <div class="node-actions">
+              ${hasChildren ? `<button onclick="addChild(event, ${node.id})">+ 子节点</button>` : ''}
+            </div>
+          </div>
+      `;
+      
+      if (hasChildren && isOpen) {
+        html += '<div class="children">';
+        node.children.forEach(child => {
+          html += renderTree(child, 0);
+        });
+        html += '</div>';
+      }
+      
+      html += '</div>';
+      return html;
+    }
+    
+    function toggleNode(event, id) {
+      event.stopPropagation();
+      if (expandedIds.has(id)) {
+        expandedIds.delete(id);
+      } else {
+        expandedIds.add(id);
+      }
+      renderTreeContainer();
+    }
+    
+    function selectNode(id) {
+      selectedNodeId = id;
+      logEvent(`选择节点: ${id}`);
+      renderTreeContainer();
+    }
+    
+    function renderTreeContainer() {
+      document.getElementById('treeContainer').innerHTML = renderTree(treeData);
+    }
+    
+    function toggleAll(open) {
+      if (open) {
+        expandedIds = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+      } else {
+        expandedIds = new Set();
+      }
+      renderTreeContainer();
+    }
+    
+    function addChild(event, id) {
+      event.stopPropagation();
+      logEvent(`添加子节点到节点 ${id}`);
+    }
+    
+    // 渲染评论
+    function renderComment(comment, depth = 0) {
+      const avatarColor = ['#42b883', '#ff6b6b', '#ffd93d', '#6bcb77', '#9b59b6'][comment.id % 5];
+      let html = `
+        <div class="comment-item" style="margin-left:${depth * 40}px;">
+          <div class="comment-header">
+            <div class="comment-avatar" style="background:${avatarColor}">${comment.avatar}</div>
+            <div>
+              <div style="font-weight:bold;">${comment.user}</div>
+              <div class="comment-meta">${comment.time}</div>
+            </div>
+          </div>
+          <div class="comment-body">${comment.content}</div>
+          <div class="comment-actions">
+            <span onclick="replyTo(${comment.id})">回复</span>
+            <span onclick="likeComment(${comment.id})">赞</span>
+          </div>
+      `;
+      
+      if (comment.children && comment.children.length > 0) {
+        comment.children.forEach(child => {
+          html += renderComment(child, depth + 1);
+        });
+      }
+      
+      html += '</div>';
+      return html;
+    }
+    
+    function renderComments() {
+      document.getElementById('commentContainer').innerHTML = commentsData.map(c => renderComment(c)).join('');
+    }
+    
+    function addComment() {
+      const input = document.getElementById('newComment');
+      const text = input.value.trim();
+      if (text) {
+        commentsData.push({
+          id: Date.now(),
+          user: '我',
+          avatar: '我',
+          content: text,
+          time: '刚刚',
+          children: []
+        });
+        renderComments();
+        input.value = '';
+        logEvent(`添加新评论: "${text}"`);
+      }
+    }
+    
+    function replyTo(id) {
+      logEvent(`回复评论: ${id}`);
+    }
+    
+    function likeComment(id) {
+      logEvent(`点赞评论: ${id}`);
+    }
+    
+    // 渲染菜单
+    function renderMenu(items, depth = 0) {
+      let html = '';
+      items.forEach(item => {
+        const hasChildren = item.children && item.children.length > 0;
+        html += `
+          <div class="menu-item">${item.icon || ''} ${item.label}</div>
+        `;
+        if (hasChildren) {
+          html += `<div class="menu-children">${renderMenu(item.children, depth + 1)}</div>`;
+        }
+      });
+      return html;
+    }
+    
+    function renderMenus() {
+      document.getElementById('menuContainer').innerHTML = renderMenu(menuData);
+    }
+    
+    // 事件日志
+    function logEvent(msg) {
+      const log = document.getElementById('eventLog');
+      const time = new Date().toLocaleTimeString();
+      log.textContent += `\n[${time}] ${msg}`;
+      log.scrollTop = log.scrollHeight;
+    }
+    
+    function clearEventLog() {
+      document.getElementById('eventLog').textContent = '事件日志已清空';
+    }
+    
+    // 初始化
+    renderTreeContainer();
+    renderComments();
+    renderMenus();
+  </script>
+</body>
+</html>

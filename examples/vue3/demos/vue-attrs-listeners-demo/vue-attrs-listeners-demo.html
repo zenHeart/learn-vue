@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue $attrs / $listeners 交互演示</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    
+    .tabs { display: flex; gap: 4px; background: #e0e0e0; border-radius: 8px; padding: 4px; margin-bottom: 20px; }
+    .tab { padding: 8px 16px; border: none; background: transparent; cursor: pointer; border-radius: 6px; font-size: 14px; }
+    .tab.active { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    
+    .panel { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: none; }
+    .panel.active { display: block; }
+    
+    .code-block { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; font-family: 'Fira Code', monospace; font-size: 13px; overflow-x: auto; white-space: pre; }
+    .code-block .keyword { color: #569cd6; }
+    .code-block .string { color: #ce9178; }
+    .code-block .comment { color: #6a9955; }
+    .code-block .function { color: #dcdcaa; }
+    
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+    th { background: #fafafa; }
+    
+    /* 组件演示样式 */
+    .demo-wrapper { background: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    .attrs-display { background: #1e1e1e; color: #0f0; padding: 12px; border-radius: 4px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+    
+    .my-button { padding: 8px 16px; background: #42b883; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 4px; }
+    .my-button:hover { background: #3aa876; }
+    .my-button.secondary { background: #6c757d; }
+    .my-button.large { padding: 12px 24px; font-size: 16px; }
+    
+    .my-input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; margin: 4px; }
+    .my-input:focus { outline: none; border-color: #42b883; }
+    
+    h2 { margin-bottom: 16px; }
+    h3 { margin: 20px 0 12px; }
+    p { line-height: 1.6; color: #555; margin: 12px 0; }
+    
+    .highlight { background: #fff3cd; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 style="margin-bottom:20px;">Vue $attrs / $listeners 交互演示</h1>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('overview')">📚 概念总览</button>
+      <button class="tab" onclick="showTab('attrs')">🔍 $attrs 详解</button>
+      <button class="tab" onclick="showTab('button')">🔘 Button 组件</button>
+      <button class="tab" onclick="showTab('input')">📝 Input 组件</button>
+      <button class="tab" onclick="showTab('detect')">🔎 事件检测</button>
+    </div>
+    
+    <!-- 概念总览 -->
+    <div id="overview" class="panel active">
+      <h2>概念总览</h2>
+      
+      <h3>Vue 2 vs Vue 3 对比</h3>
+      <table>
+        <tr><th>特性</th><th>Vue 2</th><th>Vue 3</th></tr>
+        <tr><td>非 prop 属性</td><td>$attrs</td><td>$attrs</td></tr>
+        <tr><td>事件监听器</td><td>$listeners</td><td><span class="highlight">已合并到 $attrs</span></td></tr>
+        <tr><td>inheritAttrs</td><td>支持</td><td>支持</td></tr>
+      </table>
+      
+      <h3>$attrs 包含什么？</h3>
+      <div class="code-block"><span class="comment">&lt;!-- 父组件 --&gt;</span>
+&lt;MyButton 
+  type=<span class="string">"primary"</span>           <span class="comment">← 在 props 中声明 → 不在 $attrs</span>
+  class=<span class="string">"custom-btn"</span>       <span class="comment">← 不在 props 中 → 在 $attrs</span>
+  @click=<span class="string">"handleClick"</span>     <span class="comment">← 事件 → 在 $attrs 中（Vue3）</span>
+  data-id=<span class="string">"123"</span>          <span class="comment">← 自定义属性 → 在 $attrs</span>
+/&gt;</div>
+      
+      <h3>图解数据流</h3>
+      <div class="demo-wrapper" style="font-size:14px;line-height:2;">
+        <strong>父组件传递:</strong><br>
+        type="primary" | class="custom" | @click="handle" | data-id="123" | id="btn"<br><br>
+        <strong>子组件声明 props: ['type']</strong><br><br>
+        <strong>结果:</strong><br>
+        ✓ type → 被 props 接收，不在 $attrs 中<br>
+        ✓ class="custom" → 在 $attrs 中，会自动透传给根元素<br>
+        ✓ @click="handle" → 在 $attrs.onClick 中（Vue3）<br>
+        ✓ data-id="123" → 在 $attrs 中<br>
+        ✓ id="btn" → 在 $attrs 中
+      </div>
+    </div>
+    
+    <!-- $attrs 详解 -->
+    <div id="attrs" class="panel">
+      <h2>$attrs 详解</h2>
+      
+      <h3>Vue 3 中的 $attrs 结构</h3>
+      <div class="code-block"><span class="comment">// Vue 3 $attrs 包含：</span>
+{
+  <span class="comment">// 透传的属性（不在 props 中声明）</span>
+  class: <span class="string">'custom-btn large'</span>,
+  style: { color: <span class="string">'red'</span> },
+  id: <span class="string">'my-btn'</span>,
+  <span class="string">'data-id'</span>: <span class="string">'123'</span>,
+  
+  <span class="comment">// 透传的事件监听器（Vue3 中）</span>
+  onClick: function() { <span class="comment">/* ... */</span> },
+  onFocus: function() { <span class="comment">/* ... */</span> },
+  onInput: function() { <span class="comment">/* ... */</span> }
+}</div>
+      
+      <h3>setup 中使用</h3>
+      <div class="code-block"><span class="comment">// 组合式 API</span>
+<span class="keyword">import</span> { useAttrs } <span class="keyword">from</span> <span class="string">'vue'</span>
+
+<span class="function">setup</span>(props, { attrs }) {
+  <span class="comment">// 方式一：参数获取</span>
+  console.log(attrs.class)
+  console.log(attrs.onClick)
+  
+  <span class="comment">// 方式二：useAttrs()</span>
+  <span class="keyword">const</span> attrs = <span class="function">useAttrs</span>()
+}</div>
+      
+      <h3>inheritAttrs 行为</h3>
+      <table>
+        <tr><th>配置</th><th>行为</th></tr>
+        <tr><td>inheritAttrs: true（默认）</td><td>未声明的 attrs 自动应用到根元素</td></tr>
+        <tr><td>inheritAttrs: false</td><td>不自动应用，需手动 v-bind="$attrs"</td></tr>
+      </table>
+      
+      <h3>🎮 交互演示</h3>
+      <div class="demo-wrapper">
+        <p><strong>当前父组件传递的属性：</strong></p>
+        <div class="attrs-display" id="attrsDisplay">点击下方按钮查看 $attrs 状态</div>
+      </div>
+    </div>
+    
+    <!-- Button 组件 -->
+    <div id="button" class="panel">
+      <h2>Button 组件示例</h2>
+      
+      <p>演示 $attrs 如何透传给内部元素：</p>
+      
+      <div class="demo-wrapper">
+        <p><strong>组件结构（伪代码）：</strong></p>
+        <div class="code-block"><span class="comment">// Button.vue - 子组件</span>
+&lt;template&gt;
+  &lt;button v-bind=<span class="string">"$attrs"</span> class=<span class="string">"my-btn"</span>&gt;
+    &lt;slot /&gt;
+  &lt;/button&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+<span class="comment">// 不需要声明 type、class、onClick 等</span>
+<span class="comment">// 它们会自动从 $attrs 透传到 button 元素</span>
+&lt;/script&gt;</div>
+        
+        <p style="margin-top:16px;"><strong>使用示例：</strong></p>
+        <button class="my-button" onclick="showButtonAttrs()">查看 $attrs</button>
+      </div>
+      
+      <h3>检测父组件是否传递了特定属性</h3>
+      <div class="code-block"><span class="keyword">const</span> attrs = <span class="function">useAttrs</span>()
+
+<span class="comment">// 检测是否传递了 href（智能组件）</span>
+<span class="keyword">const</span> isLink = <span class="function">computed</span>(() => !!attrs.href)
+
+<span class="comment">// 检测是否有 click 事件</span>
+<span class="keyword">const</span> hasClick = <span class="function">computed</span>(() => <span class="string">'onClick'</span> <span class="keyword">in</span> attrs)</div>
+    </div>
+    
+    <!-- Input 组件 -->
+    <div id="input" class="panel">
+      <h2>Input 组件示例</h2>
+      
+      <p>演示 v-model 和 $attrs 的配合：</p>
+      
+      <div class="demo-wrapper">
+        <p><strong>表单输入组件（透传所有属性）：</strong></p>
+        <div class="code-block"><span class="comment">// FormInput.vue</span>
+&lt;template&gt;
+  &lt;div class=<span class="string">"form-field"</span>&gt;
+    &lt;label v-if=<span class="string">"label"</span>&gt;{{ label }}&lt;/label&gt;
+    &lt;input v-bind=<span class="string">"$attrs"</span> class=<span class="string">"my-input"</span> /&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+<span class="keyword">defineProps</span>([<span class="string">'label'</span>])  <span class="comment">// 只声明 label</span>
+&lt;/script&gt;</div>
+        
+        <p style="margin-top:16px;"><strong>使用示例：</strong></p>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">
+          <div>
+            <label style="display:block;margin-bottom:4px;font-size:13px;color:#666;">用户名（自动透传 placeholder, type, @input）：</label>
+            <input class="my-input" type="text" placeholder="请输入用户名" style="width:250px;" id="demoInput" oninput="updateInputAttrs()">
+          </div>
+          <div id="inputResult" style="font-size:13px;color:#42b883;"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 事件检测 -->
+    <div id="detect" class="panel">
+      <h2>检测父组件监听器</h2>
+      
+      <h3>方法一：检查 $attrs 中的事件属性</h3>
+      <div class="code-block"><span class="comment">// Vue 3</span>
+<span class="keyword">const</span> attrs = <span class="function">useAttrs</span>()
+
+<span class="keyword">const</span> hasClick = <span class="function">computed</span>(() => <span class="string">'onClick'</span> <span class="keyword">in</span> attrs)
+<span class="keyword">const</span> hasFocusHandlers = <span class="function">computed</span>(() => 
+  <span class="string">'onFocus'</span> <span class="keyword">in</span> attrs && <span class="string">'onBlur'</span> <span class="keyword">in</span> attrs
+)</div>
+      
+      <h3>方法二：警告缺失事件</h3>
+      <div class="code-block"><span class="function">watch</span>(() => attrs[<span class="string">'onClick'</span>], (handler) => {
+  <span class="keyword">if</span> (!handler) {
+    console.<span class="function">warn</span>(<span class="string">`[MyButton] 建议提供 click 事件处理器`</span>)
+  }
+}, { immediate: <span class="keyword">true</span> })</div>
+      
+      <h3>🎮 交互演示</h3>
+      <div class="demo-wrapper">
+        <p>点击按钮，查看是否检测到 click 事件：</p>
+        <div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;">
+          <button class="my-button" onclick="checkListener(true)">带 @click</button>
+          <button class="my-button secondary" onclick="checkListener(false)">不带 @click</button>
+          <button class="my-button secondary" onclick="checkMultiple()">检测多个事件</button>
+        </div>
+        <div class="attrs-display" id="listenerResult">选择一个按钮测试...</div>
+      </div>
+      
+      <h3>智能包装组件示例</h3>
+      <div class="code-block"><span class="comment">// 根据是否有 href 自动选择标签</span>
+<span class="keyword">const</span> isLink = <span class="function">computed</span>(() => !!attrs.href)
+
+&lt;template&gt;
+  &lt;a v-if=<span class="string">"isLink"</span> v-bind=<span class="string">"$attrs"</span>&gt;
+    &lt;slot /&gt;
+  &lt;/a&gt;
+  &lt;button v-else v-bind=<span class="string">"$attrs"</span>&gt;
+    &lt;slot /&gt;
+  &lt;/button&gt;
+&lt;/template&gt;</div>
+    </div>
+  </div>
+  
+  <script>
+    function showTab(id) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      event.target.classList.add('active');
+    }
+    
+    // 模拟 $attrs 状态
+    const parentAttrs = {
+      type: 'primary',
+      class: 'custom-btn large',
+      id: 'my-button',
+      'data-id': '123',
+      onClick: function() { console.log('clicked!'); },
+      onFocus: function() { console.log('focused!'); }
+    };
+    
+    function showButtonAttrs() {
+      const display = document.getElementById('attrsDisplay');
+      display.textContent = JSON.stringify({
+        class: parentAttrs.class,
+        id: parentAttrs.id,
+        'data-id': parentAttrs['data-id'],
+        onClick: '[Function]',
+        onFocus: '[Function]'
+      }, null, 2);
+    }
+    
+    function updateInputAttrs() {
+      const input = document.getElementById('demoInput');
+      const result = document.getElementById('inputResult');
+      const value = input.value;
+      
+      result.textContent = value 
+        ? `当前输入: "${value}"（v-model 自动绑定 input 事件）`
+        : '请输入内容...';
+    }
+    
+    function checkListener(hasClick) {
+      const result = document.getElementById('listenerResult');
+      const attrs = { ...parentAttrs };
+      
+      if (hasClick) {
+        const hasOnClick = 'onClick' in attrs;
+        result.textContent = `检测结果: ${hasOnClick ? '✓' : '✗'} onClick 存在\n监听器已绑定，调用时会触发事件处理函数`;
+      } else {
+        result.textContent = `检测结果: ✗ onClick 不存在\n父组件没有传递 click 事件，子组件可以显示警告或使用默认值`;
+      }
+    }
+    
+    function checkMultiple() {
+      const result = document.getElementById('listenerResult');
+      const attrs = { ...parentAttrs };
+      
+      const hasOnClick = 'onClick' in attrs;
+      const hasOnFocus = 'onFocus' in attrs;
+      const hasOnBlur = 'onBlur' in attrs;
+      
+      result.textContent = `多事件检测结果:
+─────────────────
+onClick: ${hasOnClick ? '✓ 存在' : '✗ 不存在'}
+onFocus: ${hasOnFocus ? '✓ 存在' : '✗ 不存在'}
+onBlur:  ${hasOnBlur ? '✓ 存在' : '✗ 不存在'}
+─────────────────
+检测方式: Object.keys(attrs).some(key => key.startsWith('on'))`;
+    }
+  </script>
+</body>
+</html>
