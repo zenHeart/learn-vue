@@ -1,33 +1,25 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import {
-  buildManyItems,
-  buildProjectionOptimized,
-  countProjectionDeps,
-  createListStore,
-  DEMO_FIELD_COUNT,
-  DEMO_ITEM_COUNT,
-  measureOnce,
-  mergeItems,
-} from './listProjectionModel.js'
+import { buildProjectionOptimized } from './listProjectionModel.js'
+import { useScrollListDemo } from './useScrollListDemo.js'
 
-const store = reactive(createListStore())
-mergeItems(store, buildManyItems())
-
-// ✅ 优化写法：toRaw 浅拷贝 + 保留 memberList 引用
-const list = computed(() => buildProjectionOptimized(store))
-
-const depCount = ref(null)
-const runMs = ref(null)
-
-function countDeps() {
-  depCount.value = countProjectionDeps(buildProjectionOptimized, store)
-}
-
-function measure() {
-  runMs.value = measureOnce(buildProjectionOptimized, store)
-  countDeps()
-}
+const {
+  list,
+  viewport,
+  loading,
+  hasMore,
+  pageLoadMs,
+  depCount,
+  spinnerDeg,
+  spinnerJank,
+  onScroll,
+  scrollToBottom,
+  reset,
+  countDeps,
+  FIELD_COUNT,
+  INITIAL_PAGE_SIZE,
+  LOAD_MORE_PAGE_SIZE,
+  ITEM_HEIGHT,
+} = useScrollListDemo(buildProjectionOptimized)
 </script>
 
 <template>
@@ -35,49 +27,100 @@ function measure() {
     <p class="badge good">② 优化代码 — toRaw 快照派生</p>
 
     <p class="meta">
-      数据规模：<strong>{{ DEMO_ITEM_COUNT }}</strong> 条 ×
-      <strong>{{ DEMO_FIELD_COUNT }}</strong> 字段
+      首屏 <strong>{{ INITIAL_PAGE_SIZE }}</strong> 条，每页 +<strong>{{ LOAD_MORE_PAGE_SIZE }}</strong>，
+      每条 <strong>{{ FIELD_COUNT }}</strong> 字段
     </p>
 
     <div class="metrics">
       <div class="metric">
+        <span class="label">当前列表</span>
+        <span class="value good-text">{{ list.length }} 条</span>
+      </div>
+      <div class="metric">
+        <span class="label">上次分页加载</span>
+        <span class="value good-text">
+          {{ pageLoadMs != null ? `${pageLoadMs.toFixed(0)} ms` : '滚到底试试' }}
+        </span>
+      </div>
+      <div class="metric">
         <span class="label">computed 依赖数</span>
         <span class="value good-text">{{ depCount ?? '—' }}</span>
       </div>
-      <div class="metric">
-        <span class="label">单次求值耗时</span>
-        <span class="value">{{ runMs != null ? `${runMs.toFixed(3)} ms` : '—' }}</span>
-      </div>
+    </div>
+
+    <div class="spinner-row">
+      <div
+        class="spinner good"
+        :class="{ jank: spinnerJank }"
+        :style="{ transform: `rotate(${spinnerDeg}deg)` }"
+      />
+      <span class="spinner-hint">
+        {{ spinnerJank ? '⚠️ 偶有卡顿' : '✅ 分页加载流畅' }}
+      </span>
     </div>
 
     <div class="actions">
-      <button @click="countDeps">统计依赖数</button>
-      <button class="primary" @click="measure">测一次耗时</button>
+      <button class="primary" @click="scrollToBottom">滚到底加载下一页</button>
+      <button @click="countDeps">统计依赖</button>
+      <button @click="reset">重置</button>
     </div>
 
-    <ul class="preview">
-      <li v-for="row in list.slice(0, 5)" :key="row.id">
-        {{ row.title }} · {{ row.userList?.length ?? 0 }} 人
-      </li>
-    </ul>
+    <div
+      ref="viewport"
+      class="viewport"
+      :style="{ height: `${ITEM_HEIGHT * 7}px` }"
+      @scroll="onScroll"
+    >
+      <div
+        v-for="row in list"
+        :key="row.id"
+        class="row"
+        :style="{ height: `${ITEM_HEIGHT}px` }"
+      >
+        <span class="title">{{ row.title }}</span>
+        <span class="members">{{ row.userList?.length ?? 0 }} 人</span>
+      </div>
+      <div v-if="loading" class="footer loading">加载中…</div>
+      <div v-else-if="!hasMore" class="footer done">没有更多了</div>
+      <div v-else class="footer hint">↓ 继续下滚加载</div>
+    </div>
 
-    <p class="tip">依赖数应明显低于 ①。关键改动在 listProjectionModel.js 的 buildProjectionOptimized。</p>
+    <p class="tip">
+      同样操作：分页耗时更短、依赖数 &lt; 项数×8、流畅度指示器不停摆。
+    </p>
   </div>
 </template>
 
 <style scoped>
-.demo { font-family: system-ui, sans-serif; padding: 8px; color: #213547; max-width: 420px; }
-.badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; margin: 0 0 10px; }
+.demo { font-family: system-ui, sans-serif; padding: 8px; color: #213547; max-width: 440px; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; margin: 0 0 8px; }
 .badge.good { background: #e8f8f0; color: #27ae60; }
-.meta { font-size: 0.85rem; color: #666; margin: 0 0 12px; }
-.metrics { display: flex; gap: 10px; margin-bottom: 12px; }
-.metric { flex: 1; background: #f6f8fa; border-radius: 8px; padding: 10px; }
-.label { display: block; font-size: 0.72rem; color: #888; }
-.value { display: block; font-size: 1.4rem; font-weight: 700; margin-top: 4px; }
+.meta { font-size: 0.82rem; color: #666; margin: 0 0 10px; }
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+.metric { flex: 1; background: #f6f8fa; border-radius: 8px; padding: 8px 10px; }
+.label { display: block; font-size: 0.7rem; color: #888; }
+.value { display: block; font-size: 1.2rem; font-weight: 700; margin-top: 2px; }
 .good-text { color: #27ae60; }
-.actions { display: flex; gap: 8px; margin-bottom: 12px; }
-button { padding: 6px 14px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; font-size: 0.85rem; }
+.spinner-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.spinner {
+  width: 18px; height: 18px; border: 2px solid #42b883; border-top-color: transparent;
+  border-radius: 50%; flex-shrink: 0;
+}
+.spinner.jank { border-color: #e74c3c; border-top-color: transparent; }
+.spinner-hint { font-size: 0.75rem; color: #888; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+button { padding: 5px 12px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; font-size: 0.8rem; }
 button.primary { background: #42b883; color: #fff; border-color: #42b883; }
-.preview { margin: 0; padding-left: 1.2rem; font-size: 0.85rem; line-height: 1.8; }
-.tip { font-size: 0.8rem; color: #888; margin: 12px 0 0; }
+.viewport {
+  overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff;
+}
+.row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 12px; border-bottom: 1px solid #f0f0f0; font-size: 0.82rem; box-sizing: border-box;
+}
+.title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.members { color: #42b883; font-size: 0.75rem; margin-left: 8px; }
+.footer { text-align: center; padding: 10px; font-size: 0.78rem; color: #999; }
+.footer.loading { color: #e67e22; }
+.tip { font-size: 0.78rem; color: #888; margin: 10px 0 0; line-height: 1.5; }
 </style>
