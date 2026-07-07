@@ -1,4 +1,4 @@
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import {
   appendPage,
   countProjectionDeps,
@@ -22,28 +22,6 @@ export function useScrollListDemo(buildFn) {
   const hasMore = ref(true)
   const pageLoadMs = ref(null)
   const depCount = ref(null)
-  const spinnerDeg = ref(0)
-  const spinnerJank = ref(false)
-
-  let rafId = 0
-  let lastRaf = performance.now()
-
-  function tickSpinner(now) {
-    const delta = now - lastRaf
-    lastRaf = now
-    // 单帧 > 50ms 视为卡顿（长任务阻塞主线程）
-    spinnerJank.value = delta > 50
-    spinnerDeg.value = (spinnerDeg.value + Math.min(delta * 0.3, 12)) % 360
-    rafId = requestAnimationFrame(tickSpinner)
-  }
-
-  onMounted(() => {
-    rafId = requestAnimationFrame(tickSpinner)
-  })
-
-  onUnmounted(() => {
-    cancelAnimationFrame(rafId)
-  })
 
   async function loadMore() {
     if (loading.value || !hasMore.value) return
@@ -52,9 +30,8 @@ export function useScrollListDemo(buildFn) {
 
     const start = performance.now()
 
-    // 模拟分页 API 返回后 merge — 触发 orderedIds 变更 → 整表投影重算
     appendPage(store)
-  void list.value // 同步等待 computed 重建（主线程阻塞发生在这里）
+    void list.value
 
     await nextTick()
     pageLoadMs.value = performance.now() - start
@@ -97,16 +74,12 @@ export function useScrollListDemo(buildFn) {
   }
 
   return {
-    store,
     list,
     viewport,
     loading,
     hasMore,
     pageLoadMs,
     depCount,
-    spinnerDeg,
-    spinnerJank,
-    loadMore,
     onScroll,
     scrollToBottom,
     reset,

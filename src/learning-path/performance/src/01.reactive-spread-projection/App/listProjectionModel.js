@@ -1,13 +1,13 @@
 /**
- * 虚拟列表分页场景 — spread reactive 投影模型（抽象自真实分页下拉卡顿）
+ * 虚拟列表分页场景 — spread reactive 投影模型
  */
 import { computed, reactive, toRaw } from 'vue'
 
-/** 贴近真实规模：首屏 ~80 条、每条约 53 字段、分页 +30（与线上一致的数量级） */
-export const INITIAL_PAGE_SIZE = 80
-export const LOAD_MORE_PAGE_SIZE = 30
-export const FIELD_COUNT = 53
-export const MAX_ITEMS = 200
+/** 200 条 × 120 字段：首次 loadMore 在 dev REPL 中可达 ~100ms+ */
+export const INITIAL_PAGE_SIZE = 200
+export const LOAD_MORE_PAGE_SIZE = 40
+export const FIELD_COUNT = 120
+export const MAX_ITEMS = 400
 export const ITEM_HEIGHT = 48
 
 export function createListStore() {
@@ -46,7 +46,7 @@ export function mergeItems(store, items) {
   }
 }
 
-/** ❌ computed 内 spread reactive — 逐键 trap + 逐键依赖，O(项数×字段数) */
+/** ❌ computed 内 spread reactive */
 export function buildProjectionBad(store) {
   return store.orderedIds
     .map((id) => store.itemMap.get(id))
@@ -91,10 +91,5 @@ export function seedInitialPage(store) {
 
 export function appendPage(store) {
   const start = store.orderedIds.length
-  const batch = buildManyItems(
-    LOAD_MORE_PAGE_SIZE,
-    FIELD_COUNT,
-    start,
-  )
-  mergeItems(store, batch)
+  mergeItems(store, buildManyItems(LOAD_MORE_PAGE_SIZE, FIELD_COUNT, start))
 }

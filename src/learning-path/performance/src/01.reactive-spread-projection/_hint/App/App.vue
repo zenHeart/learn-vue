@@ -9,8 +9,6 @@ const {
   hasMore,
   pageLoadMs,
   depCount,
-  spinnerDeg,
-  spinnerJank,
   onScroll,
   scrollToBottom,
   reset,
@@ -48,17 +46,6 @@ const {
       </div>
     </div>
 
-    <div class="spinner-row">
-      <div
-        class="spinner good"
-        :class="{ jank: spinnerJank }"
-        :style="{ transform: `rotate(${spinnerDeg}deg)` }"
-      />
-      <span class="spinner-hint">
-        {{ spinnerJank ? '⚠️ 偶有卡顿' : '✅ 分页加载流畅' }}
-      </span>
-    </div>
-
     <div class="actions">
       <button class="primary" @click="scrollToBottom">滚到底加载下一页</button>
       <button @click="countDeps">统计依赖</button>
@@ -85,9 +72,7 @@ const {
       <div v-else class="footer hint">↓ 继续下滚加载</div>
     </div>
 
-    <p class="tip">
-      同样操作：分页耗时更短、依赖数 &lt; 项数×8、流畅度指示器不停摆。
-    </p>
+    <p class="tip">同样操作：分页耗时更短、依赖数 &lt; 项数×8。</p>
   </div>
 </template>
 
@@ -96,28 +81,16 @@ const {
 .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; margin: 0 0 8px; }
 .badge.good { background: #e8f8f0; color: #27ae60; }
 .meta { font-size: 0.82rem; color: #666; margin: 0 0 10px; }
-.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
-.metric { flex: 1; background: #f6f8fa; border-radius: 8px; padding: 8px 10px; }
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+.metric { background: #f6f8fa; border-radius: 8px; padding: 8px 10px; }
 .label { display: block; font-size: 0.7rem; color: #888; }
 .value { display: block; font-size: 1.2rem; font-weight: 700; margin-top: 2px; }
 .good-text { color: #27ae60; }
-.spinner-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.spinner {
-  width: 18px; height: 18px; border: 2px solid #42b883; border-top-color: transparent;
-  border-radius: 50%; flex-shrink: 0;
-}
-.spinner.jank { border-color: #e74c3c; border-top-color: transparent; }
-.spinner-hint { font-size: 0.75rem; color: #888; }
 .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 button { padding: 5px 12px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; font-size: 0.8rem; }
 button.primary { background: #42b883; color: #fff; border-color: #42b883; }
-.viewport {
-  overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff;
-}
-.row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 12px; border-bottom: 1px solid #f0f0f0; font-size: 0.82rem; box-sizing: border-box;
-}
+.viewport { overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; }
+.row { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid #f0f0f0; font-size: 0.82rem; box-sizing: border-box; }
 .title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .members { color: #42b883; font-size: 0.75rem; margin-left: 8px; }
 .footer { text-align: center; padding: 10px; font-size: 0.78rem; color: #999; }
