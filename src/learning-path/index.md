@@ -21,6 +21,12 @@ title: Vue 学习路径
 
 - [基础概念](/learning-path/theory/#01.xxx) - 掌握 Vue 的核心概念和原理
 
+### [性能优化 (Performance)](/learning-path/performance/)
+
+基于真实 Electron 客户端案例，学习 Vue 典型性能陷阱：
+
+- [组队列表投影性能](/learning-path/performance/#01.reactive-spread-projection) - spread 响应式代理的依赖收集成本与 toRaw 快照派生
+
 ## 开发状态
 
 这个功能目前处于开发状态。如果你看到这个页面，说明基本架构已经搭建完成。
