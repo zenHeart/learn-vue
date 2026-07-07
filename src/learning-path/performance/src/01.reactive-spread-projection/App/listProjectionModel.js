@@ -1,7 +1,10 @@
 /**
- * MVP：虚拟列表 + 分页场景下的列表投影模型
+ * 最小列表投影模型 — 用于演示 spread reactive 的依赖开销
  */
 import { computed, reactive, toRaw } from 'vue'
+
+export const DEMO_ITEM_COUNT = 10
+export const DEMO_FIELD_COUNT = 15
 
 export function createListStore() {
   return reactive({
@@ -10,17 +13,13 @@ export function createListStore() {
   })
 }
 
-export function buildManyItems(count, fieldCount = 40) {
+export function buildManyItems(count = DEMO_ITEM_COUNT, fieldCount = DEMO_FIELD_COUNT) {
   return Array.from({ length: count }, (_, i) => {
     const base = {
       id: 1000 + i,
-      type: 'group',
       title: `条目 #${i}`,
       memberList: [{ userId: i + 1, name: `用户${i}` }],
-      meta: {
-        label: `组${i}`,
-        hint: `描述 ${i}`,
-      },
+      meta: { label: `组${i}` },
     }
     for (let f = 0; f < fieldCount; f++) {
       base[`field${f}`] = f
@@ -42,71 +41,32 @@ export function mergeItems(store, items) {
   }
 }
 
-export function applyItemUpdate(store, patch) {
-  const key = String(patch.id)
-  const existing = store.itemMap.get(key)
-  if (!existing) return
-  const raw = toRaw(existing)
-  store.itemMap.set(key, {
-    ...raw,
-    ...patch,
-    memberList: existing.memberList,
-  })
-}
-
-export function updateMembers(store, { id, memberList }) {
-  const item = store.itemMap.get(String(id))
-  if (!item) return
-  item.memberList.splice(0, item.memberList.length, ...memberList)
-}
-
+/** ❌ 在 computed 内 spread reactive 实体 */
 export function buildProjectionBad(store) {
-  return Object.freeze(
-    store.orderedIds
-      .map((id) => store.itemMap.get(id))
-      .filter(Boolean)
-      .map((item) =>
-        Object.freeze({
-          ...item,
-          ...(item.meta || {}),
-          type: 'group',
-          userList: item.memberList,
-        }),
-      ),
-  )
+  return store.orderedIds
+    .map((id) => store.itemMap.get(id))
+    .filter(Boolean)
+    .map((item) => ({
+      ...item,
+      ...(item.meta || {}),
+      userList: item.memberList,
+    }))
 }
 
+/** ✅ toRaw 浅拷贝，保留 memberList 响应式引用 */
 export function buildProjectionOptimized(store) {
-  return Object.freeze(
-    store.orderedIds
-      .map((id) => store.itemMap.get(id))
-      .filter(Boolean)
-      .map((item) => {
-        const raw = toRaw(item)
-        return Object.freeze({
-          ...raw,
-          ...(raw.meta || {}),
-          type: 'group',
-          memberList: item.memberList,
-          userList: item.memberList,
-        })
-      }),
-  )
-}
-
-export function benchmarkProjection(buildFn, store, rounds = 30) {
-  const start = performance.now()
-  let last
-  for (let i = 0; i < rounds; i++) {
-    last = buildFn(store)
-  }
-  const elapsed = performance.now() - start
-  return {
-    rows: last?.length ?? 0,
-    rounds,
-    totalMs: elapsed,
-    avgMs: elapsed / rounds,
-  }
+  return store.orderedIds
+    .map((id) => store.itemMap.get(id))
+    .filter(Boolean)
+    .map((item) => {
+      const raw = toRaw(item)
+      return {
+        ...raw,
+        ...(raw.meta || {}),
+        memberList: item.memberList,
+        userList: item.memberList,
+      }
+    })
 }
 
 export function countProjectionDeps(buildFn, store) {
@@ -116,4 +76,10 @@ export function countProjectionDeps(buildFn, store) {
   })
   void probe.value
   return tracked
+}
+
+export function measureOnce(buildFn, store) {
+  const start = performance.now()
+  buildFn(store)
+  return performance.now() - start
 }

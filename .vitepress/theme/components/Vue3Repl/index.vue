@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Repl, useStore, useVueImportMap } from '@vue/repl'
 import CodeMirror from '@vue/repl/codemirror-editor'
-import {  ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, watch, onMounted } from 'vue'
 import {
   onHashChange
 } from './utils'
@@ -126,10 +126,33 @@ function updateExample(scroll = false) {
   }
 }
 
+function setVariant(variant: 'default' | 'hint') {
+  showingHint.value = variant === 'hint'
+  updateExample()
+  syncVariantButtons()
+}
+
 function toggleResult() {
   showingHint.value = !showingHint.value
   updateExample()
 }
+
+function syncVariantButtons() {
+  nextTick(() => {
+    const root = instruction.value
+    if (!root) return
+    root.querySelectorAll<HTMLButtonElement>('[data-lp-variant]').forEach((btn) => {
+      const variant = btn.dataset.lpVariant as 'default' | 'hint'
+      const active =
+        variant === 'hint' ? showingHint.value : !showingHint.value
+      btn.classList.toggle('active', active)
+      btn.onclick = () => setVariant(variant)
+    })
+  })
+}
+
+watch([currentDescription, showingHint], syncVariantButtons)
+onMounted(syncVariantButtons)
 
 // 初始化
 onHashChange(() => {
@@ -154,7 +177,10 @@ updateExample()
         >
       </VTFlyout>
       <div class="vt-doc" v-html="currentDescription"></div>
-      <div class="hint" v-if="data[currentStep]?._hint">
+      <div
+        class="hint"
+        v-if="data[currentStep]?._hint && !currentDescription?.includes('lp-variants')"
+      >
         <button @click="toggleResult">
           {{ showingHint ? '重置' : '显示提示!' }}
         </button>
@@ -259,6 +285,35 @@ footer a {
 
 .vt-doc :deep(summary) {
   cursor: pointer;
+}
+
+.vt-doc :deep(.lp-variants) {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0.8em 0 1em;
+}
+
+.vt-doc :deep(.lp-variant) {
+  background: var(--vt-c-bg-soft);
+  color: var(--vt-c-text-1);
+  border: 1px solid var(--vt-c-divider);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.vt-doc :deep(.lp-variant:hover) {
+  border-color: var(--vt-c-brand);
+}
+
+.vt-doc :deep(.lp-variant.active) {
+  background: var(--vt-c-brand);
+  color: var(--vt-c-bg);
+  border-color: var(--vt-c-brand);
 }
 
 .hint {
