@@ -23,9 +23,9 @@ title: Vue 学习路径
 
 ### [性能优化 (Performance)](/learning-path/performance/)
 
-基于真实 Electron 客户端案例，学习 Vue 典型性能陷阱：
+学习 Vue 在大型数据结构下的典型性能陷阱：
 
-- [组队列表投影性能](/learning-path/performance/#01.reactive-spread-projection) - spread 响应式代理的依赖收集成本与 toRaw 快照派生
+- [列表投影性能](/learning-path/performance/#01.reactive-spread-projection) - spread 响应式代理的依赖收集成本与 toRaw 快照派生
 
 ## 开发状态
 

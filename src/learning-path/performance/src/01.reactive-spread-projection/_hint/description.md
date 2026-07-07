@@ -1,9 +1,3 @@
-# 响应式代理 spread 性能对比
+# 优化方案提示
 
-打开右侧 REPL，使用顶部开关切换「优化前 / 优化后」，运行基准测试对比性能差异。
-
-## 关键步骤
-
-1. 关闭优化 → 运行基准 → 记录依赖数和 avgMs
-2. 开启优化 → 再运行基准 → 查看加速倍数
-3. 模拟分页下拉，观察重建行为差异
+开启「优化后」开关，核心在 `listProjectionModel.js` 的 `buildProjectionOptimized`：toRaw 浅拷贝 + 保留 memberList 响应式引用。

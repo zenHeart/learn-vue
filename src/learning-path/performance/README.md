@@ -1,22 +1,22 @@
 # Vue 性能优化
 
-基于真实 Electron 客户端（nn-client-all）分页下拉卡顿排查案例，抽象出可交互的 MVP 演示。
+基于虚拟列表分页场景的交互式演示，帮助理解 Vue 响应式系统在大型数据结构下的性能陷阱与优化手段。
 
-## 典型性能问题
+## 典型问题
 
-| 热点 | 表现 | 根因 |
+| 模式 | 表现 | 根因 |
 |------|------|------|
-| **B：响应式代理 spread** | 滚动分页时长任务 3–5s | computed 里 `{ ...reactiveEntity }` 逐键注册依赖，规模 O(房间数×字段数) |
-| **A：IPC 回调风暴** | 空闲也占半核 CPU | 主进程高频转发 + 渲染侧逐条 JSON.parse / 分发 |
-| 无意义深拷贝 | 列表重建变慢 | cloneDeep / 只读 Proxy 展开 |
-| deep watch 承重 | 任意字段变更触发整表 | 应用层 mutation 与 watch 粒度不匹配 |
+| **computed 内 spread reactive** | 分页时卡顿、长任务 | 逐键注册依赖，O(项数×字段数) |
+| 无意义深拷贝 | 列表重建变慢 | cloneDeep / Proxy 展开 |
+| deep watch 承重 | 任意字段变更触发整表 | watch 粒度与 mutation 不匹配 |
+| 每次 compute 新对象 | 下游全量更新 | 引用不稳定 |
 
-## Demo 列表
+## Demo
 
-1. [组队列表投影性能](./src/01.reactive-spread-projection/) — 复现 `buildLegacyTeamListProjection` 问题，开关对比优化前后
+1. [列表投影性能](./src/01.reactive-spread-projection/) — spread vs toRaw 开关对比
 
-## 案例来源
+## 验证方式
 
-- 提交：`nn-client-all@166d6d2a`（`perf(channelList): 组队投影 raw 化`）
-- Trace：分页下拉 Profile，投影自身 ~5.3s / 占采样 26.5%
-- 微基准：300 房 × 53 字段，重建 11.32ms → 2.14ms（**5.3×**）
+- 浏览器 REPL：`onTrack` 统计依赖数 + 基准测试对比
+- 官方文档：Performance 指南、toRaw API、Computed Debugging
+- 社区 issue：vue#6660、core#13613

@@ -1,12 +1,6 @@
 <template>
-  <div class="hint">
-    <p>✅ 已启用 toRaw 快照派生。打开开关对比依赖数和基准耗时。</p>
-  </div>
+  <p class="hint">✅ 使用 toRaw 快照派生。对比开关前后的依赖数与基准耗时。</p>
 </template>
-
-<script setup>
-// 提示：核心在 channelListModel.js 的 buildProjectionOptimized
-</script>
 
 <style scoped>
 .hint {
