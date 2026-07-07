@@ -1,0 +1,25 @@
+---
+tags: [config]
+---
+<script src="https://unpkg.com/vue@2"></script>
+<div id="app">
+  <h2>Vue.config.slient 控制报错控制</h2>
+  <button @click="silent" >{{text}}</button>
+  <div key="1" v-for="i in list">{{i}}</div>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    data:{
+      list: [1,2,3],
+      text:'关闭警告',
+    },
+    methods: {
+      silent() {
+        this.text = Vue.config.silent?'关闭警告':'显示警告';
+        this.list = Array.from({length:3}).map(() => ~~(Math.random()*100))
+        Vue.config.silent^=1;
+      }
+    }
+  }) 
+</script>

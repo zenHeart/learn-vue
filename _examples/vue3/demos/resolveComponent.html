@@ -1,0 +1,34 @@
+---
+tags: [api,h]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<h2>resolveComponent 解析组件,注意只能在 render 中使用且只能解析父组件下挂载的子组件</h2>
+<div id='app'>
+  <C2></C2>
+</div>
+<script>
+  const { resolveComponent, createApp, h } = Vue
+  const C1 = {
+    render() {
+      return h('div', '组件1')
+    }
+  }
+  const C2 = {
+    components: {
+      C1
+    },
+    render() {
+      return h('div', [h(resolveComponent('C1')), '组件2'])
+    }
+  }
+
+  // 返回的是 app 实例可链式调用
+  const app = createApp({
+    components: {
+      C2
+    },
+    render() {
+      return h('div', ['解析组件', h(resolveComponent('C2')), h(resolveComponent('C1'))])
+    }
+  }).mount('#app')
+</script>

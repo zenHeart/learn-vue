@@ -1,0 +1,15 @@
+---
+tags: [h]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id='app'>
+</div>
+<script>
+  const { createApp, h } = Vue
+  // 返回的是 app 实例可链式调用
+  const app = createApp({
+    render() {
+      return 'text'
+    }
+  }).mount('#app')
+</script>

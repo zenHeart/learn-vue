@@ -1,0 +1,30 @@
+<script src="https://unpkg.com/vue@2"></script>
+<div id="app">
+  <h2>使用 _v 原型方法返回纯文本节点
+    详见 <a
+      href="https://github.com/vuejs/vue/blob/994aee4f869d68a00c3b9d87daa9c8d84623ac42/dist/vue.runtime.common.js#L2249">_v</a>
+  </h2>
+  <div>
+    <button @click="show^=1">触发 {{$data}}</button>
+    <Desensitive :text="text" :show="show"></Desensitive>
+  </div>
+</div>
+<script>
+  const Desensitive = {
+    functional: true,
+    render(h, context) {
+      if (context.props.show) {
+        return context._v(context.props.text.slice(0, 1) + '**')
+      }
+      return context._v(context.props.text)
+    }
+  }
+  const app = new Vue({
+    el: '#app',
+    components: { Desensitive },
+    data: {
+      text: 'test data',
+      show: false
+    }
+  })
+</script>

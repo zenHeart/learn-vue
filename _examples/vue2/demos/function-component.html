@@ -1,0 +1,36 @@
+---
+tags: [ 组件 ]
+---
+
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+<script>
+  const FunctionCopponent = {
+    functional: true,
+    name: "RenderTest",
+    // 函数式组件此处不识别
+    template: `<div>demo</div>`,
+    render: (h, context) => {
+      return h("p", [
+        "测试函数组件"
+      ]);
+    }
+  }
+
+</script>
+
+<div id="app">
+  <h1>函数式组件</h1>
+  <function-copponent></function-copponent>
+</div>
+
+<script>
+  const app = new Vue({
+    el: '#app',
+    name: "FunctionComponent",
+    components: {
+      FunctionCopponent
+    }
+  });
+</script>

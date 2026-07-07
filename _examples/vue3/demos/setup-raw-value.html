@@ -1,0 +1,26 @@
+---
+tags: [setup]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <H1>setup 返回 data 效果,无法利用计算属性但是可作为单例数据使用</H1>
+  <button @click="state.count++">add</button>
+  <div>state: {{state}}</div>
+  <input type="text" v-model="state.count">
+  <div>double state: {{double}}</div>
+</div>
+<script>
+  const { createApp, computed } = Vue;
+  let origin = { count: 1 }
+  const app = createApp({
+    setup() {
+      const state = { count: 1 };
+      const double = computed(() => state.count * 2)
+
+      return {
+        state,
+        double
+      }
+    }
+  }).mount('#app')
+</script>

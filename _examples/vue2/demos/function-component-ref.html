@@ -1,0 +1,40 @@
+---
+tags: [ 函数组件,ref ]
+---
+
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+<script>
+  const FunctionCopponent = {
+    functional: true,
+    name: "RenderTest",
+    render: (h, ctx) => {
+      // 注意函数组件内部无法使用 ref,但是可以将函数本身暴露给外部组件
+      return h("p", {
+        ref: ctx.data.ref,
+      }, [
+        "测试函数组件"
+      ]);
+    }
+  }
+
+</script>
+
+<div id="app">
+  <h1>ref 配置函数式组件的引用</h1>
+  <function-copponent ref="a"></function-copponent>
+</div>
+
+<script>
+  const app = new Vue({
+    el: '#app',
+    name: "FunctionComponent",
+    components: {
+      FunctionCopponent
+    },
+    mounted() {
+      console.log('this refs', this.$refs)
+    }
+  });
+</script>

@@ -1,0 +1,28 @@
+---
+tags: [class ]
+---
+<script src="https://unpkg.com/vue@2"></script>
+<style>
+  .error {
+    color: red
+  }
+</style>
+<div id="app">
+  <h1>class 返回 null 或 undefined 可以不触发空 class, 注意只有初始生效</h1>
+  <p><button @click="trigger^=1">
+    trigger
+  </button></p>
+  <p>
+    <span :class="{error: trigger || null}">error</span>
+    <!--  -->
+    <span :class="trigger ? 'error' : undefined">error</span>
+  </p>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    data:{
+      trigger: false
+    }
+  })
+</script>

@@ -1,0 +1,55 @@
+<script src="https://unpkg.com/vue@next"></script>
+<script type="text/x-template" id="container">
+<div>
+  <div>
+    <p>---default slot---</p>
+    <slot></slot>
+  </div>
+  <div style="color:red">
+    <p>---fail slot----</p>
+    <slot name="fail"></slot>
+  </div>
+</div>
+</script>
+<script>
+  const C1 = {
+    template: '#container',
+    data() {
+      return {
+        show: {
+          header: false,
+          default: false,
+          footer: false,
+
+        }
+      }
+    }
+  }
+</script>
+<div id="app">
+  <h2>利用 v-slot:[name] 实现插槽</h2>
+  <button @click="changeSlot^=1">切换插槽内容</button>
+  <C1>
+    <template v-slot:[name]>
+      <h2>{{name}}</h2>
+    </template>
+  </C1>
+</div>
+<script>
+  const { createApp } = Vue
+  const app = createApp({
+    components: {
+      C1
+    },
+    data() {
+      return {
+        changeSlot: false
+      }
+    },
+    computed: {
+      name() {
+        return this.changeSlot ? 'default' : 'fail'
+      }
+    }
+  }).mount('#app')
+</script>

@@ -1,0 +1,107 @@
+---
+tags: [ 示例 ]
+---
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mockjs@latest/dist/mock-min.js"></script>
+
+<script type="text/x-template" id="item">
+  <div class="message">
+      <h3>{{item.title}}</h3>
+      <p>{{item.content}}</p>
+  </div>
+</script>
+<script>
+  const Item = {
+    template: '#item',
+    props: {
+      item: {
+        type: Object
+      }
+    }
+  }
+</script>
+<style>
+  .message {
+    border: 1px solid cyan;
+    padding: 10px;
+    margin-bottom: 5px;
+  }
+</style>
+
+<div id="app">
+  <h1>测试无限滚动</h1>
+  <main class="container" @scroll.passive="onScroll">
+    <Item v-for="item in items" :id="item.title" :key="item.title" :item="item"></Item>
+  </main>
+</div>
+
+<script>
+
+  const vue = new Vue({
+    el: '#app',
+    components: {
+      Item
+    },
+    created() {
+      this.getData().then(res => {
+        this.items = res;
+      })
+    },
+    data: {
+      items: []
+    },
+    methods: {
+      onScroll({ target }) {
+        const { scrollTop, scrollHeight, clientHeight } = target
+        // console.log(`scrollTop:${scrollTop}, scrollHeight:${scrollHeight}, clientHeight:${clientHeight} `)
+        if (scrollHeight - scrollTop - clientHeight <= 0) {
+          console.log('on bottom')
+          this.loadMore(true)
+        }
+        if (scrollTop <= 0) {
+          console.log('on top')
+          let currentId = this.items[0].title;
+          let el = document.getElementById(currentId);
+          this.loadMore(false)
+          el.scrollIntoView();
+
+        }
+      },
+      loadMore(direction) {
+        this.getData().then(res => {
+          if (direction) {
+            this.items.push(...res)
+          } else {
+            this.items.unshift(...res)
+          }
+        })
+      },
+      getData() {
+        const mockData = Mock.mock({
+          'list|10-20': [{
+            title: '@sentence(5,15)',
+            content: '@sentence(20,50)'
+          }]
+        })
+        return fetch('https://httpbin.org/delay/3', {
+          body: JSON.stringify(mockData),
+          method: 'POST',
+        }).then(r => (r.json())).then(res => (JSON.parse(res.data).list))
+      }
+    }
+  })
+
+</script>
+<style>
+  .container {
+    height: 400px;
+    border: 1px solid #000;
+    overflow: hidden;
+    padding: 10px;
+  }
+
+  .container:hover {
+    overflow-y: scroll;
+  }
+</style>

@@ -1,0 +1,58 @@
+---
+tags: [ provide ]
+---
+<script src="https://unpkg.com/vue@2"></script>
+<script type="text/x-template" id="c1">
+  <div>data: {{data}}</div>
+</script>
+<script>
+  const C1 = {
+    template: '#c1',
+    inject: [
+      'eventInfo'
+    ],
+    watch: {
+      eventInfo() {
+        console.log('---', arguments)
+      }
+    },
+    computed: {
+      data() {
+        let { data: d } = this.eventInfo || {};
+        return d;
+      }
+    }
+  }
+</script>
+<div id="app">
+  <h1>传递响应式数据无法触发 inject 响应式</h1>
+  <p>
+    <button @click="changeEvent">change eventInfo</button>
+  </p>
+  <p>{{eventInfo}}</p>
+  <C1 />
+</div>
+<script>
+
+  const app = new Vue({
+    el: '#app',
+    provide() {
+      return {
+        eventInfo: this.eventInfo
+      }
+    },
+    components: {
+      C1,
+    },
+    data: {
+      eventInfo: {}
+    },
+    methods: {
+      changeEvent() {
+        this.eventInfo = {
+          data: new Date()
+        }
+      }
+    }
+  })
+</script>

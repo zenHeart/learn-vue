@@ -1,0 +1,15 @@
+---
+tags: [ config, globalProperties ]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <button @click="$say">global say</button>
+</div>
+<script>
+  const { createApp } = Vue
+  const app = createApp({})
+  app.config.globalProperties.$say = () => {
+    console.log('say')
+  }
+  app.mount('#app')
+</script>

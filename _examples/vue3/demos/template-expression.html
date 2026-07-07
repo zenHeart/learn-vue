@@ -1,0 +1,20 @@
+---
+tags: [learn,template]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id='app'>
+  <h2>template 支持多种模板</h2>
+  <p>可访问内建对象 {{new Date().toString()}}</p>
+  <p>{{2**3}}</p>
+</div>
+<script>
+  const { createApp } = Vue
+  const HelloApp = createApp({
+    data() {
+      return {
+        text: 'hello vue'
+      }
+    }
+  })
+  HelloApp.mount('#app')
+</script>

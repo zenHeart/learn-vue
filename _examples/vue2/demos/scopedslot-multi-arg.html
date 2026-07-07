@@ -1,0 +1,27 @@
+<script src="https://unpkg.com/vue@2"></script>
+<script type="text/x-template" id="container">
+<button>
+  <slot :a="{a:1}" :b="{b:1}"></slot>
+</button>
+</script>
+<script>
+  const C1 = {
+    template: '#container',
+  }
+</script>
+<div id="app">
+  <h2>scopedslot 支持传入多个参数</h2>
+  <C1>
+    <template v-slot="d">
+      {{d}}
+    </template>
+  </C1>
+</div>
+<script>
+  const app = new Vue({
+    el:'#app',
+    components: {
+      C1
+    }
+  })
+</script>

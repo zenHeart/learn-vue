@@ -1,0 +1,115 @@
+<script src="https://unpkg.com/vue@3"></script>
+<script>
+  const { reactive, effect, computed, watch } = Vue
+  // 基础功能验证 属性，深层次熟悉，in
+  // const data = reactive({
+  //   count: 0,
+  //   demo: {
+  //     count: 0
+  //   }
+  // })
+
+  // function log() {
+  //   console.log('count:', data.demo.count, data.count)
+  // }
+  // function log1() {
+  //   console.log('count1:', data.demo.count, data.count)
+  // }
+  // function logHas() {
+  //   console.log('count has:', 'count' in data)
+  // }
+
+  // effect(log)
+  // effect(log1) // Add effect for log1
+  // effect(logHas) // Add effect for log1
+  // data.demo.count++ // Increment the count to trigger the effect
+  // data.count++ // Increment the count to trigger the effect
+  // console.dir(data)
+  // delete data.demo.count // Delete the property to trigger the effect
+
+  // 验证对原型链也会监听
+  // let dummy
+  // const parentCounter = reactive({ num: 0})
+  // const counter = reactive({ num: 2})
+  // Object.setPrototypeOf(counter, parentCounter)
+  // effect(() => (dummy = counter.num))
+
+  // console.log('dummy:', dummy)
+  // delete counter.num
+  // console.log('dummy:', dummy)
+  // parentCounter.num = 4
+  // console.log('dummy:', dummy)
+  // counter.num = 3
+  // console.log('dummy:', dummy)
+
+  // 验证 computed 功能
+  const c = reactive({ count: 0 })
+
+  function watchLog() {
+    console.log('watch count:', c.count)
+    computedCount.value
+  }
+
+  function log() {
+    let newCount = c.count + 1
+    console.log('computed count:', newCount)
+    return newCount
+  }
+  const computedCount = computed(log)
+  watch(() => c.count, watchLog, { immediate: true}) // 立即执行
+
+  // computed 是懒加载，只有消费 .value 时才会执行
+  console.log(computedCount.value) // Log the computed value
+
+  // computed  值更新后，消费了 .value 才会触发 computed
+  c.count++
+  c.count++
+  // computed 会缓存，如果值没有改变，不会重新触发 computed 函数
+  computedCount.value
+  console.log('finish')
+</script>
+
+<script type="module">
+  import {
+    reactive as selfReactvity,
+    effect as selfEffect
+  } from './reactivity/index.js'
+  // 基础功能验证 属性，深层次熟悉，in
+  // const data1 = selfReactvity({
+  //   count: 0,
+  //   demo: {
+  //     count: 0
+  //   }
+  // })
+
+  // function log() {
+  //   console.log('self count:', data1.demo.count, data1.count)
+  // }
+  // function log1() {
+  //   console.log('self count1:', data1.demo.count, data1.count)
+  // }
+  // function logHas() {
+  //   console.log('self count has:', 'count' in data1)
+  // }
+
+  // selfEffect(log)
+  // selfEffect(log1) // Add effect for log1
+  // selfEffect(logHas) // Add effect for log1
+  // data1.demo.count++ // Increment the count to trigger the effect
+  // data1.count++
+  // delete data1.demo.count // Delete the property to trigger the effect
+
+  // let dummy
+  // const parentCounter = selfReactvity({ num: 0})
+  // const counter = selfReactvity({ num: 2})
+  // Object.setPrototypeOf(counter, parentCounter)
+  // selfEffect(() => (dummy = counter.num))
+
+  // console.log('self dummy:', dummy)
+  // delete counter.num
+  // console.log('self dummy:', dummy)
+  // parentCounter.num = 4
+  // console.log('self dummy:', dummy)
+  // counter.num = 3
+  // console.log('self dummy:', dummy)
+</script>

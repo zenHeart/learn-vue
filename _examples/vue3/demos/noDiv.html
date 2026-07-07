@@ -1,0 +1,19 @@
+
+<script src="https://unpkg.com/vue@3"></script>
+<script>
+  const { createApp } = Vue
+  const HelloApp = createApp({
+    data() {
+      return {
+        text: 'hello vue'
+      }
+    },
+    template: `
+      <div>
+        <h1>{{ text }}</h1>
+        <button @click="text = 'hello world'">Change Text</button>
+      </div>
+    `
+  })
+  HelloApp.mount('#app')
+</script>

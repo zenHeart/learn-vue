@@ -1,0 +1,24 @@
+---
+tags: [ on ]
+---
+<script src="https://unpkg.com/vue@2"></script>
+<div id="app">
+  <h2>$on(array) 支持数组，在 2.2.0 后支持</h2>
+  <button @click="hanldeClick('1')" >event 1</button>
+  <button @click="hanldeClick('2')" >event 2</button>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    methods: {
+      hanldeClick(eventName) {
+        this.$emit(`event${eventName}`,eventName )
+      }
+    },
+    created() {
+      this.$on( ['event1', 'event2'],res => {
+        console.log(res)
+      })
+    }
+  }) 
+</script>

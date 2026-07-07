@@ -1,0 +1,55 @@
+ellipse()
+  white-space nowrap
+  overflow hidden
+  text-overflow ellipsis
+
+$Moblie = 800px
+
+body,html
+  height 100vh
+
+
+.app
+  display flex
+  padding 20px
+  color #888
+  height 100%
+  a,&:visited, &:hover, &:active
+      color inherit
+
+  nav
+    padding 10px 0
+    position fixed
+    top 0
+    bottom 0
+    width 300px
+    margin-right 10px
+    overflow-y auto
+
+    .nav-item
+      text-decoration none
+      display block
+      padding 25px 5px 5px 
+      cursor pointer
+      border-bottom 1px solid #e6e6e6
+  
+
+      &.active
+        border-bottom 1px solid #22B077
+
+      &:hover
+        background #CCFFCC 
+
+  .app-content
+    position relative
+    margin-left 310px
+    flex 1
+    padding 10px
+    // >iframe
+
+@media (max-width $Moblie)
+  .app
+    flex-direction column
+
+  nav
+    width 100%

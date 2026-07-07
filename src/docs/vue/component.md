@@ -1,0 +1,76 @@
+---
+title: component    
+tags: vue componnet      
+birth: 2017-10-11      
+modified: 2017-10-11      
+---
+
+component
+===
+**前言:详解 vue component 的使用**
+
+---
+
+## 组件基础
+1. 使用 `template` 申明组件结构
+2. 使用 `Vue.component` 方法定义组件名及绑定组件构造函数
+3. 直接在 Vue 的作用域使用组件标签实例化对象.
+
+[创建组件](examples/component/restify.js)
+
+可以在 Vue 或组件中使用 `compoonets` 属性定义组件的作用范围
+
+> 申明的组件讲作用域绑定的空间.
+> 注意申明的组件必须有有根节点,不支持并列模式
+> 组件结构要符合标签插入原则否则参看   [is 特性](https://cn.vuejs.org/v2/guide/components.html#DOM-模板解析注意事项)
+
+
+1. 在 Vue,或组件内部使用 components 定义组件对象
+2. 在对应作用域使用组件
+
+[componnets](examples/component/components.html)
+
+## 组件通讯
+## 组建数据
+1. 组件 data 属性必须是函数.
+
+> 重点是理解组件利用函数定义 data 确保,视图数据作用域隔离.
+如果直接申明变量,多个组件公用一个模型.
+
+详见 [data_componnet](data_component.html) 
+
+## 父子组件
+组件的数据为隔离作用域.
+组件通过暴露 `props` 来给父组件进行赋值.
+参看 [props component demo](children_component_props.html)
+* 利用数组定义多个属性
+    > 注意驼峰法属性在绑定值时采用中划线格式描述.
+    该规则符合 html5 的属性命名实践.
+* 默认属性传递为字符串.若传递属性为变量.
+利用 `:<属性名>` 绑定属性,此时传入的字符串会被解析为变量.
+例如范例中 `info` 属性的传递.
+* 属性绑定为单向
+> 父级数据变化会传递给子模块,但是子模块变量变化无法传递给父级
+
+参看范例中单向绑定示例,父层数据变化会传递给子层.子层变化父级无法获知.
+
+> **若传递的是引用,子层修改会影响父级**
+
+* [ ] 此处数组操作有问题需研究?????????
+
+* 可以给 `props` 传递对象.
+并且限制接收的参数类型.参考范例中对数字和字符串的输入限制.
+详见 [属性校验](https://vuejs.org/v2/guide/components.html#Prop-Validation)
+
+> 该校验和 typescript 的思想相似.
+
+## 组件事件
+除了利用 `props` 向父元素暴露属性.
+可以利用 `v-on` 的事件机制实现组件通讯.
+
+组件中使用 `$emit('eventname')` 的方法发送事件
+父级元素利用 `v-on:eventname` 捕获事件并执行相应回调.
+
+范例参看 [component event](children_component_event.html)
+
+* [ ] 怎样的组件才算父子组件???

@@ -1,0 +1,36 @@
+<script src="https://unpkg.com/vue@2"></script>
+<div id="app">
+  <button @click="show^=1">v-show trigger</button>
+  <button @click="ifShow^=1">v-if-show trigger</button>
+  <div class="item" v-show="show">
+    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Culpa corrupti sit veritatis ipsam. Nihil laborum
+      delectus soluta odit dolores explicabo eligendi ipsum inventore maiores, quia deserunt dolorum, assumenda
+      voluptatum dolor.</p>
+  </div>
+  <div class="item" v-if="ifShow">
+    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Ipsam tempore voluptatum maxime maiores itaque nulla,
+      expedita veniam, dolores vitae pariatur sunt magnam ullam quod? Unde itaque maiores natus vero ullam!</p>
+  </div>
+
+</div>
+<style>
+  .item {
+    width: 100px;
+    border: 1px solid #000;
+  }
+
+  .item>p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>
+<script>
+  const app = new Vue({
+    el: '#app',
+    data: {
+      show: false,
+      ifShow: false,
+    }
+  })
+</script>

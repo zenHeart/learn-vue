@@ -1,0 +1,32 @@
+---
+tags: [api, emits]
+---
+
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <h1>emits 限制组件对外发送的事件，注意可触发但会报警告</h1>
+  <C1 @send="log('send')" @send-inner="log('send-inner')"></C1>
+</div>
+<script>
+  const C1 = {
+    template: `
+    <div>
+      <button @click="$emit('send')">对外发送</button>    
+      <button @click="$emit('send-inner')">内部触发</button>  
+    </div> 
+    `,
+    emits: ['send']
+  };
+  const { createApp } = Vue;
+  const HelloApp = createApp({
+    components: {
+      C1
+    },
+    methods: {
+      log(e) {
+        console.log('receive', e);
+      }
+    }
+  });
+  HelloApp.mount('#app');
+</script>

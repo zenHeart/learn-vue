@@ -1,0 +1,40 @@
+<script src="https://unpkg.com/vue@2"></script>
+<script>
+  const C1 = {
+    render(h) {
+      console.log('slots', this.$scopedSlots);
+      var header = this.$scopedSlots.header
+      var body = this.$scopedSlots.default
+      var footer = this.$scopedSlots.footer
+      return h('div', [
+        h('header', header('header')),
+        h('main', body('main')),
+        h('footer', footer('footer'))
+      ])
+    }
+  }
+</script>
+<div id="app">
+  <h2>采用 $scopeSlots.slotName() 向多个具名插槽传值</h2>
+  <!-- 注意变量名只在 template 范围内生效,所以可重名 -->
+  <C1>
+    <template #header="a">
+      <h1>{{a}}</h1>
+    </template>
+    <!-- 支持解构,注意字符串也支持解构语法 -->
+    <template #default="[a]">
+      <h1>{{a}}</h1>
+    </template>
+    <template #footer="a">
+      <h1>{{a}}</h1>
+    </template>
+  </C1>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    components: {
+      C1
+    }
+  })
+</script>

@@ -1,0 +1,40 @@
+---
+tags: [toRaw, composition]
+---
+
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <h1>提取相应对象的原始值,利用 toRaw 实现状态提取</h1>
+  <button @click="state.count++">add state</button>
+  <button @click="state1.count++">add state1</button>
+  <p>
+    state:{{state}} state1:{{state1}}
+  </p>
+</div>
+<script>
+  const { createApp, reactive, toRaw } = Vue;
+  const useState = () => {
+    const state = reactive({
+      count: 0
+    });
+    return {
+      state
+    };
+  };
+  const app = createApp({
+    setup() {
+      const { state } = useState();
+      // 提取其他元素的状态浅拷贝
+      const state1 = reactive(toRaw(state));
+      return {
+        state,
+        state1
+      };
+    }
+  }).mount('#app');
+</script>
+<style>
+  [v-cloak] {
+    display: none;
+  }
+</style> 

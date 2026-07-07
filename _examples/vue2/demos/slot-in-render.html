@@ -1,0 +1,31 @@
+<script src="https://unpkg.com/vue@2"></script>
+<script>
+  const C1 = {
+    render(h) {
+      console.log('slots', this.$slots)
+      return h('div', [this.$slots.default])
+    }
+  }
+</script>
+<div id="app">
+  <h2>验证 $slots.default 引用默认插槽</h2>
+  <C1>
+    <h1>test</h1>
+    <h1>demo</h1>
+  </C1>
+  <!-- 无空的文本节点 -->
+  <C1>
+    <h1>test</h1><h1>demo</h1>
+  </C1>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    components: {
+      C1
+    },
+    methods: {
+      log: console.log
+    }
+  })
+</script>

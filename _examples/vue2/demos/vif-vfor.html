@@ -1,0 +1,26 @@
+---
+tags: [指令]
+---
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+
+<div id="app">
+  <div>
+    <div :key="index" v-if="[].length" v-for="(item, index) in [1,2,3]">
+      {{ item }}
+    </div>
+    <h1 v-else>
+      empty1
+    </h1>
+  </div>
+</div>
+
+<script>
+  const app = new Vue({
+    el: "#app",
+    data: {
+      arr: [1,2,3]
+    },
+    beforeCreate() {
+    }
+  });
+</script>

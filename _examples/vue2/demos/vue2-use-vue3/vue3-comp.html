@@ -1,0 +1,23 @@
+<script src="https://unpkg.com/vue@next"></script>
+
+<div id='app'>
+  <h2>teleport 组件必须在挂载点之后感觉是 bug</h2>
+  <div>content</div>
+  <div id="footer"></div>
+  <teleport to="#footer">
+    <div>
+      footer
+    </div>
+  </teleport>   
+</div>
+<script>
+  const { createApp } = Vue
+  const HelloApp = createApp({
+    data() {
+      return {
+        text: 'hello vue'
+      }
+    }
+  })
+  HelloApp.mount('#app')
+</script>

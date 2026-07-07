@@ -1,0 +1,71 @@
+---
+tags: [ computed ]
+---
+
+
+<script src="https://unpkg.com/vue@2"></script>
+<div id="app">
+<div>验证内部定时器不触发 computed</div>
+<p><button @click="show^=1">show: {{ show }}</button></p>
+<p>{{ waitTime }} </p>
+</div>
+
+<script>
+  let t;
+  const app = new Vue({
+    el: '#app',
+    data:{
+      show: true,
+      initTime: new Date().getTime(),
+      waitTime: 0
+    },
+    watch: {
+      show: {
+      handler:function  (val)  {
+        if(val) {
+          if(!t) {
+            this.waitTime = new Date().getTime() - this.initTime;
+            t = setInterval(() => {
+              this.waitTime = new Date().getTime() - this.initTime;
+            },1000)
+            this.$once('hook:beforeDestroy',() => {
+                clearInterval(t);
+                t= null;
+            })
+          } 
+        }
+        else {
+          clearInterval(t);
+          t= null;
+        } 
+      },
+      immediate: true
+    },
+    },
+    computed: {
+       time: {
+         get() {
+          let time = 0;
+          if(show) {
+            t = setInterval(() => {
+              time = new Date().toString()
+            }, 1000);
+          } else {
+            clearInterval(t)
+          }
+        },
+        set() {
+          if(show) {
+            t = setInterval(() => {
+              time = new Date().toString()
+            }, 1000);
+          } else {
+            clearInterval(t)
+          }
+      },
+      },
+     
+    }
+  }) 
+
+</script>

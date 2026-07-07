@@ -1,0 +1,51 @@
+<script src="https://unpkg.com/vue@2"></script>
+<script type="text/x-template" id="container">
+<div>
+  <header @click="show.header^=1">
+    <slot name="header" :show="show.header"></slot>
+  </header>
+  <main  @click="show.default^=1">
+    <slot :show="show.default"></slot>
+  </main>
+  <footer @click="show.footer^=1">
+    <slot name="footer" :show="show.footer"></slot>
+  </footer>
+</div>
+</script>
+<script>
+  const C1 = {
+    template: '#container',
+    data() {
+      return {
+        show: {
+          header: false,
+          default: false,
+          footer: false,
+
+        }
+      }
+    }
+  }
+</script>
+<div id="app">
+  <h2>利用 v-slot:name="valName" 访问绑定值</h2>
+  <C1>
+    <template v-slot:header="h">
+      header: {{h}}
+    </template>
+    <template v-slot="d">
+      main: {{d}}
+    </template>
+    <template v-slot:footer="f">
+      footer:{{f}}
+    </template>
+  </C1>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    components: {
+      C1
+    }
+  })
+</script>

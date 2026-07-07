@@ -1,0 +1,39 @@
+---
+tags: [ provide ]
+---
+
+<script src="https://unpkg.com/vue@2"></script>
+<script type="x-template" id="C1">
+  <p><button @click="change">change</button> {{a}}</p>
+</script>
+<script>
+  const C1 = {
+    template: '#c1',
+    inject: ['a'],
+    methods:{
+      change() {
+        this.a = new Date();
+      }
+    }
+  }
+</script>
+<div id="app">
+  <C1></C1>
+  <button @click="log">log</button>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    components: {
+      C1
+    },
+    provide: {
+      a: 1
+    },
+    methods: {
+      log() {
+        console.log(this)
+      }
+    }
+  })
+</script>

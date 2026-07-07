@@ -1,0 +1,26 @@
+---
+tags: [isProxy]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <H1>isProxy 判断状态是否为代理</H1>
+  <button @click="state.count++">add</button>
+  <div>origin: {{isProxyOrigin}} {{origin}}</div>
+  <div>state: {{isProxy(state)}} {{state}}</div>
+</div>
+<script>
+  const { createApp, reactive, computed, isProxy } = Vue;
+  let origin = { count: 1 }
+  const app = createApp({
+    setup() {
+      const state = reactive(origin);
+      const isProxyOrigin = isProxy(origin);
+      return {
+        state,
+        origin,
+        isProxyOrigin,
+        isProxy
+      }
+    }
+  }).mount('#app')
+</script>

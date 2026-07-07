@@ -1,0 +1,18 @@
+{
+  "imports": {
+    "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js",
+    "vue/server-renderer": "http://localhost:5173/src/vue-server-renderer-dev-proxy",
+    "vue-router": "https://unpkg.com/vue-router@4/dist/vue-router.esm-browser.js",
+    "@vue/devtools-api": "https://cdn.jsdelivr.net/npm/@vue/devtools-api@6.6.1/lib/esm/index.js",
+    "vitest": "https://cdn.jsdelivr.net/npm/vitest@3.1.4/dist/index.min.js",
+    "expect-type":"https://cdn.jsdelivr.net/npm/expect-type@1.2.1/dist/index.js",
+    "@vitest/runner": "https://cdn.jsdelivr.net/npm/@vitest/runner@3.1.4/dist/index.js",
+    "@vitest/ui": "https://cdn.jsdelivr.net/npm/@vitest/ui",
+    "@vitest/browser": "https://cdn.jsdelivr.net/npm/@vitest/browser",
+    "@vitest/mocker": "https://cdn.jsdelivr.net/npm/@vitest/mocker@3.1.4/dist/browser.js",
+    "chai": "https://cdn.jsdelivr.net/npm/chai",
+    "@vitest/expect": "https://cdn.jsdelivr.net/npm/@vitest/expect",
+    "mocha": "https://app.unpkg.com/mocha@11.4.0/files/mocha.js"
+  },
+  "scopes": {}
+}

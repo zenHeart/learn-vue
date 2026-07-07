@@ -1,0 +1,14 @@
+---
+tags: [ thoery ]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<script>
+  let { watch, reactive } = Vue;
+  let state = reactive({
+    count: 1
+  })
+  effect(() => {
+    console.log(state.count)
+  })
+
+</script>

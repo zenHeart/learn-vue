@@ -1,0 +1,16 @@
+---
+tags: [render, api]
+---
+
+<script src="https://unpkg.com/vue@2"></script>
+<h2>验证 render 不支持 multi root</h2>
+<div id="app"></div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    functional: true,
+    render(h) {
+      return [h('h1', 'hello'), h('h1', 'vue')];
+    }
+  });
+</script>

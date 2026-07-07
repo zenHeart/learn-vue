@@ -1,0 +1,30 @@
+<script src="https://unpkg.com/vue@2"></script>
+<script src="https://unpkg.com/@vue/composition-api@1.0.0-beta.6/dist/vue-composition-api.js"></script>
+<div id="app">
+  <h2> watchEffect 不要修改状态避免，无限触发</h2>
+  <p><button @click="stop^=1">stop: {{stop}}</button> <button @click="count++">add, count:{{count}}</button></p>
+</div>
+<script>
+  let { ref, watchEffect } = VueCompositionAPI
+  Vue.use(VueCompositionAPI);
+
+  const app = new Vue({
+    el: '#app',
+    setup() {
+      let count = ref(0);
+      let stop = ref(true);
+      watchEffect(() => {
+        console.log('log', count.value,stop.value)
+        if (stop.value) {
+          return
+        } else {
+          count.value++
+        }
+      })
+      return {
+        count,
+        stop
+      }
+    }
+  })
+</script>

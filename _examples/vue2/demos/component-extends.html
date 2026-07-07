@@ -1,0 +1,62 @@
+---
+tags: [ 组件, extends ]
+category: 组件
+---
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+
+<script>
+  // 没有 render 效果类似 mixin
+  const BaseC1 = {
+    name: 'BaseC1',
+    props: {
+      text: String
+    },
+    methods: {
+      showText() {
+        console.log(this.text);
+      }
+    },
+  }
+</script>
+<script>
+  const C1 = {
+    name: 'C1',
+    extends: BaseC1,
+    props: {
+      handle: Function
+    },
+    render(h) {
+      return h('button', {
+        on: {
+          click: () => {
+            this.handle();
+            this.showText();
+          }
+        }
+      }, this.text)
+    }
+  }
+</script>
+
+<div id="app">
+  <h1>利用 extends 属性实现类似 mixin 的效果</h1>
+  <C1 :handle="handle" text="hello world"></C1>
+</div>
+
+<script>
+  const app = new Vue({
+    el: '#app',
+    components: {
+      C1
+    },
+    data: {
+      text: 'hello world!'
+    },
+    methods: {
+      handle() {
+        console.log('show text!');
+      }
+    }
+  });
+</script>

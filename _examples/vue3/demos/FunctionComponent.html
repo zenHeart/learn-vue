@@ -1,0 +1,32 @@
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <h2>vue3 采用函数定义无状态组件</h2>
+  <fun-c @click="show" a="1" :b ="{a:12}"/>
+</div>
+<script>
+  let  { h, createApp} = Vue
+
+  // 所有数据扁平化处理
+  function FunC(props,ctx) {
+    /**
+     * ctx 包含 attrs
+     * slots
+     * emit 方法
+     */ 
+    return h('div',{
+      onClick: props.onClick
+    },JSON.stringify(props))
+  }
+
+  const app = createApp({
+    components: {
+      FunC
+    },
+    methods: {
+      show() {
+        alert(1)
+      }
+    }
+  }).mount('#app')
+
+</script>

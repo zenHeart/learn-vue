@@ -1,0 +1,41 @@
+---
+tags: [ $slots, render ]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <h2>采用 $slots.default(arg,...) 传入参数</h2>
+  <C1>
+    <template #default="a">
+      <h1>test {{a}}</h1>
+    </template>
+  </C1>
+  <C1>
+    <template #default="a">
+      {{a}}
+    </template>
+  </C1>
+</div>
+<script>
+  const { createApp, h } = Vue;
+
+  const C1 = {
+    data() {
+      return {
+        trigger: false
+      }
+    },
+    render() {
+      return h('button', {
+        onclick: () => {
+          this.trigger ^= 1
+        }
+
+      }, [this.$slots.default(this.trigger) || 'default'])
+    }
+  }
+  const app = createApp({
+    components: {
+      C1
+    }
+  }).mount('#app')
+</script>

@@ -1,0 +1,92 @@
+---
+tags: [组件]
+---
+
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+
+<div id="mount">
+
+</div>
+<script type="text/x-template" id="message">
+  <div class="message">
+    <div v-for="(itme,index) in notices">
+      <h3>{{itme.title}}</h3>
+      <p>{{itme.content}}</p>
+    </div>
+  </div>
+</script>
+<script>
+  const Message = Vue.extend({
+    template: '#message',
+    data() {
+      return {
+        notices: []
+      }
+    },
+    methods: {
+      add(info) {
+        this.notices.push(info);
+        setTimeout(() => {
+          console.log('info --')
+          this.notices.shift();
+        }, info.interval || 1000)
+      }
+    }
+  })
+
+  const singleton = (() => {
+    let message = null;
+    return function show(opts) {
+      console.log('data:', message, arguments);
+      if (!message) {
+        message = new Message(opts)
+        message.$mount('#mount');
+        return show;
+      } else {
+        message.add(opts);
+      }
+    }
+  })()
+
+
+  const InstallMesage = {
+    install(vue) {
+      vue.prototype.$message = singleton()
+    }
+  }
+</script>
+<style>
+  .message {
+    position: fixed;
+    top: 0;
+    text-align: center;
+    width: 100%;
+    z-index: -1;
+  }
+</style>
+
+<div id="app">
+  <h1>单例全局组件示例</h1>
+  <button @click="showMessage">显示消息</button>
+  <button @click="showMessage(2)">显示消息延迟 2s</button>
+</div>
+
+<script>
+  Vue.use(InstallMesage);
+
+  const vue = new Vue({
+    el: '#app',
+    methods: {
+      showMessage(time) {
+        console.log(this.$message.toString());
+        this.$message({
+          title: 'title',
+          content: `time: ${new Date().toISOString()}`,
+          interval: time ? 1000 * time : undefined
+        })
+      }
+    }
+  })
+
+</script>

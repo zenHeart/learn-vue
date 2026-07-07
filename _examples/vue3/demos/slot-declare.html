@@ -1,0 +1,32 @@
+<script src="https://unpkg.com/vue@next"></script>
+<script type="text/x-template" id="todo-button">
+  <!-- 1. 使用 slot 定义默认插槽点 -->
+<button>
+  ToDoButton
+  <slot></slot>
+</button>
+</script>
+<script>
+  const C1 = {
+    template: '#todo-button',
+  }
+</script>
+<div id="app">
+  <h2>验证 slot 的申明和使用</h2>
+  <C1 @click="log('文本节点')">raw text </C1>
+  <C1 @click="log('html 节点')">
+    <h1>test</h1>
+  </C1>
+
+</div>
+<script>
+  const { createApp } = Vue
+  const app = createApp({
+    components: {
+      C1
+    },
+    methods: {
+      log: console.log
+    }
+  }).mount('#app')
+</script>

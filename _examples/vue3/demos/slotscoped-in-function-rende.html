@@ -1,0 +1,22 @@
+---
+tags: [ slot, render,function-component ]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <h2>采用 context.slots.default() 引用默认插槽 </h2>
+  <C1>
+    <template v-slot="...a">
+      <h1>{{ a }}</h1>
+    </template>
+  </C1>
+</div>
+<script>
+  const { createApp, h } = Vue;
+
+  const C1 = (props, ctx) => h('button', [ctx.slots.default(1, 2, 3)])
+  const app = createApp({
+    components: {
+      C1
+    }
+  }).mount('#app')
+</script>

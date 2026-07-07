@@ -1,0 +1,31 @@
+---
+tags: [api,h]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id='app'>
+  <h2>h 首个参数传入 null 渲染为注释节点</h2>
+  <C1 :comment="showComment"></C1>
+  <button @click="showComment^=1">显示组件为{{showComment?'标签':'注释'}}</button>
+</div>
+<script>
+  const { createApp, h } = Vue
+  const C1 = {
+    props: {
+      comment: Boolean
+    },
+    render() {
+      return h(this.comment ? null : 'div', '组件')
+    }
+  }
+  // 返回的是 app 实例可链式调用
+  const app = createApp({
+    components: {
+      C1
+    },
+    data() {
+      return {
+        showComment: false
+      }
+    }
+  }).mount('#app')
+</script>

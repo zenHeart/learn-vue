@@ -1,0 +1,40 @@
+<script src="https://unpkg.com/vue@2"></script>
+<script type="text/x-template" id="c">
+  <div>
+    子元素 
+  </div>
+</script>
+<script>
+  const C = {
+    template: '#c',
+    created() {
+      // 清除之前的监听
+      this.$bus.$off('test');
+      this.$bus.$on('test', () => {
+        console.log('trigger')
+      })
+    }
+  }
+</script>
+
+<div id="app">
+  <h1> </h1>
+  <button @click="trigger">trigger eventbus</button>
+  <c v-for="item in 3" :key="item"></c>
+</div>
+<script>
+  const eventBus = new Vue();
+  Vue.prototype.$bus = eventBus;
+  const app = new Vue({
+    el: '#app',
+    components: {
+      C
+    },
+    methods: {
+      trigger() {
+        this.$bus.$emit('test')
+      }
+    }
+  })
+
+</script>

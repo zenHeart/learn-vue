@@ -1,0 +1,42 @@
+---
+tags: [属性,computed ]
+---
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+
+<div id="app">
+  <h1>测试属性</h1>
+  <p><button @click="count++">add</button> {{count}} {{isOdd}}</p>
+</div>
+
+<script>
+  const app = new Vue({
+    el: "#app",
+    data: {
+      count: 0
+    },
+    computed: {
+      isOdd() {
+        return this.count % 2 ? 'odd' : 'even'
+      }
+    }
+  });
+</script>
+
+<style>
+  .container {
+    position: relative;
+  }
+
+  .content {
+    display: inline-block;
+    width: 100px;
+    overflow-wrap: break-word;
+    border: 1px solid #000;
+  }
+
+  .ellipse {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+</style>

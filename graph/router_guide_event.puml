@@ -1,0 +1,23 @@
+@startuml
+!define r1 /foo
+!define r2 /bar
+
+title 路由钩子详解
+|r1|
+start
+note left : trigger switch to /bar
+:beforeRouteLeave 钩子触发;
+:beforeEach 触发;
+:视图 foo 销毁;
+|r2|
+:beforeRouteUpdate 触发;
+:beforeEnter 触发;
+:解析组件;
+:BeforeRouteEnter 触发;
+:BeforeResolve 触发;
+:导航被确认;
+:afterEach 触发;
+: dom 更新;
+: 将创建好的实例传递给 beforeRouter 守卫中的 next 函数;
+end
+@enduml

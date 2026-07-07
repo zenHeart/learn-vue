@@ -1,0 +1,34 @@
+---
+tags: [plugin]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id='app'>
+  <h2>验证 plugin 为 function 的使用</h2>
+  <button @click="log">log</button>
+</div>
+<script>
+  const DEFAULT_CONF = {
+    showTime: false
+  }
+  const Log = function (app, options = DEFAULT_CONF) {
+    app.config.globalProperties.$log = (...args) => {
+      console.log(`${options.showTime ? new Date() : ''}`, args)
+    }
+  }
+
+  const { createApp } = Vue
+  const app = createApp({
+    data() {
+      return {
+        data: null
+      }
+    },
+    methods: {
+      log() {
+        this.$log(Math.random())
+      }
+    }
+  })
+  // api 可链式调用返回的是 this 实例
+  app.use(Log, { showTime: true }).mount('#app')
+</script>

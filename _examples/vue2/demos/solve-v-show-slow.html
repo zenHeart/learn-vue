@@ -1,0 +1,46 @@
+---
+tags: [v-show]
+---
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+
+
+<div id="app">
+    <h1>解决 v-show 切换过慢问题</h1>
+    <p>
+        <button @click="tab = 1">A</button>
+        <button @click="tab = 2">B</button>
+    </p>
+    <div :hidden="tab === 2">
+      <p v-for="i in 1e5">a {{i}}</p>
+    </div>
+    <div :hidden="tab === 1">
+      <p v-for="i in 1e5">b {{i}}</p>
+    </div>
+    <!-- <div style="position: relative">
+      <div :style="{
+        position: 'absolute',
+        visibility: tab === 1 ? 'visible':'hidden'
+      }">
+        <p v-for="i in 1e5">a {{i}}</p>
+      </div>
+      <div :style="{
+        position: 'absolute',
+        visibility: tab === 2 ? 'visible': 'hidden'
+      }">
+        <p v-for="i in 1e5">b {{i}}</p>
+      </div>
+    </div>
+   -->
+</div>
+
+<script>
+  new Vue({
+        el: '#app',
+        data: {
+            tab: 1,
+        }
+    })
+
+</script>

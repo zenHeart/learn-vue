@@ -1,0 +1,46 @@
+---
+tags: [函数组件]
+---
+<script src="https://unpkg.com/vue@2"></script>
+<div id="app">
+  <h2>验证函数组件通过传入自定义事件和数据控制外层组件状态</h2>
+  <div>
+    <Func @add="add" @reset="reset" :count="count"></Func>
+    <P>count: {{count}}</P>
+  </div>
+</div>
+<script>
+  const Func = {
+    functional: true,
+    render(h, context) {
+      return h('div', {
+      }, [
+        h('button', {
+          on: {
+            click: context.listeners.add
+          }
+        }, 'add'),
+        h('button', {
+          on: {
+            click: context.listeners.reset
+          }
+        }, 'reset')
+      ])
+    }
+  }
+  const app = new Vue({
+    el: '#app',
+    components: { Func },
+    data: {
+      count: 0
+    },
+    methods: {
+      add() {
+        this.count++
+      },
+      reset() {
+        this.count = 0
+      }
+    }
+  })
+</script>

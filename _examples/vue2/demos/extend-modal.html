@@ -1,0 +1,93 @@
+---
+tags: [ api ]
+---
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+
+<script type="text/x-template" id="modal">
+  <div class="mask" v-show="showFlag">
+    <div  class="wrap">
+      <span style="float:right;cursor: pointer;" @click="showFlag = false">x</span>
+    <h3>{{ opts.title }}</h3>
+    <p>{{ opts.content }}</p>
+  </div>
+  </div >
+</script>
+<style>
+  .mask {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .wrap {
+    background: white;
+    border: 1px solid #000;
+    padding: 10px;
+    width: 500px;
+  }
+</style>
+<script>
+  var ModalComponent = {
+    template: '#modal',
+    data: function () {
+      return {
+        showFlag: false,
+        opts: {
+          title: 'title',
+          content: 'test'
+        }
+      }
+    },
+    methods: {
+      show(opts = {}) {
+        this.opts = opts;
+        this.showFlag = true
+      },
+      hide() {
+        this.showFlag = false
+      }
+    }
+  }
+  const Modal = Vue.extend(ModalComponent);
+  const modalSingleton = (function () {
+    let instance = null;
+    return function createModal(opts = {}) {
+      if (instance) return instance;
+      else {
+        instance = new Modal().$mount();
+        document.body.appendChild(instance.$el);
+        return instance
+      }
+    }
+  })();
+</script>
+
+
+<div id="app">
+  <h1>测试 extend 方法</h1>
+  <button @click="trigger">触发模态框</button>
+</div>
+
+<script>
+  Vue.prototype.$modal = modalSingleton();
+
+  const app = new Vue({
+    el: '#app',
+    methods: {
+      trigger() {
+        this.$modal.show({
+          title: '显示模态框',
+          content: `模态内容 ${new Date().toISOString()}`
+        });
+      }
+    }
+  });
+</script>

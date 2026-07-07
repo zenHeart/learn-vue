@@ -1,0 +1,33 @@
+---
+tags: [函数组件, slot]
+---
+<script src="https://unpkg.com/vue@2"></script>
+<div id="app">
+  <h2>函数组件访问 slots 变量</h2>
+  <Func :data="{a:1}">
+    <template #default="d">
+      <h1>{{d}}</h1>
+    </template>
+  </Func>
+</div>
+<script>
+  const Func = {
+    functional: true,
+    props: {
+      data: Object
+    },
+    render(h, context) {
+      console.log('slots', context.scopedSlots, context)
+      return h('button', {
+      }, [
+        context.scopedSlots.default({
+          a: context.props.data,
+        }),
+      ])
+    }
+  }
+  const app = new Vue({
+    el: '#app',
+    components: { Func },
+  })
+</script>

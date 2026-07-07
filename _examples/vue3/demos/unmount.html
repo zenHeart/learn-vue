@@ -1,0 +1,31 @@
+---
+tags: [api,unmount]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<div id='app'>
+  <h1>{{ time }}s 后卸载</h1>
+</div>
+<script>
+  const { createApp,ref, watchEffect } = Vue;
+  const app  = createApp({
+    setup() {
+      let time = ref(5);
+      const stop = watchEffect(() => {
+        time.value
+        setTimeout(function() {
+          time.value--
+          if(!time.value) {
+            stop();
+            console.log('aa')
+          }
+        },1000)
+      })
+      return {
+        time
+      }
+    }
+  })
+  app.mount('#app')
+  // 注意 app 实例还存在
+  setTimeout(() => app.unmount('#app'), 5000)
+</script>

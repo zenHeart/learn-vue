@@ -1,0 +1,14 @@
+---
+tags: [directive, v-pre]
+---
+
+<script src="https://unpkg.com/vue@next"></script>
+<div id="app">
+  <h1>v-pre 忽略此元素的编译</h1>
+  <p v-pre>内部表达式不会编译 {{ 1 + 1 }}</p>
+  <p>内部表达式会编译 {{ 1 + 1 }}</p>
+</div>
+<script>
+  const { createApp } = Vue;
+  const app = createApp({}).mount('#app');
+</script>

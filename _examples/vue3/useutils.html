@@ -1,0 +1,58 @@
+---
+tags: [composition]
+---
+<script src="https://unpkg.com/vue@next"></script>
+<script type="type/x-template" id="C1">
+  <slot :x="x" :y="y"></slot> 
+</script>
+<script>
+  const { createApp, onMounted, onUnmounted, ref } = Vue
+
+  // 将事件变成响应式
+  const useMouse = (options = {
+    init: {
+      x: 0,
+      y: 0
+    }
+  }) => {
+    let x = ref(options.init.x)
+    let y = ref(options.init.y)
+    let listner = (e) => {
+      x.value = e.pageX
+      y.value = e.pageY
+    };
+    onMounted(() => {
+      window.addEventListener('mousemove', listner)
+    })
+    onUnmounted(() => {
+      window.removeEventListener('mousemove', listner)
+    })
+    return { x, y };
+  }
+
+  const C1 = {
+    template: "#C1",
+    setup() {
+      return {
+        ...useMouse()
+      }
+    },
+  }
+</script>
+
+<div id="app">
+  <h1>利用 composition 将事件结果封装为响应式</h1>
+  <C1 v-slot:default="mouse">
+    <h3>{{ mouse }}</h3>
+    <i>{{ mouse }}</i>
+  </C1>
+</div>
+
+<script>
+
+  const app = createApp({
+    components: {
+      C1
+    }
+  }).mount('#app')
+</script>

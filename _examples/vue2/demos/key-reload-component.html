@@ -1,0 +1,42 @@
+---
+tags: ['key']
+---
+<script src="https://unpkg.com/vue@2"></script>
+<h2>使用 key 实现对组件的重载</h2>
+
+<script type="x-template" id="c1">
+  <span>{{text}}</span>
+</script>
+<script>
+  const C1 = {
+    template: '#c1',
+    props: {
+      text: {
+        type: String,
+      }
+    },
+    created() {
+      console.log('发生重载:', new Date().toISOString());
+    }
+  }
+</script>
+<div id="app">
+  <p><button @click="refresh">刷新</button></p>
+  <C1 :key="text" :text="text"></C1>
+</div>
+<script>
+  const app = new Vue({
+    el: '#app',
+    components: {
+      C1
+    },
+    data: {
+      text: 'test'
+    },
+    methods: {
+      refresh() {
+        this.text = `${new Date().toISOString()}`
+      }
+    }
+  })
+</script>
