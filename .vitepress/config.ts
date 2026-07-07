@@ -38,7 +38,7 @@ export default defineConfig({
       generateDocsSidebar()
     ),
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/zenheart' },
+      { icon: 'github', link: 'https://github.com/zenHeart/learn-vue' },
       { icon: 'twitter', link: 'https://x.com/zenheartCL' }
     ],
 

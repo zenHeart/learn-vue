@@ -1,16 +1,21 @@
-name: Deploy to Aliyun OSS
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 concurrency:
-  group: deploy
+  group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,11 +31,16 @@ jobs:
 
       - run: pnpm build
 
-      - name: Upload to Aliyun OSS
-        uses: manyuanrong/setup-ossutil@v3.0.1
+      - uses: actions/upload-pages-artifact@v3
         with:
-          endpoint: ${{ secrets.ALIYUN_OSS_ENDPOINT }}
-          access-key-id: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
-          access-key-secret: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+          path: .vitepress/dist
 
-      - run: ossutil cp -r .vitepress/dist/ oss://${{ secrets.ALIYUN_OSS_BUCKET }}/ --update --force
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
