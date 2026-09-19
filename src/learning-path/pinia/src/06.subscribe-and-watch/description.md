@@ -4,9 +4,9 @@
 
 `store.$subscribe((mutation, state) => {}, { detached })` 在 store 每次变化后触发，回调参数：
 
-- `mutation.events`：变化来源（`direct` / `patch object` / `patch function` / `action ...`）；
-- `mutation.type`：更可读的分类；
+- `mutation.type`：分类(`MutationType.direct` / `patchObject` / `patchFunction` / `action object` / `action function`);
 - `mutation.storeId`：定位 store；
+- `mutation.events`：**仅 DEV 环境存在**的 Vue 反应式调试事件(`DebuggerEvent`),用于 Pinia DevTools 与 Vue reactivity 调试,**不要在生产代码里读它**;
 - `state`：当前完整 state 快照。
 
 典型用途：

@@ -8,13 +8,12 @@
 
 ```ts
 const model = useModel(props, 'modelValue', {
-  localValue?: Ref<T>,         // 本地默认值（双向绑定前）
-  transform?: (v: T) => T,     // 写入 emit 前转换
-  event?: string,              // 默认 'update:modelValue'
+  get?: (value: T) => T,       // 读取前的转换
+  set?: (value: T) => T,       // 写入 emit 前的转换
 })
 ```
 
-返回 `WritableComputedRef<T>`：读 props，写时 emit。
+返回基于 `customRef` 的 ref（**不是** `WritableComputedRef`）：getter 读 `props[name]`（派发额外经过 `getModelModifiers`），setter 调用 `emit('update:name', ...)`。
 
 ## 与 defineModel 的关系 {#vs-defineModel}
 
@@ -22,8 +21,9 @@ const model = useModel(props, 'modelValue', {
 | --- | --- | --- |
 | 使用场景 | `<script setup>` 默认 | JSX / 非 setup / 运行时按需绑定 |
 | 编译时 | 是（编译器改写） | 否（运行时） |
-| 修饰符支持 | 通过 `modifiers` 参数自动派生 | 需手动管理 |
+| 修饰符支持 | 自动派生（传给 `useModel` 的第三个 options） | 通过 `getModelModifiers(props, name)` 手动管理 |
 | 可在循环中调用 | 否（编译期限制） | 是 |
+| 内部实现 | `customRef` + `watchSyncEffect`（见 `useModel.ts`） | 同上 |
 
 ## 实战场景 {#production}
 
@@ -34,14 +34,14 @@ const model = useModel(props, 'modelValue', {
 ## 关键陷阱 {#pitfalls}
 
 1. **`props` 必须是 setup 接收的第一个参数**（即响应式 proxy），不能传入普通对象。
-2. **`event` 选项需与父组件 `v-model:xxx` 配套**，默认 `update:modelValue`。
-3. **`transform` 只在父→子方向生效**（emit 时），子→父不做额外转换。
+2. **`event` 由 prop name 自动推导**（`update:${name}`），不是参数；如需自定义需用 `defineEmits` + 手动 emit。
+3. **`set` 选项**在 setter（子→父 emit）方向生效，把 emit 出去的值做转换；`get` 选项在父→子读 props 时生效。
 
 ## 延伸阅读 {#further-reading}
 
 - [Vue 官方文档 · useModel](https://vuejs.org/api/composition-api-helpers.html#usemodel)
 - [Vue 官方文档 · defineModel](https://vuejs.org/api/sfc-script-setup.html#definemodel)
-- [Vue 3 源码 · useModel.ts](https://github.com/vuejs/core/blob/main/packages/runtime-core/src/apiSetupHelpers.ts)
+- [Vue 3 源码 · useModel.ts](https://github.com/vuejs/core/blob/main/packages/runtime-core/src/helpers/useModel.ts)
 - [RFC 0203 defineModel](https://github.com/vuejs/rfcs/blob/master/active-rfcs/0203-define-model.md)
 
 <!-- description.md -->

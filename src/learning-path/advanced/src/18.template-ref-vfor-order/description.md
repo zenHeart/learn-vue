@@ -26,7 +26,7 @@ if (!isArray(existing)) {
 
 ## 与 `useTemplateRef`（3.5+）的对比
 
-3.5 起引入的 `useTemplateRef('elRefs')` 返回一个 `shallowRef<HTMLElement[] | null>`，**也**遵循同一收集逻辑（rendererTemplateRef.ts:14-25 通过 `useTemplateRef.ts` 的 `refs[key]` getter/setter 桥接）。也就是说 v-for + useTemplateRef 同样得到 patch 后的 DOM 顺序数组。
+3.5 起引入的 `useTemplateRef('elRefs')` 返回一个 `shallowRef<HTMLElement[] | null>`，**也**遵循同一收集逻辑（`useTemplateRef.ts:14-24` 通过 `Object.defineProperty` 给 `refs[key]` 装上 getter/setter 桥接）。也就是说 v-for + useTemplateRef 同样得到 patch 后的 DOM 顺序数组。
 
 ```ts
 import { useTemplateRef } from 'vue'

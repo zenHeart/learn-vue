@@ -65,4 +65,4 @@ export default {
 - https://github.com/vuejs/core/blob/main/packages/compiler-sfc/src/script/defineOptions.ts
 - https://github.com/vuejs/core/blob/main/packages/compiler-sfc/src/script/utils.ts
 - https://github.com/unplugin/unplugin-vue-components
-- [Vue 源码洞察：defineOptions / defineSlots 宏的编译器展开](_analysis/vue-source-insights.md#defineoptions--defineslots宏的编译器展开) | `packages/compiler-sfc/src/script/defineOptions.ts:18-72` 引用
+- [Vue 源码洞察：defineOptions / defineSlots 宏的编译器展开](_analysis/vue-source-insights.md#defineoptions--defineslots宏的编译器展开) | `packages/compiler-sfc/src/script/defineOptions.ts:12-87` 引用

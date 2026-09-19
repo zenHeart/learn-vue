@@ -77,4 +77,4 @@ export default defineComponent({
 - https://github.com/vuejs/core/blob/main/packages/runtime-core/src/h.ts
 - https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx
 - https://github.com/vuejs/jsx-vue2 (Vue 2 版本对比)
-- [Vue 源码洞察：event 修饰符 once/passive/capture 与 vue:xxx 命名空间](_analysis/vue-source-insights.md#event-修饰符oncepassivecapture-与-vuexxx-命名空间) | `packages/runtime-dom/src/modules/events.ts:71-87` 引用
+- [Vue 源码洞察：event 修饰符 once/passive/capture 与 vue:xxx 命名空间](_analysis/vue-source-insights.md#event-修饰符oncepassivecapture-与-vuexxx-命名空间) | `packages/runtime-dom/src/modules/events.ts:71-88` 引用

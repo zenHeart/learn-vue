@@ -53,5 +53,5 @@
 - https://github.com/vuejs/rfcs/discussion/502
 - https://github.com/vuejs/core/blob/main/packages/runtime-core/src/componentProps.ts
 - https://github.com/vuejs/core/blob/main/packages/compiler-sfc/src/script/defineProps.ts
-- [Vue 源码洞察：validateProp 类型校验与 validator 调用顺序](_analysis/vue-source-insights.md#validateprop类型校验与validator调用顺序) | `packages/runtime-core/src/componentProps.ts:682-707` 引用
-- [Vue 源码洞察：validatePropName 拒绝 $ 与 _ 开头的 prop 名](_analysis/vue-source-insights.md#validatepropname拒绝与开头的prop名) | `packages/runtime-core/src/componentProps.ts:617-625` 引用
+- [Vue 源码洞察：validateProp 类型校验与 validator 调用顺序](_analysis/vue-source-insights.md#validateprop类型校验与validator调用顺序) | `packages/runtime-core/src/componentProps.ts:682-719` 引用
+- [Vue 源码洞察：validatePropName 拒绝 $ 与 _ 开头的 prop 名](_analysis/vue-source-insights.md#validatepropname拒绝与开头的prop名) | `packages/runtime-core/src/componentProps.ts:623-630` 引用

@@ -59,4 +59,4 @@ const attrs = useAttrs()
 - https://github.com/vuejs/core/blob/main/packages/runtime-core/src/componentRenderUtils.ts
 - https://github.com/vuejs/core/blob/main/packages/runtime-core/src/componentProps.ts
 - https://github.com/vuejs/rfcs/discussions/468
-- [Vue 源码洞察：event 修饰符 once/passive/capture 与 vue:xxx 命名空间](_analysis/vue-source-insights.md#event-修饰符oncepassivecapture-与-vuexxx-命名空间) | `packages/runtime-dom/src/modules/events.ts:71-87` 引用
+- [Vue 源码洞察：event 修饰符 once/passive/capture 与 vue:xxx 命名空间](_analysis/vue-source-insights.md#event-修饰符oncepassivecapture-与-vuexxx-命名空间) | `packages/runtime-dom/src/modules/events.ts:71-88` 引用

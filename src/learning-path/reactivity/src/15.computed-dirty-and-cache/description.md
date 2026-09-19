@@ -2,12 +2,12 @@
 
 > 版本: Vue 3.x | RFC: 0010-computed-api, 0001-composition-api | 状态: stable
 
-`computed` 的实现本质上是一个**特殊的 effect**：
+`computed` 的实现本质上是一个**特殊的 subscriber（订阅者）**，而非传统意义的 effect：
 
-- 它持有 `value` 和 `dirty: boolean` 两个内部状态。
-- 第一次访问 `.value` 时执行 getter 收集依赖，并把 `dirty` 置为 `false`。
-- 当依赖变化时（其他 effect 调用 `trigger`），调度器把 `dirty` 重新置为 `true`，**但不会立刻重算**。
-- 下次访问 `.value` 时如果 `dirty === true` 才重新执行 getter，体现 **lazy 求值**。
+- 它持有 `_value`（缓存结果）和 `flags: EffectFlags`（其中 `EffectFlags.DIRTY` 位表示需要重算）。注：Vue 3 新版用位标志位（`EffectFlags.DIRTY`），不再使用单独的 `dirty: boolean` 字段（见 `computed.ts:78`）。
+- 第一次访问 `.value` 时执行 getter 收集依赖，并把 `flags` 清掉 `DIRTY` 位。
+- 当依赖变化时（其他 effect 调用 `trigger`），`ComputedRefImpl.notify()` 把 `DIRTY` 位重新置上（line 117-129），**但不会立刻重算**。
+- 下次访问 `.value` 时调用 `refreshComputed(this)`，根据 `DIRTY` 位决定是否重新执行 getter，体现 **lazy 求值**。
 - 多个 computed 嵌套形成**依赖链**，下游 computed 仅在上游 dirty 时才重新收集依赖。
 
 对比 `effect(fn)`：默认立即执行一次并同步重算；`computed` 仅在被读取且依赖 dirty 时才执行。

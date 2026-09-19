@@ -38,7 +38,7 @@ if (handler) {
 
 也就是说 **emit('change', v)** 已经被 Vue 翻译成 **调用 props.onChange**——然后你又主动调用 `props.onChange?.(v)`，相当于重复执行同一函数两次。
 
-更糟的是，如果父级只用了 `@change="onChange"`，**没有**传 `onChange` prop——那么 `emit('change')` 会通过 Vue 内部的机制把 `@change` 翻译成 `props.onChange`（props 工厂方法），你**主动**调 `props.onChange?.()` 仍然会触发同一个 handler 一次——但 `emit` 自己触发一次，加起来两次。
+更糟的是，如果父级只用了 `@change="onChange"`，**没有**传 `onChange` prop——Vue 编译器/模板编译器会把 `@change="onChange"` 翻译成 `vnode.props.onChange`（即子组件 props 上的 `onChange` 属性）。`emit` 内部走 `props[handlerName]` 查找（line 197-199），找到的是**同一个 `onChange` 函数引用**。你**主动**调 `props.onChange?.()` 仍指向同一个 handler，加上 `emit` 自己触发一次，加起来两次。
 
 ## 与 Vue 2 兼容写法对比
 

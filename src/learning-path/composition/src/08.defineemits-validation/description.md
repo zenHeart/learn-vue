@@ -53,4 +53,4 @@
 - https://github.com/vuejs/core/blob/main/packages/runtime-core/src/componentEmits.ts
 - https://github.com/vuejs/core/blob/main/packages/compiler-sfc/src/script/defineEmits.ts
 - [Vue 源码洞察：编译时 v-on 自动注册事件 vs 显式 emits](_analysis/vue-source-insights.md#编译时v-on自动注册事件vs显式emits) | `packages/runtime-core/src/componentEmits.ts:131-160` 引用
-- [Vue 源码洞察：validatePropName 拒绝 $ 与 _ 开头的 prop 名](_analysis/vue-source-insights.md#validatepropname拒绝与开头的prop名) | `packages/runtime-core/src/componentProps.ts:617-625` 引用
+- [Vue 源码洞察：validatePropName 拒绝 $ 与 _ 开头的 prop 名](_analysis/vue-source-insights.md#validatepropname拒绝与开头的prop名) | `packages/runtime-core/src/componentProps.ts:623-630` 引用

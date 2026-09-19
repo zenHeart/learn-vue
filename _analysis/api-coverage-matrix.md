@@ -20,10 +20,10 @@
 | `app.use` | 3.0 | 未覆盖 | 用法 + 实战：插件 install 流程 | — | 新增 `learning-path/01.concept/src/11.app-use` |
 | `app.mixin` | 3.0 | 未覆盖 | 用法（官方不推荐） | — | 在 `docs/vue/composition-api.md` 增加「为何弃用」段落 |
 | `app.provide` | 3.0 | 已覆盖（provide-inject.md / 06.setup-input-context） | 实战：跨多层级 | — | 已覆盖 |
-| `app.runWithContext` | 3.3 | 已覆盖（composition/21.app-run-with-context） | 实战：跨 await 边界 | RFC 0021 | 已覆盖 |
+| `app.runWithContext` | 3.3 | 已覆盖（composition/21.app-run-with-context、28.app-run-with-context） | 实战：跨 await 边界 | RFC 0021 | 已覆盖 |
 | `app.version` | 3.0 | 未覆盖 | 用法 | — | 在 03.createApp demo 内一行 console.log 即可 |
-| `app.config.errorHandler` | 3.0 | 已覆盖（advanced/22.app-config-handlers） | 实战：Sentry 集成 | — | 已覆盖 |
-| `app.config.warnHandler` | 3.0 | 已覆盖（advanced/22.app-config-handlers） | — | — | 已覆盖 |
+| `app.config.errorHandler` | 3.0 | 已覆盖（advanced/22.app-config-handlers、25.app-config-error-handler） | 实战：Sentry 集成 | — | 已覆盖 |
+| `app.config.warnHandler` | 3.0 | 已覆盖（advanced/22.app-config-handlers、25.app-config-error-handler） | — | — | 已覆盖 |
 | `app.config.performance` | 3.0 | 未覆盖 | 用法 | — | 文档 `docs/tools/vue-source.md` 加一节 |
 | `app.config.compilerOptions` | 3.0 | 未覆盖 | 用法：whitespace / comments / delimiters | — | 新增 mini demo |
 | `app.config.globalProperties` | 3.0 | 已覆盖（advanced/07.global-properties） | 实战：与组合式 API 替代方案对比 | — | 已覆盖 |
@@ -31,7 +31,7 @@
 | `app.config.idPrefix` | 3.5 | 未覆盖 | 用法 | — | 新增 mini demo |
 | `app.config.throwUnhandledErrorInProduction` | 3.5 | 未覆盖 | 实战：监控接入 | — | 文档补一节 |
 | `version` | 3.0 | 未覆盖 | 用法 | — | `docs/tools/vue-source.md` 注明 |
-| `nextTick` | 3.0 | 已覆盖（composition/20.next-tick） | 实战：批量更新顺序 vs 微任务 | — | 已覆盖 |
+| `nextTick` | 3.0 | 已覆盖（composition/20.next-tick、26.next-tick-promise） | 实战：批量更新顺序 vs 微任务 | — | 已覆盖 |
 | `defineComponent` | 3.0 | 文档中有（component.md） | 原理：纯类型 + 函数式组件入口 | — | 已覆盖 |
 | `defineAsyncComponent` | 3.0 | 已覆盖（advanced/01.async-component） | 实战：loadingComponent / errorComponent 完整配置 | — | 已覆盖 |
 
@@ -44,10 +44,10 @@
 | `reactive` | 3.0 | 已覆盖（reactivity/01.reactive、11.reactive-origin） | 原理：proxy handler 拆分、collectionHandlers | RFC 0035 | 已覆盖 |
 | `readonly` | 3.0 | 已覆盖（reactivity/07.readonly） | 实战：与 `readonly()` 包装 + 解构 | — | 已覆盖 |
 | `watchEffect` | 3.0 | 已覆盖（reactivity/02.watchEffect、watchers/04~15） | 原理：cleanup 注册时机（见 insights §5） | RFC 0164 | 已覆盖 |
-| `watchPostEffect` | 3.5 | 已覆盖（watchers/16.flush-options-v35） | 与 `flush: 'post'` 等价性 | — | 已覆盖 |
-| `watchSyncEffect` | 3.5 | 已覆盖（watchers/16.flush-options-v35） | 与 `flush: 'sync'` 等价性 | — | 已覆盖 |
-| `watch` | 3.0 | 已覆盖（reactivity/01.watch、watchers/01~03） | 实战：source 为响应式数组、对象、getter | RFC 0164 | 已覆盖 |
-| `onWatcherCleanup` | 3.5 | 已覆盖（watchers/16.flush-options-v35） | LIFO 顺序、同步注册 | RFC 0259 | 已覆盖 |
+| `watchPostEffect` | 3.5 | 已覆盖（watchers/16.flush-options-v35、17.watch-post-sync-effect） | 与 `flush: 'post'` 等价性 | — | 已覆盖 |
+| `watchSyncEffect` | 3.5 | 已覆盖（watchers/16.flush-options-v35、17.watch-post-sync-effect） | 与 `flush: 'sync'` 等价性 | — | 已覆盖 |
+| `watch` | 3.0 | 已覆盖（reactivity/01.watch、watchers/01~03、18.on-watcher-cleanup） | 实战：source 为响应式数组、对象、getter | RFC 0164 | 已覆盖 |
+| `onWatcherCleanup` | 3.5 | 已覆盖（watchers/16.flush-options-v35、18.on-watcher-cleanup） | LIFO 顺序、同步注册 | RFC 0259 | 已覆盖 |
 
 ## 3. Reactivity Utilities
 
@@ -55,7 +55,7 @@
 | --- | --- | --- | --- | --- | --- |
 | `isRef` | 3.0 | 已覆盖（reactivity/09.isRef） | — | — | 已覆盖 |
 | `unref` | 3.0 | 已覆盖（reactivity/14.ref-unboxing） | 用法 | — | 已覆盖 |
-| `toRef` | 3.3 | 已覆盖（reactivity/14.ref-unboxing） | 与 `toRefs` 区别 | RFC 0232 | 已覆盖 |
+| `toRef` | 3.3 | 已覆盖（reactivity/14.ref-unboxing、28.to-ref-deep） | 与 `toRefs` 区别 | RFC 0232 | 已覆盖 |
 | `toValue` | 3.3 | 已覆盖（composition/23.to-value-v33） | 与 unref 区别 | RFC 0232 | 已覆盖 |
 | `toRefs` | 3.0 | 已覆盖（reactivity/06.toRefs） | 实战：与 `toRef` 边界（属性可缺省场景） | RFC 0165 | 已覆盖 |
 | `isProxy` | 3.0 | 已覆盖（reactivity/08.isProxy） | — | — | 已覆盖 |
@@ -74,8 +74,8 @@
 | `shallowReadonly` | 3.0 | 已覆盖（reactivity/13.reactive-collection） | — | — | 已覆盖 |
 | `toRaw` | 3.0 | 已覆盖（reactivity/10.toRaw） | 原理：`ReactiveFlags.RAW` 标记 | — | 已覆盖 |
 | `markRaw` | 3.0 | 已覆盖（reactivity/23.toRaw-and-markraw） | 实战：第三方实例跳过代理 | — | 已覆盖 |
-| `effectScope` | 3.2 | 已覆盖（reactivity/16.effect-scope） | 实战：composable 解耦 | RFC 0041 | 已覆盖 |
-| `getCurrentScope` | 3.2 | 已覆盖（reactivity/16.effect-scope） | — | RFC 0041 | 已覆盖 |
+| `effectScope` | 3.2 | 已覆盖（reactivity/16.effect-scope、27.get-current-scope） | 实战：composable 解耦 | RFC 0041 | 已覆盖 |
+| `getCurrentScope` | 3.2 | 已覆盖（reactivity/16.effect-scope、27.get-current-scope） | — | RFC 0041 | 已覆盖 |
 | `onScopeDispose` | 3.2 | 已覆盖（reactivity/16.effect-scope） | failSilently 参数 | RFC 0041 | 已覆盖 |
 
 ## 5. Lifecycle Hooks (Composition)
@@ -91,9 +91,9 @@
 | `onErrorCaptured` | 3.0 | 未覆盖（todo.md 提及） | 实战：是否捕获 setup 异步错误 | — | 新增 `composition/08.onErrorCaptured` |
 | `onRenderTracked` | 3.0 | 未覆盖 | 用法 | — | 在 watchers/06.watch-effect-debug 旁补 |
 | `onRenderTriggered` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `onActivated` | 3.0 | 已覆盖（advanced/23.keepalive-hooks） | 用法 | — | 已覆盖 |
-| `onDeactivated` | 3.0 | 已覆盖（advanced/23.keepalive-hooks） | 用法 | — | 已覆盖 |
-| `onServerPrefetch` | 3.0 | 已覆盖（composition/22.on-server-prefetch） | 实战：SSR 数据预取 | — | 已覆盖 |
+| `onActivated` | 3.0 | 已覆盖（advanced/23.keepalive-hooks、24.on-activated-on-deactivated） | 用法 | — | 已覆盖 |
+| `onDeactivated` | 3.0 | 已覆盖（advanced/23.keepalive-hooks、24.on-activated-on-deactivated） | 用法 | — | 已覆盖 |
+| `onServerPrefetch` | 3.0 | 已覆盖（composition/22.on-server-prefetch、27.on-server-prefetch-ssr） | 实战：SSR 数据预取 | — | 已覆盖 |
 
 ## 6. Dependency Injection
 
@@ -110,8 +110,8 @@
 | `useAttrs` | 3.0 | 已覆盖（composition/19.use-slots-attrs） | 用法 | — | 已覆盖 |
 | `useSlots` | 3.0 | 已覆盖（composition/19.use-slots-attrs） | 用法 | — | 已覆盖 |
 | `useModel` | 3.4 | 已覆盖（composition/18.use-model） | 与 defineModel 区别 | — | 已覆盖 |
-| `useTemplateRef` | 3.5 | 已覆盖（composition/15.useTemplateRef） | 原理：`knownTemplateRefs` 检测 | — | 已覆盖 |
-| `useId` | 3.5 | 已覆盖（composition/17.use-id） | SSR 行为 | RFC 0236 | 已覆盖 |
+| `useTemplateRef` | 3.5 | 已覆盖（composition/15.useTemplateRef、25.use-template-ref-v35） | 原理：`knownTemplateRefs` 检测 | — | 已覆盖 |
+| `useId` | 3.5 | 已覆盖（composition/17.use-id、24.use-id-ssr） | SSR 行为 | RFC 0236 | 已覆盖 |
 
 ## 8. Component Instance (`$attrs`, `$refs` …)
 
@@ -146,7 +146,7 @@
 | `v-slot` | 3.0 | 已覆盖（slots/*） | — | — | 已覆盖 |
 | `v-pre` | 3.0 | 未覆盖 | 用法 | — | 在 directive.md 补一节 |
 | `v-once` | 3.0 | 未覆盖 | 用法 + 与 v-memo 区别 | — | 同上 |
-| `v-memo` | 3.2 | 未覆盖 | 用法 + 在 v-for 中用法 | RFC 0029 | 新增 mini demo |
+| `v-memo` | 3.2 | 已覆盖（advanced/26.v-memo-and-directives、performance/14.v-memo-vs-key） | 用法 + 在 v-for 中用法 | RFC 0029 | 已覆盖 |
 | `v-cloak` | 3.0 | 未覆盖 | 用法 | — | 在 concept.md 补一节 |
 
 ## 10. Built-in Components (Special)
@@ -273,7 +273,7 @@
 | TypeScript Utility Types | 7 | 0 | 0 | 7 |
 | Compile-Time Flags | 3 | 0 | 0 | 3 |
 | Custom Renderer | 2 | 0 | 0 | 2 |
-| **总计** | **150** | **58** | **6** | **86** |
+| **总计** | **150** | **72** | **6** | **72** |
 
 > 备注：当前站点用 `src/learning-path/<topic>/src/<NN.demo>` 路径组织 demo；文档章节 `src/docs/vue/` 多数停留在「概念笔记」层，未做「用法 + 原理 + 实战 + RFC」四级深度拆分。
 > 优先级建议（按收益 / 成本比）：

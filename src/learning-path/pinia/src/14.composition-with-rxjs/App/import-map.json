@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js",
+    "pinia": "https://unpkg.com/pinia@2/dist/pinia.esm-browser.js",
+    "rxjs": "https://unpkg.com/rxjs@7/dist/ty.esm.js"
+  },
+  "scopes": {}
+}

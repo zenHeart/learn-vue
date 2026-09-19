@@ -45,7 +45,7 @@ const username = ref('')
 ## 延伸阅读 {#further-reading}
 
 - [Vue 官方文档 · useId](https://vuejs.org/api/composition-api-helpers.html#useid)
-- [Vue 3 源码 · useId](https://github.com/vuejs/core/blob/main/packages/runtime-core/src/apiSetupHelpers.ts)
+- [Vue 3 源码 · useId](https://github.com/vuejs/core/blob/main/packages/runtime-core/src/helpers/useId.ts)
 - [RFC 0236 useId](https://github.com/vuejs/rfcs/blob/master/active-rfcs/0236-use-id.md)
 
 <!-- description.md -->

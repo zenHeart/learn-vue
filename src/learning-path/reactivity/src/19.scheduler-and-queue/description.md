@@ -2,7 +2,7 @@
 
 > 版本: Vue 3.x | RFC: 0001-composition-api | 状态: stable
 
-Vue 的更新机制默认走**异步批处理**（batching）。当 `trigger` 被调用时，effect 不会立刻执行，而是被 push 进一个 `queue` 并通过 `Promise.resolve().then(flushJobs)`（或 fallback `setTimeout`）合并到下一个 microtask 中执行。
+Vue 的更新机制默认走**异步批处理**（batching）。当 `trigger` 被调用时，effect 不会立刻执行，而是被 push 进一个 `queue` 并通过 `Promise.resolve().then(flushJobs)`（由 `queueFlush()` 在 `scheduler.ts:119-123` 触发）合并到下一个 microtask 中执行。
 
 这意味着：
 
@@ -43,6 +43,6 @@ Post 队列在 DOM 更新之后才执行。
 - [Vue 官方文档 · 调度机制](https://vuejs.org/guide/extras/reactivity-in-depth.html#scheduling)
 - [Vue 3 源码 · scheduler.ts](https://github.com/vuejs/core/blob/main/packages/runtime-core/src/scheduler.ts)
 - [RFC 0001 Composition API](https://github.com/vuejs/rfcs/blob/master/active-rfcs/0001-composition-api.md)
-- [Vue 源码洞察：渲染器异步批处理：queueJob + flushJobs](_analysis/vue-source-insights.md#渲染器异步批处理queuejob--flushjobs) | `packages/runtime-core/src/scheduler.ts:62-67` 引用
+- [Vue 源码洞察：渲染器异步批处理：queueJob + flushJobs](_analysis/vue-source-insights.md#渲染器异步批处理queuejob--flushjobs) | `packages/runtime-core/src/scheduler.ts:56-67,99-117,119-123` 引用
 
 <!-- description.md -->

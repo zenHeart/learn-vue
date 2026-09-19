@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useLocalStorage, useDebounceFn, useEventListener, useIntersectionObserver } from '@vueuse/core'
 
 const name = useLocalStorage('ecosystem-demo.name', 'guest')

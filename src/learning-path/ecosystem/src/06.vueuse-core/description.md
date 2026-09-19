@@ -8,7 +8,7 @@
 
 | Hook | 用途 |
 |---|---|
-| `useLocalStorage` | 自动持久化 ref 到 localStorage（双向同步） |
+| `useLocalStorage` | 自动持久化 ref 到 localStorage，并默认开启**跨标签同步**（底层 `listenToStorageChanges: true`） |
 | `useDebounceFn` | 函数防抖 |
 | `useEventListener` | 自动清理的 `addEventListener` 包装 |
 | `useIntersectionObserver` | 元素可见性观察（懒加载、动画触发） |
@@ -45,12 +45,27 @@ const { stop, isIntersecting } = useIntersectionObserver(target, ([entry]) => {
 - 名字 `useLocalStorage` 持久化（刷新页面不丢）
 - 卡片 `useIntersectionObserver` 滚到底部才出现
 
+## 跨标签同步的边界
+
+```ts
+// A 标签
+const token = useLocalStorage('token', '')
+token.value = 'abc'
+
+// B 标签（同源）
+const token = useLocalStorage('token', '')
+// token.value === 'abc' ✓ 通过 storage 事件自动同步
+```
+
+底层机制：原标签写 `localStorage.setItem` 后，浏览器会在**其他**标签里派发 `storage` 事件，`useStorage` 订阅该事件并更新 ref。**写入自身不会触发同步**（这是浏览器规范），所以同一个 ref 的多次 `.value =` 是稳定的。如果需要关闭（避免触发其他标签刷新），传 `useLocalStorage('token', '', { listenToStorageChanges: false })`。
+
 ## 常见坑
 
 | 现象 | 原因 | 修复 |
 |---|---|---|
 | SSR `document is not defined` | hook 在服务端调用 | 移到 `onMounted` 或加 `import.meta.client` |
 | localStorage 数据类型错误 | 序列化 / 反序列化失败 | `useLocalStorage(key, defaultValue, { serializer: { read, write } })` |
+| 跨标签不同步 | 关掉了 `listenToStorageChanges` 或运行在 iframe / `data:` URL | 恢复默认值（默认就是 `true`） |
 | IntersectionObserver 不触发 | 元素没渲染 | 用 `ref(null)` + `nextTick` 后再观察 |
 
 ## 延伸阅读

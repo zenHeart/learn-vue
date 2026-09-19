@@ -27,7 +27,7 @@ const inputEl = ref<HTMLInputElement | null>(null)
 
 ## Vue 怎么实现
 
-- 入口：`packages/runtime-core/src/apiTemplateRef.ts` 的 `useTemplateRef`
+- 入口：`packages/runtime-core/src/helpers/useTemplateRef.ts` 的 `useTemplateRef`（**不是** `apiTemplateRef.ts`）
 - 实现：内部创建一个 `ref(null)`，并通过 `template ref="..."` 的字符串 key 绑定；编译期额外注入 SSR 占位
 - 类型推断：`useTemplateRef<T>` 中的 T 是目标元素的类型，IDE 可以基于此推断 `.value`
 
@@ -58,7 +58,7 @@ const inputEl = ref<HTMLInputElement | null>(null)
 
 - https://cn.vuejs.org/api/composition-api-helpers.html#usetemplateref
 - https://cn.vuejs.org/guide/essentials/template-refs.html
-- https://github.com/vuejs/core/blob/main/packages/runtime-core/src/apiTemplateRef.ts
+- https://github.com/vuejs/core/blob/main/packages/runtime-core/src/helpers/useTemplateRef.ts
 - https://github.com/vuejs/rfcs/discussions/557
 - https://github.com/vuejs/core/blob/main/CHANGELOG.md (3.5 release)
 - [Vue 源码洞察：模板 ref 在 v-for 中的收集顺序与异步包装](_analysis/vue-source-insights.md#模板-ref-在-v-for-中的收集顺序与异步包装) | `packages/runtime-core/src/rendererTemplateRef.ts:24-58` 引用

@@ -48,7 +48,8 @@ export const createApp = ViteSSG(App, { routes })
 2. **Math.random() / uuid** — 每次生成不同
 3. **localStorage / cookie** — 服务端读不到
 4. **window.matchMedia** — 服务端没有 matchMedia API
-5. **CSS-in-JS 在 SSR 时拿不到 class** — emotion / styled-components 经典坑
+5. **非法 HTML 嵌套** — `<p><div>` 浏览器解析器会自动闭合外层 `<p>`，与 SSR 输出不一致
+6. **CSS-in-JS 类名随机** — 用 hash 类名（emotion / styled-components）且每次渲染结果不同时产生
 
 ```vue
 <template>
@@ -57,6 +58,8 @@ export const createApp = ViteSSG(App, { routes })
 ```
 
 **修复**：把这种逻辑放进 `onMounted()`（客户端 only），或用 `import.meta.client` 守卫。
+
+**Vue 3 的恢复行为**：遇到 mismatch 时 Vue 会**自动恢复**——丢弃不匹配的 DOM 节点、按客户端状态重新挂载。这会导致少量渲染性能损失（节点被废弃再重建），但应用不会崩溃。Vue 3.5+ 可以用 `data-allow-mismatch` 属性选择性抑制**已知不可避免**的 mismatch。
 
 ## 动手试
 

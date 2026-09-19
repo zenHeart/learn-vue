@@ -17,13 +17,15 @@ const title = computed({
 })
 ```
 
-返回的对象是一个 `WritableComputedRef`，可以直接用于 `v-model` 或读写。
+返回的对象是一个 `WritableComputedRef`（用户侧等价物），可以直接用于 `v-model` 或读写。
+
+> 注意：上面这个等价写法仅在 `useModel` 的 `useModel(props, name)` 的**用户视角**下成立——`useModel` 内部实际返回的是基于 `customRef` + `watchSyncEffect` 的 ref（详见 `packages/runtime-core/src/helpers/useModel.ts`），不是 `computed`。
 
 ## Vue 怎么实现
 
 - RFC: <https://github.com/vuejs/rfcs/discussions/503>
 - 编译器入口：`packages/compiler-sfc/src/script/defineModel.ts`
-- 运行时入口：`packages/runtime-core/src/apiSetupHelpers.ts` 的 `useModel`，内部用 computed 包裹 props + emit
+- 运行时入口：`packages/runtime-core/src/helpers/useModel.ts` 的 `useModel`，内部用 `customRef` + `watchSyncEffect` 包裹 props + emit（**不是** `computed`）
 - 文档：<https://cn.vuejs.org/api/sfc-script-setup.html#definemodel>
 
 `defineModel` 的第二个参数支持：
@@ -55,6 +57,6 @@ const title = computed({
 - https://cn.vuejs.org/api/sfc-script-setup.html#definemodel
 - https://github.com/vuejs/rfcs/discussions/503
 - https://cn.vuejs.org/guide/components/v-model.html
-- https://github.com/vuejs/core/blob/main/packages/runtime-core/src/apiSetupHelpers.ts
+- https://github.com/vuejs/core/blob/main/packages/runtime-core/src/helpers/useModel.ts
 - https://github.com/vuejs/core/blob/main/packages/compiler-sfc/src/script/defineModel.ts
-- [Vue 源码洞察：patchProp 中 v-model 监听被忽略](_analysis/vue-source-insights.md#patchprop中v-model监听被忽略) | `packages/runtime-dom/src/patchProp.ts:28-32` 引用
+- [Vue 源码洞察：patchProp 中 v-model 监听被忽略](_analysis/vue-source-insights.md#patchprop中v-model监听被忽略) | `packages/runtime-dom/src/patchProp.ts:38-42` 引用

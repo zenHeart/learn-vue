@@ -26,8 +26,8 @@ slots.header   // 类型： (() => any) | undefined
 
 ## Vue 怎么实现
 
-- 编译器：`packages/compiler-sfc/src/script/defineSlots.ts` 把宏调用转换为一个空函数，类型信息注入 `__slots` 类型上，从而让 `$slots` 类型推断生效
-- 运行时：`useSlots()`（`packages/runtime-core/src/componentSlots.ts`）读取 `instance.slots`
+- 编译器：`packages/compiler-sfc/src/script/defineSlots.ts` 在有 `declId` 时把宏调用**改写为 `useSlots()` 调用**（`processDefineSlots` 第 24-30 行），类型信息注入 `__slots` 类型上，从而让 `$slots` 类型推断生效
+- 运行时：`useSlots()`（`packages/runtime-core/src/apiSetupHelpers.ts:408`）读取 `instance.slots`
 - 没有运行时开销，因为类型在编译期就被擦除
 
 ## 实战中什么时候用 / 什么时候不用
@@ -60,5 +60,5 @@ slots.header   // 类型： (() => any) | undefined
 - https://cn.vuejs.org/guide/components/slots.html
 - https://github.com/vuejs/rfcs/discussions/502
 - https://github.com/vuejs/core/blob/main/packages/compiler-sfc/src/script/defineSlots.ts
-- https://github.com/vuejs/core/blob/main/packages/runtime-core/src/componentSlots.ts
-- [Vue 源码洞察：defineOptions / defineSlots 宏的编译器展开](_analysis/vue-source-insights.md#defineoptions--defineslots宏的编译器展开) | `packages/compiler-sfc/src/script/defineOptions.ts:18-72` 引用
+- https://github.com/vuejs/core/blob/main/packages/runtime-core/src/apiSetupHelpers.ts
+- [Vue 源码洞察：defineOptions / defineSlots 宏的编译器展开](_analysis/vue-source-insights.md#defineoptions--defineslots宏的编译器展开) | `packages/compiler-sfc/src/script/defineSlots.ts:7-33` 引用

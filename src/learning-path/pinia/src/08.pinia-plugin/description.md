@@ -15,7 +15,7 @@ function myPlugin({ store, options, pinia }) { ... }
 - 监听 action 调用（`store.$onAction`）；
 - 注册全局生命周期钩子。
 
-通过 `pinia.use(myPlugin)` 启用；插件先于 store 实例化执行。
+通过 `pinia.use(myPlugin)` 启用；插件在每个 store **首次被 `useXxxStore()` 调用时**依次执行(`store.ts:754` 的 `pinia._p.forEach`),而不是在 `createPinia()` 时就跑一遍。`createPinia.ts:33` 那个 `toBeInstalled` 队列只是为了让"在 `app.use(pinia)` 之前调 `pinia.use(plugin)`"的插件不丢失。
 
 本 demo 写一个把指定 store 持久化到 localStorage 的插件，支持：
 

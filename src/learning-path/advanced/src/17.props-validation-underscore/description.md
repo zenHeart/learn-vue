@@ -17,7 +17,9 @@ function validatePropName(key: string) {
 }
 ```
 
-含义：**以 `$` 开头的 prop**（例如 `$secret`、`$ref`）和 **`_` 或 `__` 开头的 prop**（例如 `_private`、`__v_isRef`）都会被丢弃，并 dev 模式下警告。生产环境则**完全静默**——传入但不生效。
+含义：**以 `$` 开头的 prop**（例如 `$secret`、`$ref`）会被 `validatePropName` 直接拒绝并 dev 模式下警告。生产环境则**完全静默**——传入但不生效。
+
+`_` / `__` 前缀的 prop（如 `_private`）同样会被静默丢弃，但走的是 `setFullProps`（line 392-394）里的 `isReservedProp(key)` 检查，而不是 `validatePropName`。注意：`__v_isRef` / `__v_isReactive` / `__v_raw` / `__v_skip` 这类内部字段在父组件传 prop 时也会被 `isReservedProp` 跳过（见 `setFullProps:392`），不会出现在子组件 props 上。
 
 为什么这样设计？因为 Vue 把 `$el` / `$refs` / `$emit` / `$forceUpdate` 等保留给组件实例方法，把 `__v_isRef` / `__v_isReactive` / `__v_raw` / `__v_skip` 等保留给内部 reactive flags。允许外部同名 prop 会引发覆盖冲突。
 
