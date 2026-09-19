@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0008-async-component | 状态: stable | 概念: defineAsyncComponent
+
 # 异步组件示例
 
 该示例展示了 Vue 3 中异步组件的定义和使用方法。
@@ -18,4 +20,8 @@
 - defineAsyncComponent
 - 异步加载
 - 延迟加载
-- 性能优化 
+- 性能优化
+
+## 延伸阅读
+
+- [Vue 源码洞察：reactive 对 Array / Map / Set / WeakMap 的代理限制](_analysis/vue-source-insights.md#reactive对arraymapsetweakmap的代理限制) | `packages/reactivity/src/reactive.ts:52-66,267-300` 引用

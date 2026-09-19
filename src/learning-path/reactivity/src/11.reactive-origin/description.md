@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: reactive 起源与 Proxy
+
 # 响应式原理示例
 
 这个示例展示了 Vue 3 响应式系统的一个重要特性：reactive 会直接修改传入的初始对象。这个特性需要我们在使用时特别注意，避免直接操作原始对象。

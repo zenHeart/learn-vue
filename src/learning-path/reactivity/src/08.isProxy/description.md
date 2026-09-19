@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: isProxy / isReactive
+
 # isProxy 示例
 
 这个示例展示了 Vue 3 中 isProxy 的使用方法。

@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: setup context（attrs/slots/emit/expose）
+
 # setup 上下文示例
 
 这个示例展示了 Vue 3 中 setup 函数如何接收和使用上下文对象。

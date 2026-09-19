@@ -100,12 +100,16 @@ function readExample(dir: string): ExampleData {
   return files
 }
 
-function readComponentDir(dir: string): Record<string, string> {
-  const files = fs.readdirSync(dir)
+function readComponentDir(dir: string, prefix = ''): Record<string, string> {
   const ret: Record<string, string> = {}
-  for (const file of files) {
+  for (const file of fs.readdirSync(dir)) {
     const fullPath = path.join(dir, file)
-    ret[file] = fs.readFileSync(fullPath, 'utf-8')
+    const key = prefix ? `${prefix}/${file}` : file
+    if (fs.statSync(fullPath).isDirectory()) {
+      Object.assign(ret, readComponentDir(fullPath, key))
+    } else {
+      ret[key] = fs.readFileSync(fullPath, 'utf-8')
+    }
   }
   return ret
 }

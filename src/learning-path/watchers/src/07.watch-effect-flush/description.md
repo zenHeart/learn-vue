@@ -1,3 +1,5 @@
+> 版本: Vue 3.2+ | RFC: 0001-composition-api | 状态: stable (3.2+) | 概念: watchEffect flush 选项
+
 # watchEffect flush 示例
 
 这个示例展示了 Vue 3 中 watchEffect 的 flush 选项，用于控制副作用函数的执行时机。
@@ -18,4 +20,8 @@
 - post 模式：在组件更新后执行
 - sync 模式：同步执行
 - pre 模式：在组件更新前执行
-- 组件生命周期的调试 
+- 组件生命周期的调试
+
+## 延伸阅读
+
+- [Vue 源码洞察：watchEffect / watch 的调度时机](_analysis/vue-source-insights.md#watcheffectwatch的调度时机) | `packages/runtime-core/src/apiWatch.ts, scheduler.ts:88-117` 引用

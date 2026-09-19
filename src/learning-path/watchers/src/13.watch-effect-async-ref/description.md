@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: watchEffect 异步 ref
+
 # watchEffect 异步 ref 示例
 
 这个示例展示了 Vue 3 中 watchEffect 对异步 ref 的追踪机制。

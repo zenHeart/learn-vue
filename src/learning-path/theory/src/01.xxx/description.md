@@ -1,3 +1,5 @@
+> 版本: Vue 3.x | RFC: — | 状态: stable | 概念: 理论 / 框架概述
+
 # Vue 理论基础: 虚拟 DOM {#vue-virtual-dom}
 
 欢迎来到 Vue 理论基础学习路径的第一步！
@@ -19,3 +21,7 @@
 ## 动手尝试 {#try-it-yourself}
 
 右侧是一个简单的虚拟 DOM 实现示例。尝试修改 `createVNode` 函数，添加更多属性或子节点，并观察生成的虚拟 DOM 结构。
+
+## 源码洞察（延伸阅读）
+
+- [Vue 源码洞察：模板 ref 在 v-for 中的收集顺序与异步包装](_analysis/vue-source-insights.md#模板-ref-在-v-for-中的收集顺序与异步包装) | `packages/runtime-core/src/rendererTemplateRef.ts:24-58` 引用

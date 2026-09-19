@@ -1,0 +1,77 @@
+@startuml
+title Vue 学习路径关系图
+skinparam backgroundColor #fafbfc
+skinparam defaultFontName "Helvetica Neue"
+skinparam defaultFontSize 13
+skinparam shadowing false
+
+skinparam state {
+  BorderColor #42b883
+  BackgroundColor #ffffff
+  FontColor #35495e
+  FontStyle bold
+}
+
+skinparam note {
+  BackgroundColor #fff7e6
+  BorderColor #f0c674
+  FontColor #5b6b7d
+}
+
+' ====== 阶段 1: 入门 ======
+state "入门" as S1 #d6f5e3 {
+  state "01.concept\nVue 概念" as P1
+  state "Vue2\nOptions API" as P2
+}
+
+' ====== 阶段 2: 响应式 ======
+state "响应式" as S2 #d6f5e3 {
+  state "composition\nComposition API" as P3
+  state "reactivity\n响应式系统" as P4
+  state "watchers\nwatch / watchEffect" as P5
+}
+
+' ====== 阶段 3: 组件系统 ======
+state "组件系统" as S3 #d6f5e3 {
+  state "slots\n插槽与作用域插槽" as P6
+  state "advanced\n高级组件模式" as P7
+}
+
+' ====== 阶段 4: 进阶原理 ======
+state "进阶原理" as S4 #cfe8f5 {
+  state "theory\n源码级 mini 实现" as P8
+}
+
+' ====== 阶段 5: 生态与实战 ======
+state "生态与实战" as S5 #f5e0c8 {
+  state "vue-router\n路由" as P9
+  state "pinia\n状态管理" as P10
+  state "ecosystem\nVite / 周边工具" as P11
+  state "performance\n性能与基准" as P12
+}
+
+' ====== 阶段流转 ======
+S1 --> S2 : 模板 → 组合式
+S2 --> S3 : API → 组件
+S3 --> S4 : 用法 → 原理
+S4 --> S5 : 原理 → 生态 / 性能
+
+' ====== 阶段内顺序 ======
+P1 --> P2
+P2 --> P3
+P3 --> P4
+P4 --> P5
+P5 --> P6
+P6 --> P7
+P7 --> P8
+P8 --> P9
+P9 --> P10
+P10 --> P11
+P11 --> P12
+
+' ====== 反向回流（按需） ======
+P8 ..> P4 : 反查响应式细节
+P12 ..> P4 : 大型数据结构下的代理成本
+P11 ..> P3 : 与 <script setup> 结合
+
+@enduml

@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: computed getter/setter
+
 # 计算属性访问器示例
 
 这个示例展示了 Vue 3 中 computed 的 getter 和 setter 的使用方法。

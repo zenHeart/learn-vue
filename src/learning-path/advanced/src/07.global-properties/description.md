@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: — | 状态: stable | 概念: app.config.globalProperties
+
 # Vue 3 全局属性示例
 
 该示例展示了 Vue 3 中全局属性的使用方法和最佳实践。

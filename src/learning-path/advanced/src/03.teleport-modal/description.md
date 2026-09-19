@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0025-teleport | 状态: stable | 概念: Teleport 组合用法（Modal）
+
 # Vue 3 模态框传送示例
 
 该示例展示了如何使用 Vue 3 的 `teleport` 功能实现模态框。

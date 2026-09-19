@@ -1,3 +1,5 @@
+> 版本: Vue 3.x | RFC: — | 状态: stable | 概念: 响应式 spread 投影性能
+
 # 在 computed 里 spread 响应式对象
 
 ## 你会学到什么

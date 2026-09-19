@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0025-teleport | 状态: stable | 概念: Teleport 组件
+
 # 传送门组件示例
 
 该示例展示了 Vue 3 中 Teleport 组件的基本用法。

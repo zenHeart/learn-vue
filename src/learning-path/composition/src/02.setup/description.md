@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: setup() 函数
+
 # setup 函数示例
 
 这个示例展示了 Vue 3 中 setup 函数的使用方法和特性。

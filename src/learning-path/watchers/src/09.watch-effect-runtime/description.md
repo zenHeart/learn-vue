@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: watchEffect 运行时
+
 # watchEffect 运行时示例
 
 这个示例展示了 Vue 3 中 watchEffect 的执行时机与组件生命周期钩子的关系。

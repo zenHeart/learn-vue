@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: watchEffect 与 this 绑定
+
 # watchEffect 绑定示例
 
 这个示例展示了 Vue 3 中 watchEffect 的绑定机制和触发条件。

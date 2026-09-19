@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: reactive()
+
 # 响应式对象示例
 
 这个示例展示了 Vue 3 中 reactive 的使用方法。

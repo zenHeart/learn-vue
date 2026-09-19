@@ -246,3 +246,24 @@ next 函数用来解析钩子回调的执行结果.
 
 [滚动行为](https://router.vuejs.org/zh-cn/advanced/scroll-behavior.html)
 
+---
+
+## 深入阅读
+
+本页覆盖 Vue Router 的常见 API 速查。更系统的能力拆解与可运行 demo 见
+[Vue Router 学习路径](../../learning-path/vue-router/)，共 13 个 demo，按主题递进：
+
+- [01.history](../../learning-path/vue-router/src/01.history/) — 沙箱中 `createMemoryHistory` 的初始化
+- [02.dynamic-route](../../learning-path/vue-router/src/02.dynamic-route/) — `path: '/user/:id'` 动态参数与 `onBeforeRouteUpdate`
+- [03.nested-route](../../learning-path/vue-router/src/03.nested-route/) — `children` 嵌套 + `components: {default, sidebar}` 命名视图
+- [04.named-route](../../learning-path/vue-router/src/04.named-route/) — 命名路由 vs 路径字符串
+- [05.programmatic-navigation](../../learning-path/vue-router/src/05.programmatic-navigation/) — `useRouter().push/replace/go/back` 与 `NavigationFailureType`
+- [06.router-view-slot](../../learning-path/vue-router/src/06.router-view-slot/) — `<router-view v-slot>` + `<Transition>` + `<KeepAlive>`
+- [07.global-guard](../../learning-path/vue-router/src/07.global-guard/) — `router.beforeEach` 异步权限拦截
+- [08.route-guard](../../learning-path/vue-router/src/08.route-guard/) — 组件级 `beforeRouteEnter/Update/Leave`
+- [09.before-enter-guard](../../learning-path/vue-router/src/09.before-enter-guard/) — 路由配置 `beforeEnter` 与角色校验
+- [10.fetch-on-navigation](../../learning-path/vue-router/src/10.fetch-on-navigation/) — 导航前/后获取数据 vs `<Suspense>` + async setup
+- [11.lazy-route](../../learning-path/vue-router/src/11.lazy-route/) — `() => import('./Foo.vue')` 与 `defineAsyncComponent`
+- [12.scroll-behavior](../../learning-path/vue-router/src/12.scroll-behavior/) — `scrollBehavior` savedPosition / hash / 自定义坐标
+- [13.composable-use-route](../../learning-path/vue-router/src/13.composable-use-route/) — `useRouteQuery(name)` / `useRouteParam(name)` 组合式封装
+

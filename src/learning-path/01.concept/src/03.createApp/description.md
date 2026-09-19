@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: — | 状态: stable | 概念: createApp / mount
+
 # 应用创建示例
 
 这个示例展示了如何使用 Vue 3 的 createApp 方法创建应用实例。

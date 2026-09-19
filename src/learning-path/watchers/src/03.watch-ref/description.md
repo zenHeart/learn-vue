@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: watch ref
+
 # ref 监听示例
 
 这个示例展示了 Vue 3 中如何监听 ref 对象的变化。

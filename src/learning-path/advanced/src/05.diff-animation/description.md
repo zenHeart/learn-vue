@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: — | 状态: stable | 概念: transition-group 列表过渡动画
+
 # Vue 3 差异动画示例
 
 该示例展示了 Vue 3 中列表过渡动画的实现。

@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: watchEffect 资源校验与 onInvalidate
+
 # watchEffect 验证示例
 
 这个示例展示了 Vue 3 中 watchEffect 的验证回调功能。

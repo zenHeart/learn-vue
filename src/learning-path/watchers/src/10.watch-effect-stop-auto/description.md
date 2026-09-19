@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: watchEffect 自动停止（组件卸载）
+
 # watchEffect 自动停止示例
 
 这个示例展示了 Vue 3 中 watchEffect 在组件销毁时自动停止监听的功能。

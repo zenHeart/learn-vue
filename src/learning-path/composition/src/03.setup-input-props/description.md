@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: setup 中访问 props
+
 # setup 接收 props 示例
 
 这个示例展示了 Vue 3 中 setup 函数如何接收和使用 props。

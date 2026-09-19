@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: Composition API 钩子函数
+
 # 生命周期钩子示例
 
 这个示例展示了 Vue 3 中组合式 API 的生命周期钩子使用方法。

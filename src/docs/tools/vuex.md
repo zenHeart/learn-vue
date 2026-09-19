@@ -1,13 +1,35 @@
 ---
-title: vuex    
-tags: vue tool      
-birth: 2017-11-12      
-modified: 2017-11-12      
+title: vuex
+tags: vue tool
+birth: 2017-11-12
+modified: 2026-09-19
 ---
 
 vuex
 ===
 **前言:讲解 vuex 状态管理工具的使用**
+
+---
+
+## 关于 Vuex 与 Pinia
+
+Vuex 在 Vue 2 时代是官方推荐的状态管理方案，但自 Vue 3 起，**Pinia 已是官方推荐**：
+
+- 类型推断更自然（Setup Store）；
+- 自动 ref 解包，无需 `.value`；
+- 没有 mutations / actions 类型差异，action 即可异步；
+- 对 SSR、代码分包、DevTools 都有更现代的支持。
+
+如果你正在启动新项目，请直接使用 Pinia；本仓库的
+[Pinia 学习路径](../../learning-path/pinia/) 提供了 11 个从基础到插件、测试的可运行 demo。
+
+如果你正在维护老项目，迁移思路：
+
+1. 把 Vuex 的 `state / getters / mutations / actions` 映射到 Pinia 的 `ref / computed / actions`；
+2. 用 `mapState/mapGetters` 调用点改为 `storeToRefs(store)`；
+3. 模块（modules）天然等价于多个独立的 store，跨域逻辑放进组合式 action。
+
+> 本页保留 Vuex 1.x/2.x 的旧范例，用于维护期查阅。新业务请转向 Pinia。
 
 ---
 

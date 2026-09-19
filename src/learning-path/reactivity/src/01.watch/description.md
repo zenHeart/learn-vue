@@ -1,3 +1,5 @@
+> 版本: Vue 3.0+ | RFC: 0001-composition-api | 状态: stable | 概念: watch 基础
+
 # Vue 的 Watch API {#vue-watch-api}
 
 欢迎来到 Vue 响应式系统学习路径的第一步！
