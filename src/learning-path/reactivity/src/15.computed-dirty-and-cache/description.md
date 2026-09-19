@@ -1,30 +1,16 @@
-# computed 的 dirty 标记、缓存与嵌套依赖 {#computed-dirty-and-cache}
+# computed 缓存、依赖变化与副作用
 
-> 版本: Vue 3.x | RFC: 0010-computed-api, 0001-composition-api | 状态: stable
+> 演示运行版本：Vue 3.5.13。源码阅读固定到同名 tag；内部字段不是公共 API。
 
-`computed` 的实现本质上是一个**特殊的 subscriber（订阅者）**，而非传统意义的 effect：
+先预测再点击：连续读取两次时是否得到同一个对象？修改 count 后再读取呢？getter 返回一个新对象，因此对象身份可以观测缓存复用，不需要在 getter 内修改计数器。
 
-- 它持有 `_value`（缓存结果）和 `flags: EffectFlags`（其中 `EffectFlags.DIRTY` 位表示需要重算）。注：Vue 3 新版用位标志位（`EffectFlags.DIRTY`），不再使用单独的 `dirty: boolean` 字段（见 `computed.ts:78`）。
-- 第一次访问 `.value` 时执行 getter 收集依赖，并把 `flags` 清掉 `DIRTY` 位。
-- 当依赖变化时（其他 effect 调用 `trigger`），`ComputedRefImpl.notify()` 把 `DIRTY` 位重新置上（line 117-129），**但不会立刻重算**。
-- 下次访问 `.value` 时调用 `refreshComputed(this)`，根据 `DIRTY` 位决定是否重新执行 getter，体现 **lazy 求值**。
-- 多个 computed 嵌套形成**依赖链**，下游 computed 仅在上游 dirty 时才重新收集依赖。
+1. 点击“连续读取两次”：身份相同，值为 2。
+2. 点击“修改依赖后读取”：身份不同，新值为 4；再连续读取又会复用新对象。
+3. b、c 组成派生链。模板读取它们也会驱动求值，因此不要把“用户没有点击读取按钮”理解成“没有消费者读取”。
+4. echo 的副作用由同步 watch 执行。实际工程通常用默认调度，同步 watcher 不会批处理，避免用于高频变动。
 
-对比 `effect(fn)`：默认立即执行一次并同步重算；`computed` 仅在被读取且依赖 dirty 时才执行。
+源码从 `ComputedRefImpl.value` 跟入 `refreshComputed`：它结合 dirty 标记、全局版本及依赖版本判断是否需要重算，不能简化成每次依赖通知都必然执行 getter。对照 [computed.ts](https://github.com/vuejs/core/blob/v3.5.13/packages/reactivity/src/computed.ts) 和 [effect.ts](https://github.com/vuejs/core/blob/v3.5.13/packages/reactivity/src/effect.ts)。
 
-## 关键陷阱 {#pitfalls}
+getter 应保持纯计算。写其他 ref 不等于给只读 computed 自身赋值，不保证出现 readonly 警告；错误同步可能引入循环和不可预测的读取行为。参见 [官方计算属性约定](https://vuejs.org/guide/essentials/computed.html#best-practices)。
 
-1. **不要在 getter 内修改其他 ref**：会形成**循环依赖**，触发"computed value cannot be used as a side effect"警告；极端情况下导致栈溢出。这是官方明确禁止的反模式（Vue 编译器与 `ComputedRefImpl` 中均有检测）。
-2. **不要在 computed 内做异步**：因为异步完成时 `dirty` 状态可能已变化，结果不确定。
-3. **错误的"反向同步"**：用 `watch(value, v => other.value = v)` 是单向同步，**不要**用 `computed({ get, set })` 把另一个 ref 写入 getter。
-4. **嵌套 computed 的重算次数**：依赖链上游只变更一次，下游每次访问 `.value` 才会重算，不会自动 batch。
-
-## 延伸阅读 {#further-reading}
-
-- [Vue 官方文档 · computed](https://vuejs.org/api/reactivity-core.html#computed)
-- [Vue 官方文档 · 计算属性 缓存 vs 方法](https://vuejs.org/guide/essentials/computed.html)
-- [Vue 3 源码 · computed.ts](https://github.com/vuejs/core/blob/main/packages/reactivity/src/computed.ts)
-- [RFC 0010 Composition API: Computed Properties](https://github.com/vuejs/rfcs/blob/master/active-rfcs/0010-composition-api-dfa.md)
-- [Vue 源码洞察：computed 的 dirty 标记与缓存策略](_analysis/vue-source-insights.md#computed的dirty标记与缓存策略) | `packages/reactivity/src/computed.ts:97-122` 引用
-
-<!-- description.md -->
+迁移挑战：把派生值改成价格与数量计算的订单总额，证明无关状态改变不会生成新对象；说明为什么 getter 中不能发送网络请求。

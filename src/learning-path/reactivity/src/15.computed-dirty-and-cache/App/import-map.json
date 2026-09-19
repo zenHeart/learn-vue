@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "vue": "https://play.vuejs.org/vue.runtime.esm-browser.js?v=3.5.13"
+  }
+}

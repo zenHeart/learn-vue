@@ -2,36 +2,16 @@
 import { ref, computed } from 'vue'
 
 const a = ref(0)
-const error = ref(null)
-
-// 错误版本：computed 内自增
-const badB = computed(() => {
-  try {
-    // 制造死循环：用 setTimeout 隔一层防止同步栈爆炸，但仍会触发调度告警
-    if (a.value < 5) {
-      Promise.resolve().then(() => { a.value++ })
-    }
-    return a.value * 2
-  } catch (e) {
-    error.value = e.message
-    return 0
-  }
-})
-
-// 修复版本：副作用在事件
+const observation = ref('先预测：读取派生值会改变 a 吗？')
+const goodB = computed(() => a.value * 2)
 function bump() {
   if (a.value < 10) a.value++
+  observation.value = '事件修改了 a，模板随后读取派生值。'
 }
-const goodB = computed(() => a.value * 2)
-
-function triggerBad() {
-  a.value = 0
-  error.value = null
-  // 触发 getter
-  void badB.value
-  setTimeout(() => {
-    error.value = `检测到循环调度：computed getter 内修改 a.value 导致 a 反复 invalidate（最终值=${a.value}）`
-  }, 50)
+function readOnly() {
+  const before = a.value
+  const value = goodB.value
+  observation.value = `读取结果=${value}；a 保持不变：${before === a.value}`
 }
 </script>
 
@@ -40,11 +20,10 @@ function triggerBad() {
     <p class="badge">computed 副作用</p>
 
     <div class="card bad">
-      <h3>① 错误版本</h3>
-      <pre>computed(() => { a.value++; return a * 2 })</pre>
-      <p>a = {{ a }} (被自激修改)</p>
-      <button @click="triggerBad">触发 badB.value</button>
-      <p v-if="error" class="err">{{ error }}</p>
+      <h3>① 预测副作用风险</h3>
+      <p>如果读取 getter 会修改它自己的依赖，读取结果就不再是纯推导。是否形成循环取决于消费者与调度，不能承诺固定警告。</p>
+      <button @click="readOnly">读取修复后的派生值</button>
+      <p role="status">{{ observation }}</p>
     </div>
 
     <div class="card good">

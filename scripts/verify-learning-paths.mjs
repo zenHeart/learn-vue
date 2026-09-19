@@ -68,7 +68,7 @@ function checkDemo(demoDir, chapter) {
   }
 
   // Heuristic: detect computed getter with assignment.
-  const computedWithAssignment = /computed\s*\(\s*(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>\s*\{[^}]*(?:[a-zA-Z_$][\w$.]*\.value\s*=|store\.\w+\s*=|state\.\w+\s*=|count\.value\s*\+\+|list\.push)/m
+  const computedWithAssignment = /computed\s*\(\s*(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>\s*\{[^}]*(?:[a-zA-Z_$][\w$.]*\.value\s*(?:=(?!=)|\+\+|--)|store\.\w+\s*=(?!=)|state\.\w+\s*=(?!=)|list\.push)/m
   if (computedWithAssignment.test(app)) {
     errors++
     report.push(`⚠️  ${rel}: suspected side-effect inside computed getter`)
