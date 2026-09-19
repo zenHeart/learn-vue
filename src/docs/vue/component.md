@@ -74,3 +74,48 @@ component
 范例参看 [component event](children_component_event.html)
 
 * [ ] 怎样的组件才算父子组件???
+
+---
+
+## 组件实例属性：$data / $el / $options / $parent / $root
+
+Options API 中可通过 `this` 访问的实例属性：
+
+| 属性 | 类型 | 说明 |
+|---|---|---|
+| `$data` | object | 组件 data 对象的代理；`this.$data === this.data`（ref 指向同一对象） |
+| `$el` | Element \| null | 组件挂载的根 DOM 节点；fragment 多个根节点时指向占位文本 |
+| `$options` | object | 当前组件的 resolved options（合并了 mixin / extends 的最终结果） |
+| `$parent` | instance \| null | 父组件实例；`$parent.$parent...` 一路可上溯 |
+| `$root` | instance | 根组件实例；通常即 `app.mount()` 时传入的组件 |
+
+> 推荐使用 `getCurrentInstance()` 或 `<script setup>` 中的局部变量；`$parent` 在多根节点 / Fragment 场景下不再可靠。
+
+```ts
+import { getCurrentInstance } from 'vue'
+const inst = getCurrentInstance()
+inst?.proxy.$el         // 同 this.$el
+inst?.proxy.$options.name
+```
+
+更多：[Vue 官方：组件实例](https://cn.vuejs.org/api/component-instance.html)
+
+---
+
+## app.mixin：为何弃用
+
+Vue 3 仍保留 `app.mixin` 用于向后兼容，但**官方已不推荐**——与 Options API 的隐式合并相同，它会让组件之间的属性来源变得不可追溯。`app.config.optionMergeStrategies` 也只是为它服务。
+
+```ts
+app.mixin({
+  data() { return { ts: Date.now() } }
+})
+```
+
+**为什么弃用**：
+
+1. 与 Composition API 的显式 import 哲学相悖——状态来源不可见；
+2. 多个 mixin 命名冲突时，merge 顺序决定优先级，难调试；
+3. 类型推导困难；Vue 3.x 推荐用 composables 替代。
+
+更多：[Vue 官方迁移指南：mixin](https://v3-migration.vuejs.org/breaking-changes/mixins.html)

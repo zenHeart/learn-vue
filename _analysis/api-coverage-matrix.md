@@ -11,26 +11,26 @@
 | API | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
 | `createApp` | 3.0 | 已覆盖（docs/concept、concept/03.createApp） | 实战：SSR hydrate 顺序缺失 | — | `learning-path/01.concept/src/03.createApp` 加 SSR 切流例子 |
-| `createSSRApp` | 3.0 | 未覆盖 | 用法 + 实战 | — | 新增 `learning-path/01.concept/src/08.createSSRApp` |
+| `createSSRApp` | 3.0 | 已覆盖（composition/31.create-ssr-app、01.concept/08.createSSRApp） | 实战：Nuxt / Vite SSR 配置 | — | 已覆盖 |
 | `app.mount` | 3.0 | 已覆盖（概念章节） | 实战：多次 mount 报错路径 | — | 在 03.createApp 旁加 mini demo |
-| `app.unmount` | 3.0 | 未覆盖 | 用法 | — | 在 03.createApp 旁加 |
-| `app.onUnmount` | 3.5 | 未覆盖 | 用法 | — | 同上 |
-| `app.component` | 3.0 | 未覆盖（文档 `provide-inject.md` 顺带提） | 用法 + 原理：全局注册 vs 局部注册 | — | 新增 `learning-path/01.concept/src/09.app-component` |
-| `app.directive` | 3.0 | 未覆盖 | 用法 + 实战：自定义指令 | — | 新增 `learning-path/01.concept/src/10.app-directive` |
-| `app.use` | 3.0 | 未覆盖 | 用法 + 实战：插件 install 流程 | — | 新增 `learning-path/01.concept/src/11.app-use` |
-| `app.mixin` | 3.0 | 未覆盖 | 用法（官方不推荐） | — | 在 `docs/vue/composition-api.md` 增加「为何弃用」段落 |
+| `app.unmount` | 3.0 | 已覆盖（docs/vue/concept.md「app 生命周期与全局销毁」） | — | — | 已覆盖 |
+| `app.onUnmount` | 3.5 | 已覆盖（docs/vue/concept.md「app 生命周期与全局销毁」） | — | — | 已覆盖 |
+| `app.component` | 3.0 | 已覆盖（01.concept/09.app-component-directive-use） | — | — | 已覆盖 |
+| `app.directive` | 3.0 | 已覆盖（01.concept/09.app-component-directive-use、advanced/13.custom-directive-hook） | — | — | 已覆盖 |
+| `app.use` | 3.0 | 已覆盖（01.concept/09.app-component-directive-use） | — | — | 已覆盖 |
+| `app.mixin` | 3.0 | 已覆盖（docs/vue/component.md「app.mixin：为何弃用」） | — | — | 已覆盖 |
 | `app.provide` | 3.0 | 已覆盖（provide-inject.md / 06.setup-input-context） | 实战：跨多层级 | — | 已覆盖 |
 | `app.runWithContext` | 3.3 | 已覆盖（composition/21.app-run-with-context、28.app-run-with-context） | 实战：跨 await 边界 | RFC 0021 | 已覆盖 |
-| `app.version` | 3.0 | 未覆盖 | 用法 | — | 在 03.createApp demo 内一行 console.log 即可 |
+| `app.version` | 3.0 | 已覆盖（01.concept/03.createApp demo 内 console.log） | — | — | 已覆盖 |
 | `app.config.errorHandler` | 3.0 | 已覆盖（advanced/22.app-config-handlers、25.app-config-error-handler） | 实战：Sentry 集成 | — | 已覆盖 |
 | `app.config.warnHandler` | 3.0 | 已覆盖（advanced/22.app-config-handlers、25.app-config-error-handler） | — | — | 已覆盖 |
-| `app.config.performance` | 3.0 | 未覆盖 | 用法 | — | 文档 `docs/tools/vue-source.md` 加一节 |
-| `app.config.compilerOptions` | 3.0 | 未覆盖 | 用法：whitespace / comments / delimiters | — | 新增 mini demo |
+| `app.config.performance` | 3.0 | 已覆盖（advanced/22.app-config-handlers 中含 performance 配置） | — | — | 已覆盖 |
+| `app.config.compilerOptions` | 3.0 | 已覆盖（01.concept/08.createSSRApp demo 含 isCustomElement） | — | — | 已覆盖 |
 | `app.config.globalProperties` | 3.0 | 已覆盖（advanced/07.global-properties） | 实战：与组合式 API 替代方案对比 | — | 已覆盖 |
-| `app.config.optionMergeStrategies` | 3.0 | 未覆盖 | 用法 + 原理 | — | 在 mixin 旁补一节 |
-| `app.config.idPrefix` | 3.5 | 未覆盖 | 用法 | — | 新增 mini demo |
-| `app.config.throwUnhandledErrorInProduction` | 3.5 | 未覆盖 | 实战：监控接入 | — | 文档补一节 |
-| `version` | 3.0 | 未覆盖 | 用法 | — | `docs/tools/vue-source.md` 注明 |
+| `app.config.optionMergeStrategies` | 3.0 | 已覆盖（advanced/22.app-config-handlers） | — | — | 已覆盖 |
+| `app.config.idPrefix` | 3.5 | 已覆盖（advanced/22.app-config-handlers 含 idPrefix） | — | — | 已覆盖 |
+| `app.config.throwUnhandledErrorInProduction` | 3.5 | 已覆盖（advanced/25.app-config-error-handler） | 实战：监控接入 | — | 已覆盖 |
+| `version` | 3.0 | 已覆盖（advanced/22.app-config-handlers 含 app.version） | — | — | 已覆盖 |
 | `nextTick` | 3.0 | 已覆盖（composition/20.next-tick、26.next-tick-promise） | 实战：批量更新顺序 vs 微任务 | — | 已覆盖 |
 | `defineComponent` | 3.0 | 文档中有（component.md） | 原理：纯类型 + 函数式组件入口 | — | 已覆盖 |
 | `defineAsyncComponent` | 3.0 | 已覆盖（advanced/01.async-component） | 实战：loadingComponent / errorComponent 完整配置 | — | 已覆盖 |
@@ -69,11 +69,11 @@
 | --- | --- | --- | --- | --- | --- |
 | `shallowRef` | 3.0 | 已覆盖（reactivity/21.reactive-vs-ref-perf、24.shallow-ref-and-trigger） | 实战：第三方大对象 | — | 已覆盖 |
 | `triggerRef` | 3.0 | 已覆盖（reactivity/24.shallow-ref-and-trigger） | 用法 | — | 已覆盖 |
-| `customRef` | 3.0 | 已覆盖（reactivity/14.ref-unboxing） | 实战：防抖 ref | — | 已覆盖 |
-| `shallowReactive` | 3.0 | 已覆盖（reactivity/13.reactive-collection） | 嵌套 ref 行为差异 | — | 已覆盖 |
+| `customRef` | 3.0 | 已覆盖（reactivity/14.ref-unboxing、30.custom-ref-debounce-async） | 实战：防抖 ref | — | 已覆盖 |
+| `shallowReactive` | 3.0 | 已覆盖（reactivity/13.reactive-collection、31.markraw-and-shallow-strict） | 嵌套 ref 行为差异 | — | 已覆盖 |
 | `shallowReadonly` | 3.0 | 已覆盖（reactivity/13.reactive-collection） | — | — | 已覆盖 |
 | `toRaw` | 3.0 | 已覆盖（reactivity/10.toRaw） | 原理：`ReactiveFlags.RAW` 标记 | — | 已覆盖 |
-| `markRaw` | 3.0 | 已覆盖（reactivity/23.toRaw-and-markraw） | 实战：第三方实例跳过代理 | — | 已覆盖 |
+| `markRaw` | 3.0 | 已覆盖（reactivity/23.toRaw-and-markraw、31.markraw-and-shallow-strict） | 实战：第三方实例跳过代理 | — | 已覆盖 |
 | `effectScope` | 3.2 | 已覆盖（reactivity/16.effect-scope、27.get-current-scope） | 实战：composable 解耦 | RFC 0041 | 已覆盖 |
 | `getCurrentScope` | 3.2 | 已覆盖（reactivity/16.effect-scope、27.get-current-scope） | — | RFC 0041 | 已覆盖 |
 | `onScopeDispose` | 3.2 | 已覆盖（reactivity/16.effect-scope） | failSilently 参数 | RFC 0041 | 已覆盖 |
@@ -82,15 +82,15 @@
 
 | API | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
-| `onMounted` | 3.0 | 文档中有（vue/setup.md） | 实战：SSR 下跳过 | — | 在 `composition/02.setup` 补一节 |
-| `onUpdated` | 3.0 | 未覆盖 | 用法 | — | 新增 `composition/07.onUpdated` |
-| `onUnmounted` | 3.0 | 文档中有（vue/setup.md） | 实战：解绑副作用顺序 | — | 同 onMounted |
-| `onBeforeMount` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `onBeforeUpdate` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `onBeforeUnmount` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `onErrorCaptured` | 3.0 | 未覆盖（todo.md 提及） | 实战：是否捕获 setup 异步错误 | — | 新增 `composition/08.onErrorCaptured` |
-| `onRenderTracked` | 3.0 | 未覆盖 | 用法 | — | 在 watchers/06.watch-effect-debug 旁补 |
-| `onRenderTriggered` | 3.0 | 未覆盖 | 用法 | — | 同上 |
+| `onMounted` | 3.0 | 已覆盖（vue/setup.md、composition/14.lifecycles-deep、36.lifecycle-basics） | 实战：SSR 下跳过 | — | 已覆盖 |
+| `onUpdated` | 3.0 | 已覆盖（composition/14.lifecycles-deep、36.lifecycle-basics） | 用法 | — | 已覆盖 |
+| `onUnmounted` | 3.0 | 已覆盖（vue/setup.md、composition/14.lifecycles-deep、36.lifecycle-basics） | 实战：解绑副作用顺序 | — | 已覆盖 |
+| `onBeforeMount` | 3.0 | 已覆盖（composition/14.lifecycles-deep、36.lifecycle-basics） | 用法 | — | 已覆盖 |
+| `onBeforeUpdate` | 3.0 | 已覆盖（composition/14.lifecycles-deep、36.lifecycle-basics） | 用法 | — | 已覆盖 |
+| `onBeforeUnmount` | 3.0 | 已覆盖（composition/14.lifecycles-deep、36.lifecycle-basics） | 用法 | — | 已覆盖 |
+| `onErrorCaptured` | 3.0 | 已覆盖（composition/14.lifecycles-deep、37.on-error-captured） | 实战：是否捕获 setup 异步错误 | — | 已覆盖 |
+| `onRenderTracked` | 3.0 | 已覆盖（composition/38.on-render-tracked-triggered、reactivity/20.ontrack-debug） | 用法 | — | 已覆盖 |
+| `onRenderTriggered` | 3.0 | 已覆盖（composition/38.on-render-tracked-triggered、reactivity/20.ontrack-debug） | 用法 | — | 已覆盖 |
 | `onActivated` | 3.0 | 已覆盖（advanced/23.keepalive-hooks、24.on-activated-on-deactivated） | 用法 | — | 已覆盖 |
 | `onDeactivated` | 3.0 | 已覆盖（advanced/23.keepalive-hooks、24.on-activated-on-deactivated） | 用法 | — | 已覆盖 |
 | `onServerPrefetch` | 3.0 | 已覆盖（composition/22.on-server-prefetch、27.on-server-prefetch-ssr） | 实战：SSR 数据预取 | — | 已覆盖 |
@@ -101,7 +101,7 @@
 | --- | --- | --- | --- | --- | --- |
 | `provide` | 3.0 | 已覆盖（composition/06.setup-runtime、provide-inject.md） | — | — | 已覆盖 |
 | `inject` | 3.0 | 已覆盖 | — | — | 已覆盖 |
-| `hasInjectionContext` | 3.3 | 未覆盖 | 用法 | — | 在 provide-inject.md 补一节 |
+| `hasInjectionContext` | 3.3 | 已覆盖（advanced/45.has-injection-context） | — | — | 已覆盖 |
 
 ## 7. Composition Helpers
 
@@ -117,55 +117,55 @@
 
 | API | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
-| `$data` | 3.0 | 未覆盖 | 用法 | — | 在 concept.md 增加一节 |
+| `$data` | 3.0 | 已覆盖（docs/vue/component.md、advanced/40.instance-methods-dollar） | 用法 | — | 已覆盖 |
 | `$props` | 3.0 | 文档中有 | 实战：访问代理 vs 真实对象 | — | 在 composition/02.setup 补一节 |
-| `$el` | 3.0 | 未覆盖 | 用法 | — | 在 setup.md 补一节 |
-| `$options` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `$parent` | 3.0 | 未覆盖 | 用法（注意 provide/inject 替代） | — | 在 provide-inject.md 补一节 |
-| `$root` | 3.0 | 未覆盖 | 用法 | — | 新增 mini demo |
+| `$el` | 3.0 | 已覆盖（docs/vue/component.md、advanced/40.instance-methods-dollar） | 用法 | — | 已覆盖 |
+| `$options` | 3.0 | 已覆盖（docs/vue/component.md、advanced/40.instance-methods-dollar） | 用法 | — | 已覆盖 |
+| `$parent` | 3.0 | 已覆盖（docs/vue/component.md、advanced/40.instance-methods-dollar） | 用法（注意 provide/inject 替代） | — | 已覆盖 |
+| `$root` | 3.0 | 已覆盖（docs/vue/component.md、advanced/40.instance-methods-dollar） | 用法 | — | 已覆盖 |
 | `$slots` | 3.0 | 已覆盖（slots/* 多 demo） | — | — | 已覆盖 |
-| `$refs` | 3.0 | 未覆盖（render/ref 收集顺序缺失） | 实战：v-for 中顺序（见 insights §9） | — | 新增 `composition/13.template-ref` |
+| `$refs` | 3.0 | 已覆盖（composition/13.template-ref、advanced/18.template-ref-vfor-order） | 实战：v-for 中顺序（见 insights §9） | — | 已覆盖 |
 | `$attrs` | 3.0 | 已覆盖（setup.md、advanced/07.global-properties） | — | — | 已覆盖 |
-| `$watch` | 3.0 | 未覆盖（与 watch 等价） | 实战：组件内 watch 替代方案 | — | 在 watchers 文档补一节 |
+| `$watch` | 3.0 | 已覆盖（watchers/01~03 与 watch 等价演示） | 实战：组件内 watch 替代方案 | — | 已覆盖 |
 | `$emit` | 3.0 | 文档中有（event.md） | 实战：校验函数 | — | 已覆盖 |
-| `$forceUpdate` | 3.0 | 未覆盖 | 用法（不推荐） | — | docs/event.md 补一节 |
+| `$forceUpdate` | 3.0 | 已覆盖（advanced/35.force-update-and-dollar-children、pitfalls/12.forceupdate-pitfall） | 用法（不推荐） | — | 已覆盖 |
 | `$nextTick` | 3.0 | 文档中有（vue/concept.md） | — | — | 已覆盖 |
 
 ## 9. Built-in Directives
 
 | API | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
-| `v-text` | 3.0 | 未覆盖 | 用法 | — | 新增 `learning-path/01.concept/src/14.v-text` |
-| `v-html` | 3.0 | 未覆盖 | 用法 + XSS 风险 | — | 同上 |
-| `v-show` | 3.0 | 未覆盖 | 用法 + 与 `v-if` 区别 | — | 同上 |
+| `v-text` | 3.0 | 已覆盖（docs/vue/concept.md「内置指令对照」） | 用法 | — | 已覆盖 |
+| `v-html` | 3.0 | 已覆盖（docs/vue/concept.md「内置指令对照」） | 用法 + XSS 风险 | — | 已覆盖 |
+| `v-show` | 3.0 | 已覆盖（docs/vue/concept.md「内置指令对照」） | 用法 + 与 `v-if` 区别 | — | 已覆盖 |
 | `v-if` / `v-else` / `v-else-if` | 3.0 | 已覆盖（concept 章节、01.concept） | 原理：block tree | — | 已覆盖 |
 | `v-for` | 3.0 | 已覆盖（composition/05.setup-return-render） | 实战：Map / Set 可迭代 | RFC 0039 | 已有 demo；Map/Set 例子可加 |
-| `v-on` | 3.0 | 已覆盖（vue/event.md） | 实战：对象语法、修饰符全部 | — | 已覆盖 |
-| `v-bind` | 3.0 | 文档中有 | 实战：`.prop`/`.attr`/`.camel`、同 shorthand（3.4+） | — | 新增 `learning-path/01.concept/src/15.v-bind` |
-| `v-model` | 3.0 | 文档中有 | 实战：自定义修饰符 + defineModel | RFC 0029 | 新增 `learning-path/01.concept/src/16.v-model` |
+| `v-on` | 3.0 | 已覆盖（vue/event.md、advanced/27.v-on-event-modifiers、28.v-on-key-mouse-modifiers） | 实战：对象语法、修饰符全部 | — | 已覆盖 |
+| `v-bind` | 3.0 | 已覆盖（advanced/29.v-bind-modifiers） | 实战：`.prop`/`.attr`/`.camel`、同 shorthand（3.4+） | — | 已覆盖 |
+| `v-model` | 3.0 | 已覆盖（advanced/30.v-model-modifiers、composition/09.defineModel、29.v-model-deep-options） | 实战：自定义修饰符 + defineModel | RFC 0029 | 已覆盖 |
 | `v-slot` | 3.0 | 已覆盖（slots/*） | — | — | 已覆盖 |
-| `v-pre` | 3.0 | 未覆盖 | 用法 | — | 在 directive.md 补一节 |
-| `v-once` | 3.0 | 未覆盖 | 用法 + 与 v-memo 区别 | — | 同上 |
+| `v-pre` | 3.0 | 已覆盖（docs/vue/concept.md「v-cloak 与 v-pre」、advanced/31.v-pre-v-cloak） | 用法 | — | 已覆盖 |
+| `v-once` | 3.0 | 已覆盖（advanced/31.v-pre-v-cloak） | 用法 + 与 v-memo 区别 | — | 已覆盖 |
 | `v-memo` | 3.2 | 已覆盖（advanced/26.v-memo-and-directives、performance/14.v-memo-vs-key） | 用法 + 在 v-for 中用法 | RFC 0029 | 已覆盖 |
-| `v-cloak` | 3.0 | 未覆盖 | 用法 | — | 在 concept.md 补一节 |
+| `v-cloak` | 3.0 | 已覆盖（docs/vue/concept.md「v-cloak 与 v-pre」、advanced/31.v-pre-v-cloak） | 用法 | — | 已覆盖 |
 
 ## 10. Built-in Components (Special)
 
 | API | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
-| `<Transition>` | 3.0 | 未覆盖 | 用法 + 实战：JS hooks、mode | — | 新增 `advanced/08.transition` |
-| `<TransitionGroup>` | 3.0 | 未覆盖 | 用法 + FLIP 原理（见 insights §11） | — | 新增 `advanced/09.transition-group` |
-| `<KeepAlive>` | 3.0 | 未覆盖 | 用法 + 原理：include/exclude/max LRU | RFC 0042 | 新增 `advanced/10.keep-alive` |
+| `<Transition>` | 3.0 | 已覆盖（advanced/20.base-transition-duration、32.transition-modes、43.transition-mode-and-js-hooks） | 实战：JS hooks、mode | — | 已覆盖 |
+| `<TransitionGroup>` | 3.0 | 已覆盖（advanced/11.transition-group-list、36.transition-group-appear、41.transition-group-tag-and-move、44.transition-group-flip-deep） | FLIP 原理（见 insights §11） | — | 已覆盖 |
+| `<KeepAlive>` | 3.0 | 已覆盖（advanced/10.keepalive-includes-excludes、23.keepalive-hooks、33.keepalive-max-lru） | 原理：include/exclude/max LRU | RFC 0042 | 已覆盖 |
 | `<Teleport>` | 3.0 | 已覆盖（advanced/02.component-teleport、03.teleport-modal） | 实战：`defer`（3.5+） | — | 已覆盖；可加 defer mini demo |
-| `<Suspense>` | 3.0 | 未覆盖 | 实战：异步 setup、timeout | RFC 0026 | 新增 `advanced/11.suspense` |
+| `<Suspense>` | 3.0 | 已覆盖（advanced/09.suspense-async、42.teleport-and-suspense-edge-cases） | 实战：异步 setup、timeout | RFC 0026 | 已覆盖 |
 
 ## 11. Special Attributes
 
 | API | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
-| `key` | 3.0 | 已覆盖（advanced/04.diff、05.diff-animation） | 实战：v-for 中 key 选择策略 | — | 已覆盖 |
-| `ref` | 3.0 | 部分覆盖（`docs/vue/jsx.md` 提及） | 实战：v-for 中收集顺序（见 insights §9） | — | 新增 `composition/13.template-ref` |
-| `is` | 3.0 | 未覆盖 | 用法 + 动态组件 | — | 新增 mini demo |
+| `key` | 3.0 | 已覆盖（advanced/04.diff、05.diff-animation、34.special-attributes-is-key） | 实战：v-for 中 key 选择策略 | — | 已覆盖 |
+| `ref` | 3.0 | 已覆盖（composition/13.template-ref、advanced/18.template-ref-vfor-order） | 实战：v-for 中收集顺序（见 insights §9） | — | 已覆盖 |
+| `is` | 3.0 | 已覆盖（advanced/34.special-attributes-is-key） | 用法 + 动态组件 | — | 已覆盖 |
 
 ## 12. SFC `<script setup>` Macros
 
@@ -173,80 +173,80 @@
 | --- | --- | --- | --- | --- | --- |
 | `defineProps`（runtime） | 3.0 | 已覆盖（composition/03.setup-input-props） | — | — | 已覆盖 |
 | `defineProps`（type-based） | 3.0 | 已覆盖 | 实战：默认值（3.4 withDefaults 弃用） | RFC 0227 | 已覆盖 |
-| `defineProps` reactive destructure | 3.5 | 未覆盖 | 用法 + 原理：编译器自动 `props.` 前缀 | — | 在 03.setup-input-props 加 mini demo |
-| `defineEmits` | 3.0 | 已覆盖（composition/03.setup-input-props） | — | — | 已覆盖 |
-| `defineModel` | 3.4 | 未覆盖 | 实战：modifiers + transformers | RFC 0203 | 新增 `composition/14.defineModel` |
-| `defineExpose` | 3.0 | 未覆盖 | 用法 + 关闭默认暴露的机制 | — | 新增 `composition/15.defineExpose` |
-| `defineOptions` | 3.3 | 未覆盖 | 用法 + 编译原理（见 insights §2） | RFC 0232 | 新增 `composition/16.defineOptions` |
-| `defineSlots` | 3.3 | 未覆盖 | 用法 | RFC 0232 | 新增 `composition/17.defineSlots` |
+| `defineProps` reactive destructure | 3.5 | 已覆盖（composition/39.reactive-props-destructure） | 用法 + 原理：编译器自动 `props.` 前缀 | — | 已覆盖 |
+| `defineEmits` | 3.0 | 已覆盖（composition/03.setup-input-props、08.defineemits-validation） | — | — | 已覆盖 |
+| `defineModel` | 3.4 | 已覆盖（composition/09.defineModel、14.defineModel、18.use-model） | 实战：modifiers + transformers | RFC 0203 | 已覆盖 |
+| `defineExpose` | 3.0 | 已覆盖（composition/15.defineExpose、pitfalls/13.deprecated-instance-methods） | 用法 + 关闭默认暴露的机制 | — | 已覆盖 |
+| `defineOptions` | 3.3 | 已覆盖（composition/10.defineOptions） | 用法 + 编译原理（见 insights §2） | RFC 0232 | 已覆盖 |
+| `defineSlots` | 3.3 | 已覆盖（composition/11.defineSlots） | 用法 | RFC 0232 | 已覆盖 |
 | `useSlots` / `useAttrs` | 3.0 | 已覆盖（composition/19.use-slots-attrs） | 用法 | — | 已覆盖 |
-| Top-level `await` | 3.0 | 未覆盖 | 用法 + 与 Suspense 配合 | — | 新增 mini demo |
-| Generics | 3.3 | 未覆盖 | 用法 | RFC 0232 | 新增 mini demo |
+| Top-level `await` | 3.0 | 已覆盖（composition/06.setup-runtime、04.async-setup-and-suspense） | 用法 + 与 Suspense 配合 | — | 已覆盖 |
+| Generics | 3.3 | 已覆盖（composition/16.composable-pattern） | 用法 | RFC 0232 | 已覆盖 |
 
 ## 13. SFC CSS Features
 
 | API | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
-| Scoped CSS | 3.0 | 未覆盖 | 用法 + 原理：`data-v-xxx` 属性注入 | — | 新增 `learning-path/01.concept/src/17.scoped-css` |
-| CSS Modules | 3.0 | 未覆盖 | 用法 + `useCssModule` | — | 同上 |
-| `v-bind()` in CSS | 3.0 | 未覆盖 | 用法 | — | 同上 |
+| Scoped CSS | 3.0 | 已覆盖（01.concept/10.scoped-css-and-vbind-css） | 用法 + 原理：`data-v-xxx` 属性注入 | — | 已覆盖 |
+| CSS Modules | 3.0 | 已覆盖（01.concept/10.scoped-css-and-vbind-css 含 useCssModule 关联） | 用法 + `useCssModule` | — | 已覆盖 |
+| `v-bind()` in CSS | 3.0 | 已覆盖（01.concept/10.scoped-css-and-vbind-css） | 用法 | — | 已覆盖 |
 
 ## 14. Custom Elements
 
 | API | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
-| `defineCustomElement` | 3.0 | 未覆盖 | 用法 + 实战：自定义元素 + slots | — | 新增 `advanced/12.custom-element` |
-| `useHost` / `useShadowRoot` | 3.0 | 未覆盖 | 用法 | — | 同上 |
+| `defineCustomElement` | 3.0 | 已覆盖（advanced/38.define-custom-element） | 用法 + 实战：自定义元素 + slots | — | 已覆盖 |
+| `useHost` / `useShadowRoot` | 3.0 | 已覆盖（advanced/38.define-custom-element） | 用法 | — | 已覆盖 |
 
 ## 15. Render Function
 
 | API | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
-| `h` | 3.0 | 文档中有（vue/render.md、vue/jsx.md） | 实战：h 函数完整签名 | — | 已覆盖 |
-| `mergeProps` | 3.0 | 未覆盖 | 用法 | — | 新增 `composition/18.mergeProps` |
-| `cloneVNode` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `isVNode` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `resolveComponent` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `resolveDirective` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `withDirectives` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `withModifiers` | 3.0 | 未覆盖 | 用法 | — | 同上 |
+| `h` | 3.0 | 已覆盖（vue/render.md、vue/jsx.md、advanced/15.render-function-jsx） | 实战：h 函数完整签名 | — | 已覆盖 |
+| `mergeProps` | 3.0 | 已覆盖（advanced/15.render-function-jsx） | 用法 | — | 已覆盖 |
+| `cloneVNode` | 3.0 | 已覆盖（advanced/15.render-function-jsx） | 用法 | — | 已覆盖 |
+| `isVNode` | 3.0 | 已覆盖（advanced/15.render-function-jsx） | 用法 | — | 已覆盖 |
+| `resolveComponent` | 3.0 | 已覆盖（advanced/15.render-function-jsx） | 用法 | — | 已覆盖 |
+| `resolveDirective` | 3.0 | 已覆盖（advanced/15.render-function-jsx） | 用法 | — | 已覆盖 |
+| `withDirectives` | 3.0 | 已覆盖（advanced/15.render-function-jsx） | 用法 | — | 已覆盖 |
+| `withModifiers` | 3.0 | 已覆盖（advanced/15.render-function-jsx） | 用法 | — | 已覆盖 |
 
 ## 16. SSR
 
 | API | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
-| `renderToString` | 3.0 | 未覆盖 | 用法 + 实战 | — | 新增 `advanced/13.ssr-renderToString` |
-| `renderToNodeStream` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `renderToWebStream` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `pipeToNodeWritable` / `pipeToWebWritable` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `useSSRContext` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `data-allow-mismatch` | 3.5 | 未覆盖 | 实战：文本水合不匹配 | — | 文档补一节 |
+| `renderToString` | 3.0 | 已覆盖（ecosystem/23.ssr-render-to-string、composition/27.on-server-prefetch-ssr） | 用法 + 实战 | — | 已覆盖 |
+| `renderToNodeStream` | 3.0 | 已覆盖（ecosystem/23.ssr-render-to-string） | 用法 | — | 已覆盖 |
+| `renderToWebStream` | 3.0 | 已覆盖（ecosystem/23.ssr-render-to-string） | 用法 | — | 已覆盖 |
+| `pipeToNodeWritable` / `pipeToWebWritable` | 3.0 | 已覆盖（ecosystem/23.ssr-render-to-string） | 用法 | — | 已覆盖 |
+| `useSSRContext` | 3.0 | 已覆盖（composition/32.use-ssr-context） | 用法 | — | 已覆盖 |
+| `data-allow-mismatch` | 3.5 | 已覆盖（pitfalls/11.ssr-hydration-mismatch、ecosystem/23.ssr-render-to-string） | 实战：文本水合不匹配 | — | 已覆盖 |
 
 ## 17. TypeScript Utility Types
 
 | API | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
-| `PropType<T>` | 3.0 | 未覆盖 | 用法 | — | 在 composition/03 旁补一节 |
-| `MaybeRef<T>` / `MaybeRefOrGetter<T>` | 3.3 | 未覆盖 | 用法 | — | 新增 mini demo |
-| `ExtractPropTypes<T>` / `ExtractPublicPropTypes<T>` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `ComponentCustomProperties` | 3.0 | 未覆盖 | 实战：与 globalProperties 配合 | — | 文档补一节 |
-| `ComponentCustomOptions` / `ComponentCustomProps` | 3.0 | 未覆盖 | 用法 | — | 文档补一节 |
-| `CSSProperties` | 3.0 | 未覆盖 | 用法 | — | 文档补一节 |
+| `PropType<T>` | 3.0 | 已覆盖（composition/33.prop-type-and-extract-props） | 用法 | — | 已覆盖 |
+| `MaybeRef<T>` / `MaybeRefOrGetter<T>` | 3.3 | 已覆盖（composition/34.maybe-ref-and-to-refs） | 用法 | — | 已覆盖 |
+| `ExtractPropTypes<T>` / `ExtractPublicPropTypes<T>` | 3.0 | 已覆盖（composition/33.prop-type-and-extract-props） | 用法 | — | 已覆盖 |
+| `ComponentCustomProperties` | 3.0 | 已覆盖（composition/35.component-custom-properties） | 实战：与 globalProperties 配合 | — | 已覆盖 |
+| `ComponentCustomOptions` / `ComponentCustomProps` | 3.0 | 已覆盖（composition/35.component-custom-properties） | 用法 | — | 已覆盖 |
+| `CSSProperties` | 3.0 | 已覆盖（composition/35.component-custom-properties） | 用法 | — | 已覆盖 |
 
 ## 18. Compile-Time Flags
 
 | Flag | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
-| `__VUE_OPTIONS_API__` | 3.0 | 未覆盖 | 实战：tree-shaking 体积影响 | — | `docs/tools/vue-source.md` 加一节 |
-| `__VUE_PROD_DEVTOOLS__` | 3.0 | 未覆盖 | 用法 | — | 同上 |
-| `__VUE_PROD_HYDRATION_MISMATCH_DETAILS__` | 3.5 | 未覆盖 | 实战：SSR 调试 | — | 同上 |
+| `__VUE_OPTIONS_API__` | 3.0 | 已覆盖（ecosystem/27.vue-compile-flags） | 实战：tree-shaking 体积影响 | — | 已覆盖 |
+| `__VUE_PROD_DEVTOOLS__` | 3.0 | 已覆盖（ecosystem/27.vue-compile-flags） | 用法 | — | 已覆盖 |
+| `__VUE_PROD_HYDRATION_MISMATCH_DETAILS__` | 3.5 | 已覆盖（ecosystem/27.vue-compile-flags） | 实战：SSR 调试 | — | 已覆盖 |
 
 ## 19. Custom Renderer
 
 | API | 引入版本 | 当前覆盖 | 缺哪种深度 | 对应 RFC / Issue | 推荐补到哪个 demo |
 | --- | --- | --- | --- | --- | --- |
-| `createRenderer` | 3.0 | 未覆盖 | 实战：自定义渲染目标（小程序 / Canvas） | — | `docs/tools/vue-source.md` 加一节 |
-| `createHydrationRenderer` | 3.0 | 未覆盖 | 用法 | — | 同上 |
+| `createRenderer` | 3.0 | 已覆盖（advanced/39.create-renderer） | 实战：自定义渲染目标（小程序 / Canvas） | — | 已覆盖 |
+| `createHydrationRenderer` | 3.0 | 已覆盖（advanced/39.create-renderer） | 用法 | — | 已覆盖 |
 
 ---
 
@@ -254,30 +254,27 @@
 
 | 类别 | 条目数 | 已覆盖 | 部分覆盖 | 未覆盖 |
 | --- | --- | --- | --- | --- |
-| Application / Global | 24 | 8 | 1 | 15 |
-| Reactivity Core | 9 | 8 | 0 | 1 |
+| Application / Global | 24 | 24 | 0 | 0 |
+| Reactivity Core | 9 | 9 | 0 | 0 |
 | Reactivity Utilities | 9 | 9 | 0 | 0 |
 | Reactivity Advanced | 10 | 10 | 0 | 0 |
-| Composition Lifecycle | 12 | 3 | 2 | 7 |
-| Injection | 3 | 2 | 0 | 1 |
+| Composition Lifecycle | 12 | 12 | 0 | 0 |
+| Injection | 3 | 3 | 0 | 0 |
 | Composition Helpers | 5 | 5 | 0 | 0 |
-| Component Instance | 13 | 4 | 1 | 8 |
-| Built-in Directives | 14 | 3 | 0 | 11 |
-| Built-in Components | 5 | 1 | 0 | 4 |
-| Special Attributes | 3 | 1 | 1 | 1 |
-| SFC `<script setup>` | 11 | 4 | 0 | 7 |
-| SFC CSS | 3 | 0 | 0 | 3 |
-| Custom Elements | 3 | 0 | 0 | 3 |
-| Render Function | 8 | 0 | 1 | 7 |
-| SSR | 6 | 0 | 0 | 6 |
-| TypeScript Utility Types | 7 | 0 | 0 | 7 |
-| Compile-Time Flags | 3 | 0 | 0 | 3 |
-| Custom Renderer | 2 | 0 | 0 | 2 |
-| **总计** | **150** | **72** | **6** | **72** |
+| Component Instance | 13 | 12 | 1 | 0 |
+| Built-in Directives | 14 | 14 | 0 | 0 |
+| Built-in Components | 5 | 5 | 0 | 0 |
+| Special Attributes | 3 | 3 | 0 | 0 |
+| SFC `<script setup>` | 11 | 11 | 0 | 0 |
+| SFC CSS | 3 | 3 | 0 | 0 |
+| Custom Elements | 3 | 3 | 0 | 0 |
+| Render Function | 8 | 8 | 0 | 0 |
+| SSR | 6 | 6 | 0 | 0 |
+| TypeScript Utility Types | 7 | 7 | 0 | 0 |
+| Compile-Time Flags | 3 | 3 | 0 | 0 |
+| Custom Renderer | 2 | 2 | 0 | 0 |
+| **总计** | **150** | **149** | **1** | **0** |
 
-> 备注：当前站点用 `src/learning-path/<topic>/src/<NN.demo>` 路径组织 demo；文档章节 `src/docs/vue/` 多数停留在「概念笔记」层，未做「用法 + 原理 + 实战 + RFC」四级深度拆分。
-> 优先级建议（按收益 / 成本比）：
-> 1. 内置组件（Transition / KeepAlive / Suspense）+ 内置指令（v-bind / v-model / v-memo）。
-> 2. `<script setup>` 新宏（defineModel / defineOptions / defineSlots / defineExpose）与 reactive destructure。
-> 3. 进阶响应式（shallowRef / triggerRef / customRef / shallowReactive / effectScope）。
-> 4. 渲染函数与 SSR。
+> 备注：`Component Instance` 中 `$props` 仍标记为「部分覆盖」——文档中有但缺一个聚焦式 demo（已在 composition/02.setup 旁提到，文件本身存在但需补章节）。这是 150 条中仅剩的 1 条非完全覆盖项；其余均为「已覆盖」。
+>
+> 站点用 `src/learning-path/<topic>/src/<NN.demo>` 路径组织 demo；文档章节 `src/docs/vue/` 已扩展 `$data/$el/$options/$parent/$root`、`v-text/v-html/v-show`、`app.unmount/app.onUnmount`、`app.mixin 为何弃用`、`v-cloak/v-pre` 共五个补充段落。

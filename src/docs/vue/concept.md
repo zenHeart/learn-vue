@@ -99,6 +99,24 @@ computed: {
 
 **在迭代模式创建视图,利用 `key` 属性添加索引 id**
 
+## 内置指令对照：v-text / v-html / v-show
+
+| 指令 | 等价于 | 行为差异 |
+|---|---|---|
+| `v-text` | `{{ msg }}` | 直接覆盖元素的 textContent，会覆盖子节点，不解析插值 |
+| `v-html` | — | 插入原始 HTML，**有 XSS 风险**，仅信任内容使用 |
+| `v-show` | — | 通过 `display: none` 切换可见性，元素始终保留在 DOM 中 |
+| `v-if` | — | 通过 mount/unmount 切换可见性，进入/离开有动画钩子 |
+
+```html
+<span v-text="msg"></span>
+<div v-html="trustedHtml"></div>
+<p v-show="visible">始终在 DOM 中</p>
+<p v-if="visible">会真实挂载/卸载</p>
+```
+
+更多：[Vue 官方：内置指令](https://cn.vuejs.org/api/built-in-directives.html)
+
 
 ## 逻辑优先级 
 这个概念和 angular 配置指令优先级原理类似.
@@ -268,6 +286,39 @@ v-model 相比 v-bind,省略了
 
 
 ## 自定义指令
+
+
+
+
+## app 生命周期与全局销毁
+
+```ts
+const app = createApp(App)
+app.mount('#app')
+
+// 卸载：触发整棵子树的 beforeUnmount / unmounted
+app.unmount()
+
+// 注册 unmount 后回调（Vue 3.5+）
+app.onUnmount(() => {
+  console.log('app 已卸载')
+})
+```
+
+`app.unmount()` 是应用级销毁入口，**多次调用是 noop**；`onUnmount` 用于在卸载完成后做一次性的资源回收。
+
+更多：[Vue 官方：app.unmount](https://cn.vuejs.org/api/application.html#app-unmount) · [app.onUnmount](https://cn.vuejs.org/api/application.html#app-onunmount)
+
+## v-cloak 与 v-pre
+
+```html
+<div v-cloak>{{ msg }}</div>      <!-- 在 Vue 编译完成前保持隐藏 -->
+<div v-pre>{{ msg }}</div>        <!-- 跳过此节点的编译，原样输出 -->
+```
+
+`v-cloak` 常配合 `[v-cloak] { display: none }` 避免刷新瞬间出现未编译的 `{{ }}`；`v-pre` 用于展示模板源码片段。
+
+更多：[Vue 官方：v-cloak](https://cn.vuejs.org/api/built-in-directives.html#v-cloak) · [v-pre](https://cn.vuejs.org/api/built-in-directives.html#v-pre)
 
 
 
